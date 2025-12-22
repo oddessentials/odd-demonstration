@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📡 Distributed Task Observatory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card .value {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-card.total .value { color: #ffd700; }
+        .stat-card.completed .value { color: #00ff88; }
+        .stat-card.failed .value { color: #ff4757; }
+        
+        .jobs-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .jobs-section h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        th {
+            color: #ffd700;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        
+        .status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status.COMPLETED { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .status.FAILED { background: rgba(255, 71, 87, 0.2); color: #ff4757; }
+        .status.PENDING { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
+        
+        .last-update {
+            text-align: center;
+            opacity: 0.6;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #00ff88;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📡 Distributed Task Observatory</h1>
+            <p style="margin-top: 10px; opacity: 0.8;"><span class="live-indicator"></span>Live Dashboard</p>
+        </header>
+        
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <div class="value" id="totalJobs">-</div>
+                <div class="label">Total Jobs</div>
+            </div>
+            <div class="stat-card completed">
+                <div class="value" id="completedJobs">-</div>
+                <div class="label">Completed</div>
+            </div>
+            <div class="stat-card failed">
+                <div class="value" id="failedJobs">-</div>
+                <div class="label">Failed</div>
+            </div>
+        </div>
+        
+        <div class="jobs-section">
+            <h2>📋 Recent Jobs</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody id="jobsTable">
+                    <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="last-update">
+            Last updated: <span id="lastUpdate">-</span>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8080' 
+            : '/api';
+        
+        async function fetchStats() {
+            try {
+                const response = await fetch(`${API_URL}/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('totalJobs').textContent = stats.totalJobs || 0;
+                document.getElementById('completedJobs').textContent = stats.completedJobs || 0;
+                document.getElementById('failedJobs').textContent = stats.failedJobs || 0;
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+            }
+        }
+        
+        async function fetchJobs() {
+            try {
+                const response = await fetch(`${API_URL}/jobs/recent`);
+                const jobs = await response.json();
+                
+                const tbody = document.getElementById('jobsTable');
+                if (jobs && jobs.length > 0) {
+                    tbody.innerHTML = jobs.map(job => `
+                        <tr>
+                            <td><code>${job.id.substring(0, 8)}...</code></td>
+                            <td>${job.type}</td>
+                            <td><span class="status ${job.status}">${job.status}</span></td>
+                            <td>${new Date(job.createdAt).toLocaleString()}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No jobs yet</td></tr>';
+                }
+            } catch (error) {
+                console.error('Failed to fetch jobs:', error);
+            }
+        }
+        
+        function updateTimestamp() {
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+        
+        async function refresh() {
+            await Promise.all([fetchStats(), fetchJobs()]);
+            updateTimestamp();
+        }
+        
+        // Initial load
+        refresh();
+        
+        // Auto-refresh every 3 seconds
+        setInterval(refresh, 3000);
+    </script>
+</body>
+</html>

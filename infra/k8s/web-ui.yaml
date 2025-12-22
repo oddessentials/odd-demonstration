@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: web-ui
+  template:
+    metadata:
+      labels:
+        service: web-ui
+    spec:
+      containers:
+      - name: web-ui
+        image: web-ui:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-ui
+spec:
+  selector:
+    service: web-ui
+  ports:
+  - port: 80
+    targetPort: 80

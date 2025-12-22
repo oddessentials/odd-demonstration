@@ -1,0 +1,17 @@
+{
+    "contractVersion": "1.0.0",
+    "eventType": "job.created",
+    "eventId": "550e8400-e29b-41d4-a716-446655440000",
+    "occurredAt": "2025-12-21T22:00:00Z",
+    "producer": {
+        "service": "node-gateway",
+        "instanceId": "gw-1",
+        "version": "0.1.0"
+    },
+    "correlationId": "550e8400-e29b-41d4-a716-446655440001",
+    "idempotencyKey": "key-123",
+    "payload": {
+        "jobId": "550e8400-e29b-41d4-a716-446655440000",
+        "type": "simulated-work"
+    }
+}

@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+LICENSE
+docs/
+
+# Audit folder
+audit/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Bazel
+bazel-*
+.bazelrc*
+MODULE.bazel
+WORKSPACE
+BUILD.bazel
+*.bazel
+
+# Test files
+*_test.go
+*_test.py
+test/
+tests/
+
+# Development configs
+.env.example
+docker-compose*.yml
+Makefile

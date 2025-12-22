@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: processor
+  template:
+    metadata:
+      labels:
+        service: processor
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+
+      containers:
+      - name: processor
+        image: processor:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+          name: metrics
+        env:
+        - name: RABBITMQ_URL
+          value: "amqp://guest:guest@rabbitmq:5672"
+        - name: POSTGRES_URL
+          value: "postgresql://admin:password123@postgres:5432/task_db"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: processor
+spec:
+  selector:
+    service: processor
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: metrics

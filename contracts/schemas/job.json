@@ -1,0 +1,45 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Job",
+    "description": "Canonical Job domain object.",
+    "type": "object",
+    "required": [
+        "id",
+        "type",
+        "status",
+        "createdAt"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "format": "uuid"
+        },
+        "type": {
+            "type": "string"
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "PENDING",
+                "VALIDATED",
+                "EXECUTING",
+                "COMPLETED",
+                "FAILED"
+            ]
+        },
+        "payload": {
+            "type": "object"
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "metadata": {
+            "type": "object"
+        }
+    }
+}

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: read-model
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: read-model
+  template:
+    metadata:
+      labels:
+        service: read-model
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      containers:
+      - name: read-model
+        image: read-model:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: REDIS_URL
+          value: "redis:6379"
+        - name: POSTGRES_URL
+          value: "postgres://admin:password123@postgres:5432/task_db?sslmode=disable"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: read-model
+spec:
+  selector:
+    service: read-model
+  ports:
+  - port: 8080
+    targetPort: 8080

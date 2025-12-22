@@ -1,0 +1,198 @@
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use ratatui::{
+    backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
+    Terminal,
+};
+use serde::Deserialize;
+use std::{error::Error, io, time::Duration};
+
+#[derive(Deserialize, Debug, Clone, Default)]
+struct Stats {
+    #[serde(rename = "totalJobs")]
+    total_jobs: i64,
+    #[serde(rename = "completedJobs")]
+    completed_jobs: i64,
+    #[serde(rename = "failedJobs")]
+    failed_jobs: i64,
+    #[serde(rename = "lastEventTime")]
+    last_event_time: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+struct Job {
+    id: String,
+    #[serde(rename = "type")]
+    job_type: String,
+    status: String,
+    #[serde(rename = "createdAt")]
+    created_at: String,
+}
+
+struct App {
+    stats: Stats,
+    jobs: Vec<Job>,
+    api_url: String,
+}
+
+impl App {
+    fn new(api_url: String) -> App {
+        App {
+            stats: Stats::default(),
+            jobs: Vec::new(),
+            api_url,
+        }
+    }
+
+    fn refresh(&mut self) {
+        // Fetch stats
+        if let Ok(resp) = reqwest::blocking::get(format!("{}/stats", self.api_url)) {
+            if let Ok(stats) = resp.json::<Stats>() {
+                self.stats = stats;
+            }
+        }
+
+        // Fetch recent jobs
+        if let Ok(resp) = reqwest::blocking::get(format!("{}/jobs/recent", self.api_url)) {
+            if let Ok(jobs) = resp.json::<Vec<Job>>() {
+                self.jobs = jobs;
+            }
+        }
+    }
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let api_url = std::env::var("READ_MODEL_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let mut app = App::new(api_url);
+    app.refresh();
+
+    loop {
+        terminal.draw(|f| {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(1)
+                .constraints([
+                    Constraint::Length(3),
+                    Constraint::Length(7),
+                    Constraint::Min(10),
+                ])
+                .split(f.size());
+
+            // Title
+            let title = Paragraph::new(vec![Line::from(vec![
+                Span::styled(
+                    " 📡 Distributed Task Observatory ",
+                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                ),
+            ])])
+            .block(Block::default().borders(Borders::ALL));
+            f.render_widget(title, chunks[0]);
+
+            // Stats
+            let stats_text = vec![
+                Line::from(vec![
+                    Span::raw("  Total Jobs:     "),
+                    Span::styled(
+                        format!("{}", app.stats.total_jobs),
+                        Style::default().fg(Color::Yellow),
+                    ),
+                ]),
+                Line::from(vec![
+                    Span::raw("  Completed:      "),
+                    Span::styled(
+                        format!("{}", app.stats.completed_jobs),
+                        Style::default().fg(Color::Green),
+                    ),
+                ]),
+                Line::from(vec![
+                    Span::raw("  Failed:         "),
+                    Span::styled(
+                        format!("{}", app.stats.failed_jobs),
+                        Style::default().fg(Color::Red),
+                    ),
+                ]),
+                Line::from(vec![
+                    Span::raw("  Last Event:     "),
+                    Span::styled(&app.stats.last_event_time, Style::default().fg(Color::Blue)),
+                ]),
+            ];
+            let stats_block = Paragraph::new(stats_text)
+                .block(Block::default().title(" Statistics ").borders(Borders::ALL));
+            f.render_widget(stats_block, chunks[1]);
+
+            // Jobs table
+            let header = Row::new(vec!["ID", "Type", "Status", "Created"])
+                .style(Style::default().fg(Color::Yellow))
+                .bottom_margin(1);
+
+            let rows: Vec<Row> = app
+                .jobs
+                .iter()
+                .map(|job| {
+                    let status_style = match job.status.as_str() {
+                        "COMPLETED" => Style::default().fg(Color::Green),
+                        "FAILED" => Style::default().fg(Color::Red),
+                        "PENDING" => Style::default().fg(Color::Yellow),
+                        _ => Style::default(),
+                    };
+                    Row::new(vec![
+                        Cell::from(job.id.chars().take(8).collect::<String>()),
+                        Cell::from(job.job_type.clone()),
+                        Cell::from(job.status.clone()).style(status_style),
+                        Cell::from(job.created_at.clone()),
+                    ])
+                })
+                .collect();
+
+            let widths = [
+                Constraint::Length(10),
+                Constraint::Length(20),
+                Constraint::Length(12),
+                Constraint::Min(25),
+            ];
+            let table = Table::new(rows)
+            .header(header)
+            .widths(&widths)
+            .block(Block::default().title(" Recent Jobs ").borders(Borders::ALL));
+            f.render_widget(table, chunks[2]);
+        })?;
+
+        // Handle input
+        if event::poll(Duration::from_secs(2))? {
+            if let Event::Key(key) = event::read()? {
+                if key.code == KeyCode::Char('q') {
+                    break;
+                }
+                if key.code == KeyCode::Char('r') {
+                    app.refresh();
+                }
+            }
+        } else {
+            app.refresh();
+        }
+    }
+
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+
+    Ok(())
+}

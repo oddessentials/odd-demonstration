@@ -1,0 +1,37 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+py_binary(
+    name = "processor_bin",
+    srcs = ["main.py"],
+    deps = [
+        "@pip//pika",
+        "@pip//psycopg2_binary",
+        "@pip//jsonschema",
+    ],
+
+    data = [
+        "//contracts/schemas:event-envelope.json",
+    ],
+)
+
+pkg_tar(
+    name = "app_tar",
+    srcs = ["main.py"],
+    package_dir = "/app",
+)
+
+oci_image(
+    name = "image",
+    base = "@distroless_python",
+    entrypoint = ["python3", "/app/main.py"],
+    tars = [":app_tar"],
+)
+
+oci_tarball(
+    name = "tarball",
+    image = ":image",
+    repo_tags = ["processor:latest"],
+)
+
