@@ -12,6 +12,8 @@ The Distributed Task Observatory allows users to submit small "jobs" that flow t
 
 ## 🏗️ Architecture
 
+![Architecture diagram](./mermaid-diagram.svg)
+
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Web UI    │     │  Rust TUI   │     │   Gateway   │
@@ -51,6 +53,7 @@ This guide assumes you're starting from scratch on a Windows machine.
 You'll need to install the following tools. Open **PowerShell as Administrator** and run:
 
 #### 1.1 Install Chocolatey (Package Manager)
+
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
@@ -58,28 +61,35 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocola
 ```
 
 #### 1.2 Install Docker Desktop
+
 ```powershell
 choco install docker-desktop -y
 ```
+
 After installation, **restart your computer** and launch Docker Desktop. Wait for it to start completely (whale icon in system tray should be stable).
 
 #### 1.3 Install kubectl (Kubernetes CLI)
+
 ```powershell
 choco install kubernetes-cli -y
 ```
 
 #### 1.4 Install kind (Kubernetes in Docker)
+
 ```powershell
 choco install kind -y
 ```
 
 #### 1.5 Verify Installations
+
 Open a new PowerShell window and run:
+
 ```powershell
 docker --version
 kubectl version --client
 kind --version
 ```
+
 All three should display version numbers without errors.
 
 ---
@@ -102,9 +112,11 @@ cd odd-demonstration
 This creates a local Kubernetes cluster named `task-observatory` with ingress support.
 
 **Wait for cluster to be ready** (about 1-2 minutes). You can verify with:
+
 ```powershell
 kubectl get nodes
 ```
+
 You should see `task-observatory-control-plane` with status `Ready`.
 
 ---
@@ -145,9 +157,11 @@ kubectl apply -f .\infra\k8s\
 ```
 
 Wait for all pods to be ready (about 1-2 minutes):
+
 ```powershell
 kubectl get pods --watch
 ```
+
 Press `Ctrl+C` when all pods show `1/1 Running`.
 
 ---
@@ -157,6 +171,7 @@ Press `Ctrl+C` when all pods show `1/1 Running`.
 Since we're using a local cluster, we need to forward ports to access services.
 
 #### Start Port Forwards (run each in a separate terminal)
+
 ```powershell
 # Terminal 1 - Gateway API
 kubectl port-forward svc/gateway 3000:3000
@@ -178,25 +193,30 @@ kubectl port-forward svc/prometheus 9090:9090
 ```
 
 #### Access URLs
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **Web Dashboard** | http://localhost:8081 | - |
-| **RabbitMQ** | http://localhost:15672 | guest / guest |
-| **Grafana** | http://localhost:3002 | admin / admin |
-| **Prometheus** | http://localhost:9090 | - |
-| **Gateway API** | http://localhost:3000 | - |
-| **Read Model API** | http://localhost:8080/stats | - |
+
+| Service            | URL                         | Credentials   |
+| ------------------ | --------------------------- | ------------- |
+| **Web Dashboard**  | http://localhost:8081       | -             |
+| **RabbitMQ**       | http://localhost:15672      | guest / guest |
+| **Grafana**        | http://localhost:3002       | admin / admin |
+| **Prometheus**     | http://localhost:9090       | -             |
+| **Gateway API**    | http://localhost:3000       | -             |
+| **Read Model API** | http://localhost:8080/stats | -             |
+
+![Message Bus Example](./screenshots/rabbitmq.png)
 
 ---
 
 ### Step 8: Verify Everything Works
 
 Run the integration test:
+
 ```powershell
 .\scripts\integration-gate.ps1
 ```
 
 You should see all tests pass:
+
 ```
 [PASS] Gateway Health
 [PASS] Read Model Health
@@ -217,7 +237,10 @@ You should see all tests pass:
 3. Go to **Dashboards** in the left menu
 4. Click on **Distributed Task Observatory**
 
+![Grafana Dashboard Example](./screenshots/grafana.png)
+
 The dashboard shows:
+
 - **Jobs Submitted** - Counter of jobs sent to Gateway
 - **Jobs Accepted** - Counter of jobs published to RabbitMQ
 - **Jobs Completed** - Counter of successfully processed jobs
@@ -242,6 +265,7 @@ Invoke-RestMethod -Uri "http://localhost:3000/jobs" -Method Post -Body $job -Con
 ```
 
 Watch the job appear in:
+
 - http://localhost:8081 (Web Dashboard)
 - http://localhost:15672 (RabbitMQ queues)
 - http://localhost:3002 (Grafana metrics)
@@ -250,7 +274,7 @@ Watch the job appear in:
 
 ## 🖥️ Running the CLI (Rust TUI)
 
-The project includes a terminal-based dashboard built with Rust and `ratatui`. 
+The project includes a terminal-based dashboard built with Rust and `ratatui`.
 
 ### Prerequisites: Install Rust
 
@@ -264,6 +288,7 @@ choco install rustup.install -y
 ```
 
 After installation, restart your terminal and verify:
+
 ```powershell
 rustc --version
 cargo --version
@@ -290,9 +315,9 @@ $env:READ_MODEL_URL="http://localhost:8080"; cargo run --release
 
 ### Keyboard Controls
 
-| Key | Action |
-|-----|--------|
-| `q` | Quit the TUI |
+| Key | Action        |
+| --- | ------------- |
+| `q` | Quit the TUI  |
 | `r` | Force refresh |
 
 ### Expected Output
@@ -313,37 +338,46 @@ $env:READ_MODEL_URL="http://localhost:8080"; cargo run --release
 └────────────────────────────────────────────────────────────┘
 ```
 
+![TUI Example](./screenshots/tui.png)
+
 ### Troubleshooting TUI
 
 **"error: linker `link.exe` not found"**
+
 - Install Visual Studio Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/
 - Select "Desktop development with C++" workload
 
 **"Unable to connect to the remote server"**
+
 - Make sure the Read Model port-forward is running:
   ```powershell
   kubectl port-forward svc/read-model 8080:8080
   ```
 
-
 ## 🔧 Troubleshooting
 
 ### "kubectl: command not found"
+
 Restart your terminal after installing kubectl.
 
 ### "Cannot connect to the Docker daemon"
+
 Make sure Docker Desktop is running (whale icon in system tray).
 
 ### "pods are stuck in Pending"
+
 Wait a few more minutes. Check status with:
+
 ```powershell
 kubectl describe pod <pod-name>
 ```
 
 ### "port-forward keeps disconnecting"
+
 This is normal when pods restart. Just run the port-forward command again.
 
 ### Images not loading
+
 Make sure you're using `--name task-observatory` in the `kind load` commands.
 
 ---
@@ -374,6 +408,7 @@ odd-demonstration/
 ## 🛑 Cleanup
 
 To stop and remove the cluster:
+
 ```powershell
 kind delete cluster --name task-observatory
 ```

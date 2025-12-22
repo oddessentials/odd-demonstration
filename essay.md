@@ -232,3 +232,15 @@ Well-defined invariants are a key to making high-velocity, autonomous systems tr
 Practically, provenance is enforced by carrying stable identifiers and context through every boundary. Correlation IDs tie together all actions related to a single job across services. Event IDs and idempotency keys establish uniqueness and replay safety. Producer metadata records _who_ emitted an event and _which version_ of the code did so. Persistence layers distinguish authoritative facts from derived projections, ensuring that reconstructed history matches what actually occurred. Metrics and alerts inherit this context so that operational signals can be traced back to concrete system behavior, not vague symptoms.
 
 Why provenance matters is that it turns the system from a black box into an auditable machine. When something goes wrong—or simply behaves unexpectedly—you can answer precise questions: _Which input caused this? Which service decided this outcome? Was this a retry, a duplicate, or a first attempt? Could this state be reproduced from the same inputs?_ Provenance is what makes post-mortems factual instead of speculative, makes debugging distributed systems tractable, and allows autonomous teams to move fast without sacrificing accountability or trust in the system’s behavior.
+
+## Appendix C: Related Materials
+
+View all code and audit trails related to this article [here on github.com](https://github.com/oddessentials/odd-demonstration).
+
+---
+
+![Contract Authority Example](./screenshots/contract-authority.png)
+
+---
+
+![Phase Gate Example](./screenshots/phase-gate.png)
