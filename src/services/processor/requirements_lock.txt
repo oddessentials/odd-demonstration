@@ -1,4 +1,5 @@
--e git+https://github.com/oddessentials/ado-pull-request-metrics.git@52f090be007a0f7d0048775b57d641b183119ba5#egg=ado_pull_request_metrics
+# NOTE: Editable install removed - incompatible with rules_python
+# Original: -e git+https://github.com/oddessentials/ado-pull-request-metrics.git@...
 argcomplete==3.6.3
 attrs==25.4.0
 build==1.3.0
