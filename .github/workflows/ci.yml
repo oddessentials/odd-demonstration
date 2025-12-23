@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================
+  # Bazel Build & Test
+  # ============================================================
+  bazel:
+    name: Bazel Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Bazelisk
+        uses: bazel-contrib/setup-bazel@0.9.0
+        with:
+          # Use .bazelversion file to determine Bazel version
+          use-bazelisk: true
+          # Enable disk cache for faster builds
+          disk-cache: ${{ github.workflow }}
+          # Enable repository cache
+          repository-cache: true
+          # Generate external cache key based on lockfiles
+          external-cache: true
+
+      - name: Build all targets
+        run: bazel build //...
+
+      - name: Run all tests
+        run: bazel test //...
+        
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bazel-testlogs
+          path: bazel-testlogs/
+          retention-days: 7
+
+  # ============================================================
+  # Contract Validation (PowerShell)
+  # ============================================================
+  contracts:
+    name: Contract Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Validate contracts
+        shell: pwsh
+        run: ./scripts/validate-contracts.ps1
+        
+      - name: Upload validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-validation
+          path: contracts/validation-results.json
+          retention-days: 7
+
+  # ============================================================
+  # Container Image Builds (Future extensibility)
+  # ============================================================
+  # docker:
+  #   name: Build Container Images
+  #   runs-on: ubuntu-latest
+  #   needs: [bazel]
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Build images
+  #       run: |
+  #         docker build -t gateway:ci src/services/gateway
+  #         docker build -t processor:ci src/services/processor
+
+  # ============================================================
+  # Lint (Future extensibility)
+  # ============================================================
+  # lint:
+  #   name: Lint & Format
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run buildifier
+  #       run: bazel run //:buildifier_check
+
+  # ============================================================
+  # Release (Future extensibility)
+  # ============================================================
+  # release:
+  #   name: Create Release
+  #   runs-on: ubuntu-latest
+  #   needs: [bazel, docker]
+  #   if: startsWith(github.ref, 'refs/tags/v')
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Create GitHub Release
+  #       uses: softprops/action-gh-release@v1
