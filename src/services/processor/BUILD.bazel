@@ -5,6 +5,7 @@ load("@rules_pkg//:pkg.bzl", "pkg_tar")
 py_binary(
     name = "processor_bin",
     srcs = ["main.py"],
+    main = "main.py",
     deps = [
         "@pip//pika",
         "@pip//psycopg2_binary",
