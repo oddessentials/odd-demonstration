@@ -32,6 +32,5 @@ oci_image(
 oci_tarball(
     name = "tarball",
     image = ":image",
-    repo_tags = ["processor:latest"],
 )
 

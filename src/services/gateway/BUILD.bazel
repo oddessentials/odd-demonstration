@@ -41,5 +41,4 @@ oci_image(
 oci_tarball(
     name = "tarball",
     image = ":image",
-    repo_tags = ["gateway:latest"],
 )
