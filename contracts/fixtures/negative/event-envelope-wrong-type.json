@@ -1,0 +1,16 @@
+{
+    "_comment": "Invalid eventType: not in enum",
+    "_expectedError": "enum",
+    "contractVersion": "1.0.0",
+    "eventType": "job.unknown",
+    "eventId": "550e8400-e29b-41d4-a716-446655440000",
+    "occurredAt": "2025-01-01T12:00:00Z",
+    "producer": {
+        "service": "gateway",
+        "instanceId": "gateway-abc123",
+        "version": "0.1.0"
+    },
+    "correlationId": "660e8400-e29b-41d4-a716-446655440001",
+    "idempotencyKey": "job-123-create",
+    "payload": {}
+}

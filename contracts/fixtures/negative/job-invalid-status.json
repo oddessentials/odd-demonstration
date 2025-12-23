@@ -1,0 +1,8 @@
+{
+    "_comment": "Invalid status: not in enum",
+    "_expectedError": "enum",
+    "id": "880e8400-e29b-41d4-a716-446655440003",
+    "type": "data-processing",
+    "status": "INVALID_STATUS",
+    "createdAt": "2025-01-01T12:00:00Z"
+}

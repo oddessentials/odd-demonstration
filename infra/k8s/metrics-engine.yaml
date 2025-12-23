@@ -21,3 +21,5 @@ spec:
           value: "amqp://guest:guest@rabbitmq:5672"
         - name: REDIS_URL
           value: "redis:6379"
+        - name: MONGO_URL
+          value: "mongodb://admin:password123@mongodb:27017"
