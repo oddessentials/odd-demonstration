@@ -6,8 +6,7 @@ js_binary(
     name = "gateway_bin",
     data = [
         "index.js",
-        "//contracts/schemas:event-envelope.json",
-        "//contracts/schemas:job.json",
+        "//contracts/schemas",
         "//:node_modules/express",
         "//:node_modules/amqplib",
         "//:node_modules/ajv",
