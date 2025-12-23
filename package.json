@@ -20,5 +20,8 @@
     "devDependencies": {
         "@types/node": "^20.10.0",
         "husky": "^8.0.3"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": []
     }
 }
