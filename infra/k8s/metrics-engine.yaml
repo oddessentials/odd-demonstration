@@ -11,10 +11,11 @@ spec:
     metadata:
       labels:
         service: metrics-engine
+        app.kubernetes.io/version: "0.1.0"
     spec:
       containers:
       - name: metrics-engine
-        image: metrics-engine:latest
+        image: metrics-engine:0.1.0
         imagePullPolicy: Never
         env:
         - name: RABBITMQ_URL
