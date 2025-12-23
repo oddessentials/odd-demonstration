@@ -1,4 +1,4 @@
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -37,3 +37,16 @@ oci_tarball(
     tags = ["manual"],  # Excluded from //... builds - Docker format requires additional configuration
 )
 
+# Test target - runs pytest
+py_test(
+    name = "processor_test",
+    srcs = ["tests/test_main.py"],
+    main = "tests/test_main.py",
+    data = [
+        "VERSION",
+        "//contracts/schemas",
+    ],
+    deps = [
+        "@pip//pytest",
+    ],
+)

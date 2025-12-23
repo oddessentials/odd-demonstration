@@ -44,3 +44,15 @@ oci_tarball(
     repo_tags = ["gateway:latest"],
     tags = ["manual"],  # Excluded from //... builds - Docker format requires additional configuration
 )
+
+# Test target - runs vitest via npm test
+sh_test(
+    name = "gateway_test",
+    srcs = ["run_tests.sh"],
+    data = [
+        "package.json",
+        "__tests__/index.test.js",
+        "VERSION",
+    ],
+    tags = ["local"],  # Requires npm/node installed
+)
