@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +11,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
@@ -18,140 +19,246 @@
             color: #fff;
             padding: 20px;
         }
-        
+
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
-        
+
         header {
             text-align: center;
-            padding: 30px 0;
+            padding: 20px 0;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border-radius: 16px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         header h1 {
-            font-size: 2.5rem;
+            font-size: 2rem;
             background: linear-gradient(90deg, #00d4ff, #7b2ff7);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        
+
+        .header-links {
+            margin-top: 10px;
+        }
+
+        .header-links a {
+            color: #00d4ff;
+            text-decoration: none;
+            margin: 0 10px;
+            padding: 5px 12px;
+            border: 1px solid #00d4ff;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .header-links a:hover {
+            background: #00d4ff;
+            color: #0f0c29;
+        }
+
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
-        
+
         .stat-card {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 25px;
+            border-radius: 12px;
+            padding: 20px;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.3s ease;
         }
-        
+
         .stat-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-3px);
         }
-        
+
         .stat-card .value {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
-        
+
         .stat-card .label {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             opacity: 0.8;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        
-        .stat-card.total .value { color: #ffd700; }
-        .stat-card.completed .value { color: #00ff88; }
-        .stat-card.failed .value { color: #ff4757; }
-        
-        .jobs-section {
+
+        .stat-card.total .value {
+            color: #ffd700;
+        }
+
+        .stat-card.completed .value {
+            color: #00ff88;
+        }
+
+        .stat-card.failed .value {
+            color: #ff4757;
+        }
+
+        .stat-card.alerts .value {
+            color: #ff6b6b;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 25px;
+            border-radius: 12px;
+            padding: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
-        .jobs-section h2 {
-            margin-bottom: 20px;
-            font-size: 1.5rem;
+
+        .section h2 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 0.9rem;
         }
-        
-        th, td {
-            padding: 15px;
+
+        th,
+        td {
+            padding: 10px;
             text-align: left;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         th {
             color: #ffd700;
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             letter-spacing: 1px;
         }
-        
+
         .status {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
             font-weight: 600;
         }
-        
-        .status.COMPLETED { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
-        .status.FAILED { background: rgba(255, 71, 87, 0.2); color: #ff4757; }
-        .status.PENDING { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
-        
+
+        .status.COMPLETED {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .status.FAILED {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+        }
+
+        .status.PENDING {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+
+        .alert-item {
+            background: rgba(255, 71, 87, 0.15);
+            border-left: 3px solid #ff4757;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .alert-item.warning {
+            background: rgba(255, 215, 0, 0.15);
+            border-left-color: #ffd700;
+        }
+
+        .alert-item .alert-name {
+            font-weight: 600;
+            color: #ff6b6b;
+        }
+
+        .alert-item.warning .alert-name {
+            color: #ffd700;
+        }
+
+        .alert-item .alert-service {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .no-alerts {
+            text-align: center;
+            padding: 20px;
+            opacity: 0.6;
+            color: #00ff88;
+        }
+
         .last-update {
             text-align: center;
             opacity: 0.6;
-            margin-top: 20px;
-            font-size: 0.9rem;
+            margin-top: 15px;
+            font-size: 0.85rem;
         }
-        
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
-        
+
         .live-indicator {
             display: inline-block;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             background: #00ff88;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 6px;
             animation: pulse 2s infinite;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1>📡 Distributed Task Observatory</h1>
-            <p style="margin-top: 10px; opacity: 0.8;"><span class="live-indicator"></span>Live Dashboard</p>
+            <p style="margin-top: 8px; opacity: 0.8; font-size: 0.9rem;"><span class="live-indicator"></span>Live
+                Dashboard</p>
+            <div class="header-links">
+                <a href="http://grafana.local" target="_blank">📊 Grafana</a>
+                <a href="http://prometheus.local" target="_blank">📈 Prometheus</a>
+                <a href="http://rabbitmq.local" target="_blank">🐰 RabbitMQ</a>
+            </div>
         </header>
-        
+
         <div class="stats-grid">
             <div class="stat-card total">
                 <div class="value" id="totalJobs">-</div>
@@ -165,40 +272,77 @@
                 <div class="value" id="failedJobs">-</div>
                 <div class="label">Failed</div>
             </div>
+            <div class="stat-card alerts">
+                <div class="value" id="alertCount">0</div>
+                <div class="label">Active Alerts</div>
+            </div>
         </div>
-        
-        <div class="jobs-section">
-            <h2>📋 Recent Jobs</h2>
+
+        <div class="main-grid">
+            <div class="section">
+                <h2>📋 Recent Jobs</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobsTable">
+                        <tr>
+                            <td colspan="4" style="text-align: center;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h2>🚨 Active Alerts</h2>
+                <div id="alertsContainer">
+                    <div class="no-alerts">✓ No active alerts</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📜 Raw Events (MongoDB)</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Event ID</th>
                         <th>Type</th>
-                        <th>Status</th>
-                        <th>Created</th>
+                        <th>Occurred At</th>
+                        <th>Job ID</th>
                     </tr>
                 </thead>
-                <tbody id="jobsTable">
-                    <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                <tbody id="eventsTable">
+                    <tr>
+                        <td colspan="4" style="text-align: center;">Loading...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
-        
+
         <div class="last-update">
             Last updated: <span id="lastUpdate">-</span>
         </div>
     </div>
-    
+
     <script>
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:8080' 
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:8080'
             : '/api';
-        
+        const GATEWAY_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000'
+            : '/gateway';
+
         async function fetchStats() {
             try {
                 const response = await fetch(`${API_URL}/stats`);
                 const stats = await response.json();
-                
+
                 document.getElementById('totalJobs').textContent = stats.totalJobs || 0;
                 document.getElementById('completedJobs').textContent = stats.completedJobs || 0;
                 document.getElementById('failedJobs').textContent = stats.failedJobs || 0;
@@ -206,20 +350,20 @@
                 console.error('Failed to fetch stats:', error);
             }
         }
-        
+
         async function fetchJobs() {
             try {
                 const response = await fetch(`${API_URL}/jobs/recent`);
                 const jobs = await response.json();
-                
+
                 const tbody = document.getElementById('jobsTable');
                 if (jobs && jobs.length > 0) {
-                    tbody.innerHTML = jobs.map(job => `
+                    tbody.innerHTML = jobs.slice(0, 5).map(job => `
                         <tr>
                             <td><code>${job.id.substring(0, 8)}...</code></td>
                             <td>${job.type}</td>
                             <td><span class="status ${job.status}">${job.status}</span></td>
-                            <td>${new Date(job.createdAt).toLocaleString()}</td>
+                            <td>${new Date(job.createdAt).toLocaleTimeString()}</td>
                         </tr>
                     `).join('');
                 } else {
@@ -229,21 +373,98 @@
                 console.error('Failed to fetch jobs:', error);
             }
         }
-        
+
+        async function fetchAlerts() {
+            try {
+                const response = await fetch(`${GATEWAY_URL}/proxy/alerts`);
+                const alerts = await response.json();
+
+                const container = document.getElementById('alertsContainer');
+                const countEl = document.getElementById('alertCount');
+
+                if (alerts && alerts.length > 0) {
+                    countEl.textContent = alerts.length;
+                    container.innerHTML = alerts.map(alert => {
+                        const severity = alert.labels?.severity || 'warning';
+                        const name = alert.labels?.alertname || 'Unknown';
+                        const service = alert.labels?.service || '-';
+                        return `
+                            <div class="alert-item ${severity}">
+                                <div class="alert-name">${name}</div>
+                                <div class="alert-service">Service: ${service}</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    countEl.textContent = '0';
+                    container.innerHTML = '<div class="no-alerts">✓ No active alerts</div>';
+                }
+            } catch (error) {
+                document.getElementById('alertCount').textContent = '-';
+                document.getElementById('alertsContainer').innerHTML =
+                    '<div class="no-alerts" style="color: #ffd700;">⚠ Could not fetch alerts</div>';
+            }
+        }
+
+        async function fetchEvents() {
+            try {
+                const response = await fetch(`${API_URL}/events`);
+                const events = await response.json();
+
+                const tbody = document.getElementById('eventsTable');
+                if (events && events.length > 0) {
+                    // Handle BSON-style or regular JSON
+                    tbody.innerHTML = events.slice(0, 5).map(event => {
+                        let eventId = event.eventid || event.eventId || '-';
+                        let eventType = event.eventtype || event.eventType || '-';
+                        let occurredAt = event.occurredat || event.occurredAt || '-';
+                        let jobId = '-';
+
+                        // Try to extract job ID from payload
+                        if (event.payload) {
+                            if (Array.isArray(event.payload)) {
+                                const idField = event.payload.find(p => p.Key === 'id');
+                                if (idField) jobId = idField.Value;
+                            } else if (event.payload.id) {
+                                jobId = event.payload.id;
+                            }
+                        }
+
+                        if (eventId.length > 8) eventId = eventId.substring(0, 8) + '...';
+                        if (jobId.length > 8) jobId = jobId.substring(0, 8) + '...';
+
+                        return `
+                            <tr>
+                                <td><code>${eventId}</code></td>
+                                <td>${eventType}</td>
+                                <td>${new Date(occurredAt).toLocaleTimeString()}</td>
+                                <td><code>${jobId}</code></td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No events yet</td></tr>';
+                }
+            } catch (error) {
+                console.error('Failed to fetch events:', error);
+            }
+        }
+
         function updateTimestamp() {
             document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
         }
-        
+
         async function refresh() {
-            await Promise.all([fetchStats(), fetchJobs()]);
+            await Promise.all([fetchStats(), fetchJobs(), fetchAlerts(), fetchEvents()]);
             updateTimestamp();
         }
-        
+
         // Initial load
         refresh();
-        
-        // Auto-refresh every 3 seconds
-        setInterval(refresh, 3000);
+
+        // Auto-refresh every 5 seconds
+        setInterval(refresh, 5000);
     </script>
 </body>
+
 </html>

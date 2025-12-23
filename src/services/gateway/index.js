@@ -115,6 +115,55 @@ app.get('/metrics', async (req, res) => {
     res.end(await register.metrics());
 });
 
+// Proxy endpoints for observability APIs (avoid CORS issues in browser)
+const ALERTMANAGER_URL = process.env.ALERTMANAGER_URL || 'http://alertmanager:9093';
+const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://prometheus:9090';
+const PROXY_TIMEOUT_MS = 5000;
+
+app.get('/proxy/alerts', async (req, res) => {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+
+        const response = await fetch(`${ALERTMANAGER_URL}/api/v2/alerts`, {
+            signal: controller.signal,
+            headers: { 'Accept': 'application/json' }
+        });
+        clearTimeout(timeout);
+
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            res.status(504).json({ error: 'Alertmanager timeout' });
+        } else {
+            res.status(502).json({ error: 'Alertmanager unavailable', details: error.message });
+        }
+    }
+});
+
+app.get('/proxy/targets', async (req, res) => {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+
+        const response = await fetch(`${PROMETHEUS_URL}/api/v1/targets`, {
+            signal: controller.signal,
+            headers: { 'Accept': 'application/json' }
+        });
+        clearTimeout(timeout);
+
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            res.status(504).json({ error: 'Prometheus timeout' });
+        } else {
+            res.status(502).json({ error: 'Prometheus unavailable', details: error.message });
+        }
+    }
+});
+
 app.listen(PORT, () => {
 
     console.log(`Gateway service listening on port ${PORT}`);
