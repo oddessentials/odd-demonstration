@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import amqp, { Channel, Connection } from 'amqplib';
+import amqp, { Channel } from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
 import prom from 'prom-client';
 import Ajv from 'ajv';
@@ -99,7 +99,7 @@ let channel: Channel | null = null;
 
 async function connectRabbitMQ(): Promise<void> {
     try {
-        const connection: Connection = await amqp.connect(RABBITMQ_URL);
+        const connection = await amqp.connect(RABBITMQ_URL);
         channel = await connection.createChannel();
         await channel.assertQueue(QUEUE_NAME, { durable: true });
         console.log('Connected to RabbitMQ');
