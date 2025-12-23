@@ -1,9 +1,6 @@
 load("@aspect_rules_js//js:defs.bzl", "js_binary")
-load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
-
-npm_link_all_packages(name = "node_modules")
 
 js_binary(
     name = "gateway_bin",
@@ -11,14 +8,17 @@ js_binary(
         "index.js",
         "//contracts/schemas:event-envelope.json",
         "//contracts/schemas:job.json",
-        ":node_modules/express",
-        ":node_modules/amqplib",
-        ":node_modules/ajv",
-        ":node_modules/ajv-formats",
-        ":node_modules/uuid",
+        "//:node_modules/express",
+        "//:node_modules/amqplib",
+        "//:node_modules/ajv",
+        "//:node_modules/ajv-formats",
+        "//:node_modules/uuid",
+        "//:node_modules/body-parser",
+        "//:node_modules/prom-client",
     ],
     entry_point = "index.js",
 )
+
 
 # Packaging for OCI
 pkg_tar(
