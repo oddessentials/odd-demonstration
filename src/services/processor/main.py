@@ -3,10 +3,22 @@ import psycopg2
 import json
 import time
 import os
+import re
 import uuid
 import prometheus_client as prom
 from jsonschema import validate
 
+
+# Read VERSION file with fail-fast on missing/invalid
+VERSION_PATH = os.path.join(os.path.dirname(__file__), 'VERSION')
+try:
+    with open(VERSION_PATH, 'r') as f:
+        SERVICE_VERSION = f.read().strip()
+    if not re.match(r'^\d+\.\d+\.\d+$', SERVICE_VERSION):
+        raise ValueError(f"Invalid SemVer format: {SERVICE_VERSION}")
+except Exception as e:
+    print(f"FATAL: Failed to load VERSION file: {e}")
+    raise SystemExit(1)
 
 # Configuration
 RABBITMQ_URL = os.environ.get('RABBITMQ_URL', 'amqp://guest:guest@rabbitmq:5672')
@@ -87,7 +99,7 @@ def process_job(ch, method, properties, body):
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
 def main():
-    print("Processor service starting...")
+    print(f"Processor service starting... version: {SERVICE_VERSION}")
     # Start prometheus metrics server
     prom.start_http_server(8000)
     

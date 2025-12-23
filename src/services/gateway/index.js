@@ -11,6 +11,20 @@ const path = require('path');
 const app = express();
 app.use(express.json());
 
+// Read VERSION file with fail-fast on missing/invalid
+const VERSION_PATH = path.join(__dirname, 'VERSION');
+let SERVICE_VERSION;
+try {
+    SERVICE_VERSION = fs.readFileSync(VERSION_PATH, 'utf8').trim();
+    if (!/^\d+\.\d+\.\d+$/.test(SERVICE_VERSION)) {
+        throw new Error(`Invalid SemVer format: ${SERVICE_VERSION}`);
+    }
+    console.log(`Gateway version: ${SERVICE_VERSION}`);
+} catch (error) {
+    console.error(`FATAL: Failed to load VERSION file: ${error.message}`);
+    process.exit(1);
+}
+
 const ajv = new Ajv();
 addFormats(ajv);
 
@@ -105,8 +119,10 @@ app.post('/jobs', async (req, res) => {
     }
 });
 
-app.get('/healthz', (req, res) => res.send('OK'));
-app.get('/readyz', (req, res) => res.send('OK'));
+// Health endpoints with version
+const healthResponse = () => ({ status: 'ok', version: SERVICE_VERSION });
+app.get('/healthz', (req, res) => res.json(healthResponse()));
+app.get('/readyz', (req, res) => res.json(healthResponse()));
 
 const PORT = process.env.PORT || 3000;
 // Metrics endpoint

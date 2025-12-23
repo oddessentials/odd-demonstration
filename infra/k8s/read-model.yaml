@@ -11,13 +11,14 @@ spec:
     metadata:
       labels:
         service: read-model
+        app.kubernetes.io/version: "0.1.0"
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
     spec:
       containers:
       - name: read-model
-        image: read-model:latest
+        image: read-model:0.1.0
         imagePullPolicy: Never
         ports:
         - containerPort: 8080
