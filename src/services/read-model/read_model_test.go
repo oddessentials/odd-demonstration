@@ -106,3 +106,76 @@ func TestMetricLabelsIncludeVersion(t *testing.T) {
 		t.Errorf("Expected version '0.1.0', got '%s'", labels["version"])
 	}
 }
+
+// ============================================================
+// Tests for main.go functions
+// ============================================================
+
+// TestGetEnvWithValue tests getEnv returns env var when set.
+func TestGetEnvWithValue(t *testing.T) {
+	os.Setenv("TEST_READ_MODEL_VAR", "custom_value")
+	defer os.Unsetenv("TEST_READ_MODEL_VAR")
+
+	result := getEnv("TEST_READ_MODEL_VAR", "default")
+	if result != "custom_value" {
+		t.Errorf("Expected 'custom_value', got '%s'", result)
+	}
+}
+
+// TestGetEnvWithFallback tests getEnv returns fallback when not set.
+func TestGetEnvWithFallback(t *testing.T) {
+	os.Unsetenv("NONEXISTENT_VAR")
+
+	result := getEnv("NONEXISTENT_VAR", "fallback_value")
+	if result != "fallback_value" {
+		t.Errorf("Expected 'fallback_value', got '%s'", result)
+	}
+}
+
+// TestGetEnvEmptyValue tests getEnv with empty string value.
+func TestGetEnvEmptyValue(t *testing.T) {
+	os.Setenv("TEST_EMPTY_VAR", "")
+	defer os.Unsetenv("TEST_EMPTY_VAR")
+
+	result := getEnv("TEST_EMPTY_VAR", "default")
+	if result != "" {
+		t.Errorf("Expected empty string, got '%s'", result)
+	}
+}
+
+// TestStatsResponseStruct tests StatsResponse struct creation.
+func TestStatsResponseStruct(t *testing.T) {
+	stats := StatsResponse{
+		TotalJobs:     100,
+		CompletedJobs: 80,
+		FailedJobs:    5,
+		LastEventTime: "2024-01-01T00:00:00Z",
+	}
+
+	if stats.TotalJobs != 100 {
+		t.Errorf("Expected TotalJobs 100, got %d", stats.TotalJobs)
+	}
+	if stats.CompletedJobs != 80 {
+		t.Errorf("Expected CompletedJobs 80, got %d", stats.CompletedJobs)
+	}
+	if stats.FailedJobs != 5 {
+		t.Errorf("Expected FailedJobs 5, got %d", stats.FailedJobs)
+	}
+}
+
+// TestJobStruct tests Job struct creation.
+func TestJobStruct(t *testing.T) {
+	job := Job{
+		ID:        "job-123",
+		Type:      "compute",
+		Status:    "PENDING",
+		CreatedAt: "2024-01-01T00:00:00Z",
+	}
+
+	if job.ID != "job-123" {
+		t.Errorf("Expected ID 'job-123', got '%s'", job.ID)
+	}
+	if job.Status != "PENDING" {
+		t.Errorf("Expected Status 'PENDING', got '%s'", job.Status)
+	}
+}
