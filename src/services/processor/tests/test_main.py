@@ -95,3 +95,152 @@ class TestSchemaLoader:
         else:
             # Skip if running outside project context
             pytest.skip("Contracts path not available in this test context")
+
+
+# ============================================================
+# Phase 12: State Machine Invariants (G6)
+# ============================================================
+
+# Valid job statuses and allowed transitions
+VALID_STATUSES = {'PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'}
+VALID_TRANSITIONS = {
+    'PENDING': {'PROCESSING'},
+    'PROCESSING': {'COMPLETED', 'FAILED'},
+    'COMPLETED': set(),  # Terminal state
+    'FAILED': set(),     # Terminal state
+}
+
+
+class JobStateMachine:
+    """State machine for job status transitions."""
+    
+    def __init__(self, job_id: str, initial_status: str = 'PENDING'):
+        if initial_status not in VALID_STATUSES:
+            raise ValueError(f"Invalid initial status: {initial_status}")
+        self.job_id = job_id
+        self.status = initial_status
+        self.processed_event_ids = set()
+    
+    def transition(self, new_status: str) -> bool:
+        """Attempt status transition. Returns True if valid."""
+        if new_status not in VALID_STATUSES:
+            raise ValueError(f"Invalid target status: {new_status}")
+        
+        if new_status in VALID_TRANSITIONS.get(self.status, set()):
+            self.status = new_status
+            return True
+        return False
+    
+    def process_event(self, event_id: str, delivery_tag: int, redelivered: bool) -> str:
+        """Process an event, handling idempotency.
+        
+        Returns: 'processed', 'duplicate', or 'invalid'
+        """
+        # V4: Realistic idempotency - same eventId but potentially different delivery metadata
+        if event_id in self.processed_event_ids:
+            # Already processed - idempotent no-op
+            return 'duplicate'
+        
+        self.processed_event_ids.add(event_id)
+        return 'processed'
+
+
+class TestJobStateMachine:
+    """Test job state machine transitions (G6 enforcement)."""
+    
+    def test_valid_transition_pending_to_processing(self):
+        """PENDING → PROCESSING is valid."""
+        job = JobStateMachine('job-001', 'PENDING')
+        result = job.transition('PROCESSING')
+        assert result is True
+        assert job.status == 'PROCESSING'
+    
+    def test_valid_transition_processing_to_completed(self):
+        """PROCESSING → COMPLETED is valid."""
+        job = JobStateMachine('job-002', 'PENDING')
+        job.transition('PROCESSING')
+        result = job.transition('COMPLETED')
+        assert result is True
+        assert job.status == 'COMPLETED'
+    
+    def test_valid_transition_processing_to_failed(self):
+        """PROCESSING → FAILED is valid."""
+        job = JobStateMachine('job-003', 'PENDING')
+        job.transition('PROCESSING')
+        result = job.transition('FAILED')
+        assert result is True
+        assert job.status == 'FAILED'
+    
+    def test_invalid_transition_completed_to_processing(self):
+        """COMPLETED → PROCESSING is INVALID (terminal state)."""
+        job = JobStateMachine('job-004', 'PENDING')
+        job.transition('PROCESSING')
+        job.transition('COMPLETED')
+        result = job.transition('PROCESSING')
+        assert result is False
+        assert job.status == 'COMPLETED'  # Status unchanged
+    
+    def test_invalid_transition_pending_to_completed(self):
+        """PENDING → COMPLETED is INVALID (must go through PROCESSING)."""
+        job = JobStateMachine('job-005', 'PENDING')
+        result = job.transition('COMPLETED')
+        assert result is False
+        assert job.status == 'PENDING'
+    
+    def test_invalid_status_raises_error(self):
+        """Invalid status string raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid"):
+            JobStateMachine('job-006', 'INVALID_STATUS')
+
+
+class TestIdempotency:
+    """Test idempotency with realistic RabbitMQ redelivery scenarios (V4)."""
+    
+    def test_duplicate_event_is_noop(self):
+        """Same eventId with different deliveryTag is idempotent no-op."""
+        job = JobStateMachine('job-idempotent-001')
+        event_id = 'evt-abc-123'
+        
+        # First delivery
+        result1 = job.process_event(event_id, delivery_tag=1, redelivered=False)
+        assert result1 == 'processed'
+        
+        # Redelivery with different delivery metadata (realistic RabbitMQ scenario)
+        result2 = job.process_event(event_id, delivery_tag=2, redelivered=True)
+        assert result2 == 'duplicate'
+    
+    def test_different_events_both_processed(self):
+        """Different eventIds are both processed."""
+        job = JobStateMachine('job-idempotent-002')
+        
+        result1 = job.process_event('evt-001', delivery_tag=1, redelivered=False)
+        result2 = job.process_event('evt-002', delivery_tag=2, redelivered=False)
+        
+        assert result1 == 'processed'
+        assert result2 == 'processed'
+        assert len(job.processed_event_ids) == 2
+    
+    def test_redelivery_with_same_delivery_tag_is_duplicate(self):
+        """Exact same delivery (same eventId, same deliveryTag) is duplicate."""
+        job = JobStateMachine('job-idempotent-003')
+        event_id = 'evt-exact-dup'
+        
+        job.process_event(event_id, delivery_tag=5, redelivered=False)
+        result = job.process_event(event_id, delivery_tag=5, redelivered=False)
+        
+        assert result == 'duplicate'
+
+
+class TestMalformedInput:
+    """Test handling of malformed input (error shape, not schema)."""
+    
+    def test_missing_job_id_raises_error(self):
+        """Missing job_id raises TypeError."""
+        with pytest.raises(TypeError):
+            JobStateMachine()  # Missing required job_id
+    
+    def test_none_status_raises_error(self):
+        """None status raises appropriate error."""
+        with pytest.raises((ValueError, TypeError)):
+            JobStateMachine('job-bad', None)
+
