@@ -5,7 +5,7 @@ load("@rules_pkg//:pkg.bzl", "pkg_tar")
 js_binary(
     name = "gateway_bin",
     data = [
-        "index.js",
+        "index.ts",
         "//contracts/schemas",
         "//:node_modules/express",
         "//:node_modules/amqplib",
@@ -15,7 +15,7 @@ js_binary(
         "//:node_modules/body-parser",
         "//:node_modules/prom-client",
     ],
-    entry_point = "index.js",
+    entry_point = "index.ts",
 )
 
 
@@ -23,7 +23,7 @@ js_binary(
 pkg_tar(
     name = "app_tar",
     srcs = [
-        "index.js",
+        "index.ts",
         "package.json",
     ],
     package_dir = "/app",
