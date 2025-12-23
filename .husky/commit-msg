@@ -1,0 +1,5 @@
+#!/bin/sh
+# Commitlint hook - validates commit messages against Conventional Commits
+# Installed by: npm run prepare
+
+npx --no -- commitlint --edit "$1"

@@ -2,9 +2,13 @@
     "name": "distributed-task-observatory",
     "version": "0.1.0",
     "private": true,
+    "engines": {
+        "node": ">=20.0.0"
+    },
     "scripts": {
         "prepare": "husky install .husky",
         "check": "powershell -ExecutionPolicy Bypass -File ./scripts/pre-commit.ps1",
+        "lint:commits": "commitlint --from=HEAD~1",
         "validate:contracts": "powershell -ExecutionPolicy Bypass -File ./scripts/validate-contracts.ps1",
         "test:smoke": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-test.ps1",
         "test:integration": "powershell -ExecutionPolicy Bypass -File ./scripts/integration-gate.ps1"
@@ -19,6 +23,8 @@
         "prom-client": "^15.1.0"
     },
     "devDependencies": {
+        "@commitlint/cli": "^18.4.3",
+        "@commitlint/config-conventional": "^18.4.3",
         "@types/node": "^20.10.0",
         "husky": "^8.0.3"
     },
