@@ -137,7 +137,8 @@ $processorPath = Join-Path $PSScriptRoot "..\src\services\processor"
 if (Test-Path (Join-Path $processorPath "tests")) {
     Push-Location $processorPath
     try {
-        pytest tests/ -v 2>&1 | ForEach-Object { Write-Host $_ }
+        # Use python -m pytest for CI compatibility (pytest may not be on PATH)
+        python -m pytest tests/ -v 2>&1 | ForEach-Object { Write-Host $_ }
         if ($LASTEXITCODE -eq 0) {
             Write-Pass "Processor unit tests"
         } else {

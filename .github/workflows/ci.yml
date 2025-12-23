@@ -99,6 +99,14 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Python test dependencies
+        run: pip install pytest
+
+      - name: Install Gateway dependencies
+        run: |
+          cd src/services/gateway
+          npm ci || npm install
+
       # V2: run-all-tests.ps1 is SOLE authority for test execution
       # V7: Linux pwsh execution proves portability
       - name: Run all tests (canonical entrypoint)
