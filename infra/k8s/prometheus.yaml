@@ -33,6 +33,15 @@ data:
   prometheus.yml: |
     global:
       scrape_interval: 15s
+    
+    rule_files:
+      - /etc/prometheus/rules/*.yml
+    
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager:9093']
+    
     scrape_configs:
       # Scrape Gateway
       - job_name: 'gateway'
@@ -76,12 +85,17 @@ spec:
         volumeMounts:
           - name: config-volume
             mountPath: /etc/prometheus
+          - name: rules-volume
+            mountPath: /etc/prometheus/rules
           - name: storage-volume
             mountPath: /prometheus
       volumes:
         - name: config-volume
           configMap:
             name: prometheus-config
+        - name: rules-volume
+          configMap:
+            name: prometheus-rules
         - name: storage-volume
           emptyDir: {}
 ---

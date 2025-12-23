@@ -15,8 +15,17 @@ spec:
       containers:
       - name: alertmanager
         image: prom/alertmanager:v0.25.0
+        args:
+          - "--config.file=/etc/alertmanager/alertmanager.yml"
         ports:
           - containerPort: 9093
+        volumeMounts:
+          - name: config-volume
+            mountPath: /etc/alertmanager
+      volumes:
+        - name: config-volume
+          configMap:
+            name: alertmanager-config
 ---
 apiVersion: v1
 kind: Service
