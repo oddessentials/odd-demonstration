@@ -90,6 +90,10 @@ jobs:
       - name: Contract sanity checks
         run: python scripts/test-contracts-sanity.py
 
+      # Schema compatibility: VERSIONS.md coverage, $version/$id, fixture tests
+      - name: Schema compatibility check
+        run: python scripts/check-schema-compat.py --ci
+
   # ============================================================
   # Stall Diagnostic (Manual trigger only)
   # ============================================================

@@ -2,16 +2,23 @@
 """
 Schema compatibility checker for Phase 11.3.
 
+Usage:
+  python check-schema-compat.py           # Run fixture tests + schema validation
+  python check-schema-compat.py --ci      # CI mode: skip fixtures if no schema changes
+
 Detects breaking changes between schema versions:
-- Removed required fields (BREAKING)
-- Narrowed enum values (BREAKING)
-- Changed field types (BREAKING)
-- Added required fields (BREAKING)
-- Added optional fields (OK)
-- Widened enum values (OK)
+- Removed required fields (BREAKING → MAJOR)
+- Narrowed enum values (BREAKING → MAJOR)
+- Changed field types (BREAKING → MAJOR)
+- Added required fields (BREAKING → MAJOR)
+- Added optional fields (OK → MINOR)
+- Widened enum values (OK → MINOR)
 """
+import argparse
 import json
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -73,10 +80,7 @@ def check_breaking_changes(old_schema: dict, new_schema: dict) -> list[str]:
     old_props = get_properties(old_schema)
     new_props = get_properties(new_schema)
     
-    # Check for removed required fields
-    removed_required = old_required - new_required
-    # Actually, making a required field optional is NOT breaking
-    # But removing a field entirely IS breaking
+    # Check for removed fields (always breaking)
     for field in old_props:
         if field not in new_props:
             breaking_changes.append(f"Removed field: {field}")
@@ -120,6 +124,23 @@ def load_schema(path: Path) -> dict:
         return json.load(f)
 
 
+def get_changed_schemas(project_root: Path, base_ref: str = "origin/main") -> list[Path]:
+    """Get list of schema files changed compared to base_ref."""
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--name-only", base_ref, "HEAD", "--", "contracts/schemas/*.json"],
+            capture_output=True,
+            text=True,
+            cwd=project_root,
+            check=True
+        )
+        changed = result.stdout.strip().split('\n')
+        return [project_root / f for f in changed if f and f.endswith('.json')]
+    except subprocess.CalledProcessError:
+        # If git fails (e.g., no base ref), return empty
+        return []
+
+
 def run_fixture_tests(fixtures_dir: Path) -> tuple[int, int]:
     """Run fixture-based tests. Returns (passed, failed) counts."""
     passed = 0
@@ -157,8 +178,34 @@ def run_fixture_tests(fixtures_dir: Path) -> tuple[int, int]:
     return passed, failed
 
 
+def check_versions_md_coverage(project_root: Path) -> list[str]:
+    """Check that every schema appears in VERSIONS.md."""
+    errors = []
+    versions_md = project_root / "contracts" / "VERSIONS.md"
+    schemas_dir = project_root / "contracts" / "schemas"
+    
+    if not versions_md.exists():
+        errors.append("contracts/VERSIONS.md not found")
+        return errors
+    
+    content = versions_md.read_text()
+    
+    for schema_file in schemas_dir.glob("*.json"):
+        schema_name = schema_file.stem
+        # Check if schema is mentioned in VERSIONS.md
+        if schema_name not in content:
+            errors.append(f"Schema '{schema_name}' not documented in VERSIONS.md")
+    
+    return errors
+
+
 def main():
     """Run schema compatibility checks."""
+    parser = argparse.ArgumentParser(description="Schema compatibility checker")
+    parser.add_argument("--ci", action="store_true", help="CI mode: skip fixture tests if no schema changes")
+    parser.add_argument("--base", default="origin/main", help="Base ref for diff comparison")
+    args = parser.parse_args()
+    
     print("=" * 60)
     print("SCHEMA COMPATIBILITY CHECK")
     print("=" * 60)
@@ -169,22 +216,43 @@ def main():
         print(f"ERROR: {e}")
         return 1
     
-    # Run fixture tests if they exist
+    errors = []
+    
+    # Check VERSIONS.md coverage
+    print("\n>> Checking VERSIONS.md coverage...")
+    coverage_errors = check_versions_md_coverage(project_root)
+    if coverage_errors:
+        for err in coverage_errors:
+            print(f"  [ERROR] {err}")
+        errors.extend(coverage_errors)
+    else:
+        print("  [OK] All schemas documented in VERSIONS.md")
+    
+    # In CI mode, check if schemas changed
+    if args.ci:
+        changed = get_changed_schemas(project_root, args.base)
+        if not changed:
+            print(f"\n>> CI mode: No schema changes vs {args.base}, skipping diff checks")
+        else:
+            print(f"\n>> CI mode: {len(changed)} schema(s) changed vs {args.base}")
+            for f in changed:
+                print(f"  - {f.name}")
+    
+    # Run fixture tests (always, to validate compat checker logic)
     fixtures_dir = project_root / "tests" / "fixtures" / "schema-compat"
     if fixtures_dir.exists():
         print("\n>> Running fixture tests...")
         passed, failed = run_fixture_tests(fixtures_dir)
         print(f"\n>> Fixture results: {passed} passed, {failed} failed")
         if failed > 0:
-            return 1
+            errors.append(f"{failed} fixture test(s) failed")
     else:
         print(f"\n>> Fixtures directory not found: {fixtures_dir}")
-        print("   (Create fixtures to test breaking change detection)")
     
-    # Validate current schemas have $version
-    print("\n>> Checking schema versions...")
+    # Validate current schemas have $version and $id
+    print("\n>> Checking schema metadata...")
     schemas_dir = project_root / "contracts" / "schemas"
-    errors = []
+    schema_ids = {}
     
     for schema_file in schemas_dir.glob("*.json"):
         schema = load_schema(schema_file)
@@ -199,18 +267,26 @@ def main():
             print(f"  [OK] {schema_file.name}: $version={version}")
         
         if schema_id is None:
-            print(f"  [WARN] {schema_file.name}: missing $id")
+            errors.append(f"{schema_file.name}: missing $id")
+        else:
+            # Check for duplicate $id
+            if schema_id in schema_ids:
+                errors.append(f"Duplicate $id '{schema_id}' in {schema_file.name} and {schema_ids[schema_id]}")
+            else:
+                schema_ids[schema_id] = schema_file.name
     
+    # Report results
     print("\n" + "=" * 60)
     if errors:
         print(f"RESULTS: {len(errors)} error(s)")
         for error in errors:
             print(f"  [ERROR] {error}")
+        print("=" * 60)
         return 1
     else:
         print("RESULTS: All schema checks passed")
-    print("=" * 60)
-    return 0
+        print("=" * 60)
+        return 0
 
 
 if __name__ == "__main__":

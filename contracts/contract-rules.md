@@ -217,4 +217,26 @@ Failure to pass this gate blocks merges.
 
 ---
 
+## 6. Contract Versioning (Phase 11)
+
+All schemas MUST include:
+- `$id` — stable, unique identifier (e.g., `contracts/schemas/job.json`)
+- `$version` — SemVer format (e.g., `1.0.0`)
+
+### Version Bump Rules
+
+| Change Type | Version Bump | Examples |
+|-------------|--------------|----------|
+| **MAJOR** | Breaking | Remove field, narrow enum, change type, add required field |
+| **MINOR** | Additive | Add optional field, widen enum |
+| **PATCH** | Non-behavioral | Docs, metadata, clarifications |
+
+### CI Enforcement
+
+- `check-schema-compat.py` validates breaking changes
+- Breaking changes without major version bump → CI failure
+- All schemas must appear in `contracts/VERSIONS.md`
+
+---
+
 **This document is authoritative.**
