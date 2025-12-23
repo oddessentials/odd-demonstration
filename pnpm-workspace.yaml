@@ -1,3 +1,5 @@
 packages:
   - "."
   - "src/services/gateway"
+
+onlyBuiltDependencies: []
