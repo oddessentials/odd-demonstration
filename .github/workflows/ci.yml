@@ -63,7 +63,16 @@ jobs:
 
       - name: Run all tests (excluding heavy)
         timeout-minutes: 30
-        run: bazel test //... --curses=no --show_progress --verbose_failures --build_tag_filters=-heavy --test_tag_filters=-heavy
+        run: |
+          # Exit code 4 = no tests found, which is OK if all tests are tagged heavy or none exist
+          bazel test //... --curses=no --show_progress --verbose_failures --build_tag_filters=-heavy --test_tag_filters=-heavy || {
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 4 ]; then
+              echo "⏭️ No test targets found (all may be tagged heavy or none exist)"
+              exit 0
+            fi
+            exit $EXIT_CODE
+          }
         
       - name: Upload test logs on failure
         if: failure()
