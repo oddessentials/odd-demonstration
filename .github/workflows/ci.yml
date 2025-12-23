@@ -100,7 +100,7 @@ jobs:
           node-version: '20'
 
       - name: Install Python test dependencies
-        run: pip install pytest
+        run: pip install pytest pyyaml
 
       - name: Install Gateway dependencies
         run: |
