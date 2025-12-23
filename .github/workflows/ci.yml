@@ -82,6 +82,14 @@ jobs:
           path: bazel-testlogs/
           retention-days: 7
 
+      # Phase 11 enforcement: VERSION <-> K8s tag consistency
+      - name: Verify service versions match K8s manifests
+        run: python scripts/check-service-versions.py
+
+      # Contract sanity checks (schemas load, VERSION files valid)
+      - name: Contract sanity checks
+        run: python scripts/test-contracts-sanity.py
+
   # ============================================================
   # Stall Diagnostic (Manual trigger only)
   # ============================================================
