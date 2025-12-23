@@ -12,7 +12,7 @@ py_binary(
     ],
 
     data = [
-        "//contracts/schemas:event-envelope.json",
+        "//contracts/schemas",
     ],
 )
 
@@ -31,6 +31,7 @@ oci_image(
 
 oci_tarball(
     name = "tarball",
+    format = "docker",
     image = ":image",
     repo_tags = ["processor:latest"],
 )

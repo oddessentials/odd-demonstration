@@ -40,6 +40,7 @@ oci_image(
 
 oci_tarball(
     name = "tarball",
+    format = "docker",
     image = ":image",
     repo_tags = ["gateway:latest"],
 )
