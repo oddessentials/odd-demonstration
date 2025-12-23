@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:  # Manual trigger for stall-repro job
 
 # Cancel in-progress runs for the same branch
 concurrency:
@@ -35,13 +36,34 @@ jobs:
           # Generate external cache key based on lockfiles
           external-cache: true
 
-      - name: Build all targets
-        timeout-minutes: 30
-        run: bazel build //... --curses=no --show_progress --verbose_failures
+      # Fast-fail: Ensure lockfile is up-to-date before any resolution
+      - name: Verify MODULE.bazel.lock is current
+        run: bazel mod deps --lockfile_mode=error
 
-      - name: Run all tests
+      # Graph isolation: Ensure no heavy deps leak into default build
+      # This check becomes enforcing once @pip_heavy is defined
+      - name: Check for @pip_heavy leakage
+        run: |
+          # Check if @pip_heavy exists first
+          if bazel query '@pip_heavy//...' 2>/dev/null | head -1 > /dev/null; then
+            LEAKS=$(bazel query 'deps(//...) intersect @pip_heavy//...' 2>/dev/null || echo "")
+            if [ -n "$LEAKS" ]; then
+              echo "ERROR: @pip_heavy dependencies leaked into default build graph:"
+              echo "$LEAKS"
+              exit 1
+            fi
+            echo "✓ No @pip_heavy leakage detected"
+          else
+            echo "⏭️ @pip_heavy not defined yet, skipping leakage check"
+          fi
+
+      - name: Build all targets (excluding heavy)
         timeout-minutes: 30
-        run: bazel test //... --curses=no --show_progress --verbose_failures
+        run: bazel build //... --curses=no --show_progress --verbose_failures --build_tag_filters=-heavy
+
+      - name: Run all tests (excluding heavy)
+        timeout-minutes: 30
+        run: bazel test //... --curses=no --show_progress --verbose_failures --build_tag_filters=-heavy --test_tag_filters=-heavy
         
       - name: Upload test logs on failure
         if: failure()
@@ -50,6 +72,68 @@ jobs:
           name: bazel-testlogs
           path: bazel-testlogs/
           retention-days: 7
+
+  # ============================================================
+  # Stall Diagnostic (Manual trigger only)
+  # ============================================================
+  stall-repro:
+    name: Stall Diagnostic (pip.parse isolation)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'  # Manual trigger only
+    
+    steps:
+      # Checkout to a separate directory to avoid polluting the main workspace
+      - name: Checkout code (isolated path)
+        uses: actions/checkout@v4
+        with:
+          path: repro-workspace
+
+      - name: Set up Bazelisk (isolated cache)
+        uses: bazel-contrib/setup-bazel@0.9.0
+        with:
+          use-bazelisk: true
+          # Completely separate cache key to prevent poisoning main cache
+          disk-cache: stall-repro-isolated-${{ github.run_id }}
+          repository-cache: false  # Disable repo cache for isolation
+
+      # Run in isolated minimal context
+      - name: Run stall diagnostic
+        timeout-minutes: 15
+        working-directory: repro-workspace
+        run: |
+          echo "=== Stall Diagnostic: Testing pip.parse with editable install ==="
+          
+          # Create minimal workspace with only the repro requirements
+          mkdir -p /tmp/stall-repro
+          cd /tmp/stall-repro
+          
+          # Create minimal MODULE.bazel
+          cat > MODULE.bazel << 'EOF'
+          module(name = "stall_repro", version = "0.1.0")
+          bazel_dep(name = "rules_python", version = "0.36.0")
+          pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+          pip.parse(
+              hub_name = "pip_repro",
+              python_version = "3.11",
+              requirements_lock = "//:repro-requirements.txt",
+          )
+          use_repo(pip, "pip_repro")
+          EOF
+          
+          # Copy repro requirements
+          cp "$GITHUB_WORKSPACE/repro-workspace/repro/repro-requirements.txt" ./repro-requirements.txt
+          
+          # Create minimal BUILD.bazel
+          echo 'exports_files(["repro-requirements.txt"])' > BUILD.bazel
+          
+          # Create .bazelversion
+          echo "7.1.0" > .bazelversion
+          
+          echo "--- Starting pip.parse resolution timing ---"
+          time bazel mod deps --curses=no --show_progress 2>&1 || echo "Resolution failed or timed out"
+          echo "--- Diagnostic complete ---"
+          
+          # Clean up (isolated workspace, no need to restore)
 
   # ============================================================
   # Contract Validation (PowerShell)

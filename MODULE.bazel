@@ -48,7 +48,7 @@ rust.toolchain(
 use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
 
-# Python pip
+# Python pip (primary - will be split into light/heavy later)
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
     hub_name = "pip",
@@ -56,6 +56,10 @@ pip.parse(
     requirements_lock = "//src/services/processor:requirements_lock.txt",
 )
 use_repo(pip, "pip")
+
+# NOTE: pip_repro_stall repo was removed from here because pip.parse extensions
+# are evaluated during module loading regardless of target dependencies.
+# To run the stall diagnostic, use the separate repro CI job.
 
 # OCI base images
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")

@@ -1,0 +1,3 @@
+# Minimal requirements file for stall repro diagnostic
+# This file contains ONLY the editable install to isolate pip.parse behavior
+-e git+https://github.com/oddessentials/ado-pull-request-metrics.git@52f090be007a0f7d0048775b57d641b183119ba5#egg=ado_pull_request_metrics
