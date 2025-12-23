@@ -70,7 +70,7 @@ oci.pull(
     digest = "sha256:7fff8fb4a6463da2765532290c958f7e6fc01d54d7539f0d2bda1e93c7636d7c",
     platforms = ["linux/amd64"],
 )
-use_repo(oci, "distroless_node")
+use_repo(oci, "distroless_node", "distroless_node_linux_amd64")
 
 oci.pull(
     name = "distroless_python",
@@ -78,6 +78,6 @@ oci.pull(
     digest = "sha256:8ce6bba3f793ba7d834467dfe18983c42f9b223604970273e9e3a22b1891fc27",
     platforms = ["linux/amd64"],
 )
-use_repo(oci, "distroless_python")
+use_repo(oci, "distroless_python", "distroless_python_linux_amd64")
 
 

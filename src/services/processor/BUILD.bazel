@@ -24,7 +24,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@distroless_python",
+    base = "@distroless_python_linux_amd64",
     entrypoint = ["python3", "/app/main.py"],
     tars = [":app_tar"],
 )

@@ -33,7 +33,7 @@ pkg_tar(
 # For simplicity in this demo, we'll just bundle what's needed
 oci_image(
     name = "image",
-    base = "@distroless_node",
+    base = "@distroless_node_linux_amd64",
     entrypoint = ["/nodejs/bin/node", "/app/src/services/gateway/index.js"],
     tars = [":app_tar"],
 )
