@@ -44,3 +44,17 @@ oci_tarball(
     repo_tags = ["gateway:latest"],
     tags = ["manual"],  # Excluded from //... builds - Docker format requires additional configuration
 )
+
+# Test target - runs vitest via npm test
+# Tagged manual: requires npm install outside Bazel sandbox
+# TODO: Use js_test with proper rules_js setup for hermetic tests
+sh_test(
+    name = "gateway_test",
+    srcs = ["run_tests.sh"],
+    data = [
+        "package.json",
+        "__tests__/index.test.js",
+        "VERSION",
+    ],
+    tags = ["manual"],  # Excluded - needs npm install outside Bazel
+)
