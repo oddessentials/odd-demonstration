@@ -1,0 +1,24 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+# Export go.mod and go.sum for gazelle's go_deps extension
+exports_files(["go.mod", "go.sum"])
+
+go_library(
+    name = "read-model_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/distributed-task-observatory/read-model",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_lib_pq//:pq",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@org_mongodb_go_mongo_driver//bson",
+        "@org_mongodb_go_mongo_driver//mongo",
+        "@org_mongodb_go_mongo_driver//mongo/options",
+    ],
+)
+
+go_binary(
+    name = "read-model",
+    embed = [":read-model_lib"],
+    visibility = ["//visibility:public"],
+)

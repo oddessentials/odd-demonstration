@@ -58,6 +58,11 @@ data:
       - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
+      
+      # Scrape RabbitMQ
+      - job_name: 'rabbitmq'
+        static_configs:
+          - targets: ['rabbitmq:15692']
 ---
 apiVersion: apps/v1
 kind: Deployment

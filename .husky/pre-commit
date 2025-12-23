@@ -1,0 +1,13 @@
+#!/bin/sh
+# Git pre-commit hook
+# Installs to .git/hooks/pre-commit when running: npm run prepare
+
+# Run checks based on platform
+if [ -n "$COMSPEC" ]; then
+    # Windows
+    powershell.exe -ExecutionPolicy Bypass -File ./scripts/pre-commit.ps1
+else
+    # Unix
+    ./scripts/pre-commit
+fi
+exit $?

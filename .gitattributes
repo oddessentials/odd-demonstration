@@ -1,0 +1,27 @@
+# Ensure consistent line endings for Bazel files across platforms
+# This is critical for MODULE.bazel.lock hash consistency
+MODULE.bazel text eol=lf
+MODULE.bazel.lock text eol=lf
+*.bzl text eol=lf
+BUILD.bazel text eol=lf
+BUILD text eol=lf
+WORKSPACE text eol=lf
+WORKSPACE.bazel text eol=lf
+.bazelrc text eol=lf
+.bazelversion text eol=lf
+
+# Go files
+go.mod text eol=lf
+go.sum text eol=lf
+go.work text eol=lf
+*.go text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# YAML files
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# JSON files
+*.json text eol=lf

@@ -20,6 +20,8 @@ spec:
           name: amqp
         - containerPort: 15672
           name: mgmt
+        - containerPort: 15692
+          name: prometheus
 ---
 apiVersion: v1
 kind: Service
@@ -33,5 +35,8 @@ spec:
   - port: 15672
     targetPort: 15672
     name: mgmt
+  - port: 15692
+    targetPort: 15692
+    name: prometheus
   selector:
     app: rabbitmq

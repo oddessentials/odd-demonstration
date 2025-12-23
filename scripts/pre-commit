@@ -1,0 +1,26 @@
+#!/bin/sh
+# Pre-commit hook for Distributed Task Observatory
+# Runs contract validation before allowing commit
+
+echo "🔍 Running pre-commit checks..."
+
+# Run contract validation
+echo ">> Contract Validation"
+if command -v pwsh &> /dev/null; then
+    pwsh -ExecutionPolicy Bypass -File ./scripts/validate-contracts.ps1
+    CONTRACT_EXIT=$?
+elif command -v powershell &> /dev/null; then
+    powershell -ExecutionPolicy Bypass -File ./scripts/validate-contracts.ps1
+    CONTRACT_EXIT=$?
+else
+    echo "⚠️ PowerShell not found, skipping contract validation"
+    CONTRACT_EXIT=0
+fi
+
+if [ $CONTRACT_EXIT -ne 0 ]; then
+    echo "❌ Contract validation failed"
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed"
+exit 0

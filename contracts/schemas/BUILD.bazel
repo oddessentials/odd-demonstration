@@ -1,6 +1,12 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
 package(default_visibility = ["//visibility:public"])
 
-exports_files([
-    "event-envelope.json",
-    "job.json",
-])
+js_library(
+    name = "schemas",
+    srcs = [
+        "event-envelope.json",
+        "job.json",
+    ],
+)
+
