@@ -41,7 +41,10 @@ use_repo(go_deps, "com_github_redis_go_redis_v9", "com_github_lib_pq", "org_mong
 
 # Rust configuration
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
-rust.toolchain(edition = "2021")
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.75.0"],  # Pin version to avoid slow/hanging toolchain resolution
+)
 use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
 

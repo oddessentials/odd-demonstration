@@ -36,10 +36,12 @@ jobs:
           external-cache: true
 
       - name: Build all targets
-        run: bazel build //...
+        timeout-minutes: 30
+        run: bazel build //... --curses=no --show_progress --verbose_failures
 
       - name: Run all tests
-        run: bazel test //...
+        timeout-minutes: 30
+        run: bazel test //... --curses=no --show_progress --verbose_failures
         
       - name: Upload test logs on failure
         if: failure()
