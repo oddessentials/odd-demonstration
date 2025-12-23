@@ -10,6 +10,8 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type EventEnvelope struct {
@@ -32,6 +34,7 @@ func main() {
 
 	rabbitURL := getEnv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672")
 	redisURL := getEnv("REDIS_URL", "redis:6379")
+	mongoURL := getEnv("MONGO_URL", "mongodb://admin:password123@mongodb:27017")
 
 	// Connect to Redis
 	rdb := redis.NewClient(&redis.Options{
@@ -50,9 +53,27 @@ func main() {
 		time.Sleep(5 * time.Second)
 	}
 
+	// Connect to MongoDB
+	var err error
+	var mongoClient *mongo.Client
+	mongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(mongoURL))
+	if err != nil {
+		log.Fatalf("Failed to create MongoDB client: %v", err)
+	}
+	for {
+		err = mongoClient.Ping(ctx, nil)
+		if err == nil {
+			log.Println("Connected to MongoDB")
+			break
+		}
+		log.Printf("Waiting for MongoDB... %v", err)
+		time.Sleep(5 * time.Second)
+	}
+	db := mongoClient.Database("observatory")
+	eventsColl := db.Collection("job_events")
+
 	// Connect to RabbitMQ
 	var conn *amqp.Connection
-	var err error
 	for {
 		conn, err = amqp.Dial(rabbitURL)
 		if err == nil {
@@ -105,6 +126,12 @@ func main() {
 
 		// Store last event time
 		rdb.Set(ctx, "metrics:last_event_time", time.Now().Format(time.RFC3339), 0)
+
+		// Store raw event in MongoDB
+		_, err = eventsColl.InsertOne(ctx, event)
+		if err != nil {
+			log.Printf("Error storing event in MongoDB: %v", err)
+		}
 
 		msg.Ack(false)
 		log.Printf("Processed event: %s", event.EventID)

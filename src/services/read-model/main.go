@@ -11,6 +11,9 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type StatsResponse struct {
@@ -29,6 +32,8 @@ type Job struct {
 
 var rdb *redis.Client
 var db *sql.DB
+var mongoClient *mongo.Client
+var eventsColl *mongo.Collection
 var ctx = context.Background()
 
 func getEnv(key, fallback string) string {
@@ -83,6 +88,31 @@ func recentJobsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(jobs)
 }
 
+func eventsHandler(w http.ResponseWriter, r *http.Request) {
+	jobID := r.URL.Query().Get("jobId")
+	filter := bson.M{}
+	if jobID != "" {
+		filter = bson.M{"payload.id": jobID}
+	}
+
+	opts := options.Find().SetLimit(50).SetSort(bson.M{"occurredAt": -1})
+	cursor, err := eventsColl.Find(ctx, filter, opts)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var events []interface{}
+	if err = cursor.All(ctx, &events); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(events)
+}
+
 func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -103,6 +133,7 @@ func main() {
 
 	redisURL := getEnv("REDIS_URL", "redis:6379")
 	postgresURL := getEnv("POSTGRES_URL", "postgres://admin:password123@postgres:5432/task_db?sslmode=disable")
+	mongoURL := getEnv("MONGO_URL", "mongodb://admin:password123@mongodb:27017")
 
 	// Connect to Redis
 	rdb = redis.NewClient(&redis.Options{
@@ -132,9 +163,26 @@ func main() {
 		time.Sleep(5 * time.Second)
 	}
 
+	// Connect to MongoDB
+	mongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(mongoURL))
+	if err != nil {
+		log.Fatalf("Failed to create MongoDB client: %v", err)
+	}
+	for {
+		err = mongoClient.Ping(ctx, nil)
+		if err == nil {
+			log.Println("Connected to MongoDB")
+			break
+		}
+		log.Printf("Waiting for MongoDB... %v", err)
+		time.Sleep(5 * time.Second)
+	}
+	eventsColl = mongoClient.Database("observatory").Collection("job_events")
+
 	http.HandleFunc("/health", corsMiddleware(healthHandler))
 	http.HandleFunc("/stats", corsMiddleware(statsHandler))
 	http.HandleFunc("/jobs/recent", corsMiddleware(recentJobsHandler))
+	http.HandleFunc("/events", corsMiddleware(eventsHandler))
 
 	port := getEnv("PORT", "8080")
 	log.Printf("Listening on :%s", port)

@@ -1,0 +1,10 @@
+{
+    "id": "880e8400-e29b-41d4-a716-446655440003",
+    "type": "data-processing",
+    "status": "PENDING",
+    "createdAt": "2025-01-01T12:00:00Z",
+    "payload": {
+        "task": "Sample task",
+        "priority": "high"
+    }
+}

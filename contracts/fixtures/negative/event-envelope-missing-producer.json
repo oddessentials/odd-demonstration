@@ -1,0 +1,11 @@
+{
+    "_comment": "Missing producer object",
+    "_expectedError": "required property 'producer'",
+    "contractVersion": "1.0.0",
+    "eventType": "job.created",
+    "eventId": "550e8400-e29b-41d4-a716-446655440000",
+    "occurredAt": "2025-01-01T12:00:00Z",
+    "correlationId": "660e8400-e29b-41d4-a716-446655440001",
+    "idempotencyKey": "job-123-create",
+    "payload": {}
+}
