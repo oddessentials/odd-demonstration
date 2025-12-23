@@ -61,19 +61,6 @@ jobs:
         timeout-minutes: 30
         run: bazel build //... --curses=no --show_progress --verbose_failures --build_tag_filters=-heavy
 
-      - name: Run all tests (excluding heavy)
-        timeout-minutes: 30
-        run: |
-          # Exit code 4 = no tests found, which is OK if all tests are tagged heavy or none exist
-          bazel test //... --curses=no --show_progress --verbose_failures --build_tag_filters=-heavy --test_tag_filters=-heavy || {
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 4 ]; then
-              echo "⏭️ No test targets found (all may be tagged heavy or none exist)"
-              exit 0
-            fi
-            exit $EXIT_CODE
-          }
-        
       - name: Upload test logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -82,15 +69,57 @@ jobs:
           path: bazel-testlogs/
           retention-days: 7
 
-      # Phase 11 enforcement: VERSION <-> K8s tag consistency
+      # Phase 12: README structure governance (V6) - fails loudly on drift
+      - name: README structure governance
+        run: python scripts/check-readme-structure.py
+
+  # ============================================================
+  # Canonical Test Suite (V2: sole authority, V7: Linux pwsh proof)
+  # ============================================================
+  tests:
+    name: Canonical Test Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python test dependencies
+        run: pip install pytest pyyaml
+
+      - name: Install Gateway dependencies
+        run: |
+          cd src/services/gateway
+          npm ci || npm install
+
+      # V2: run-all-tests.ps1 is SOLE authority for test execution
+      # V7: Linux pwsh execution proves portability
+      - name: Run all tests (canonical entrypoint)
+        shell: pwsh
+        run: ./scripts/run-all-tests.ps1
+
+      # Governance scripts (not bypassing run-all-tests.ps1, these are structural checks)
       - name: Verify service versions match K8s manifests
         run: python scripts/check-service-versions.py
 
-      # Contract sanity checks (schemas load, VERSION files valid)
       - name: Contract sanity checks
         run: python scripts/test-contracts-sanity.py
 
-      # Schema compatibility: VERSIONS.md coverage, $version/$id, fixture tests
       - name: Schema compatibility check
         run: python scripts/check-schema-compat.py --ci
 

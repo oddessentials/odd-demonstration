@@ -24,6 +24,6 @@ go_binary(
 
 go_test(
     name = "metrics-engine_test",
-    srcs = ["main_test.go"],
+    srcs = ["metrics_engine_test.go"],
     data = ["VERSION"],
 )

@@ -15,6 +15,8 @@ The Distributed Task Observatory allows users to submit small "jobs" that flow t
 ![Architecture diagram](./mermaid-diagram.svg)
 
 ```
+v1
+
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Web UI    │     │  Rust TUI   │     │   Gateway   │
 │  (Nginx)    │     │  (ratatui)  │     │  (Node.js)  │
@@ -402,6 +404,76 @@ odd-demonstration/
         ├── metrics-engine/  # Go aggregator
         └── read-model/      # Go API
 ```
+
+---
+
+## 📦 Versioning
+
+Every microservice has an authoritative `VERSION` file at `src/services/*/VERSION` containing a SemVer string (e.g., `0.1.0`).
+
+### Governance
+
+| Layer           | Authority                          | Enforcement                                |
+| --------------- | ---------------------------------- | ------------------------------------------ |
+| Service runtime | `VERSION` file                     | Fail-fast on missing/invalid at startup    |
+| K8s manifests   | `app.kubernetes.io/version` label  | `python scripts/check-service-versions.py` |
+| Contracts       | `$id` + `$version` in JSON schemas | `python scripts/check-schema-compat.py`    |
+
+### Version Sync Verification
+
+```powershell
+python scripts/check-service-versions.py
+```
+
+Fails if any K8s image tag or label mismatches the service's `VERSION` file.
+
+---
+
+## 🧪 Testing
+
+### Canonical Entrypoint
+
+Run **all** tests with a single command:
+
+```powershell
+.\scripts\run-all-tests.ps1
+```
+
+This is the sole authority for test execution in CI and local development.
+
+### Unit Tests (Per-Service)
+
+| Service        | Framework | Command                                         |
+| -------------- | --------- | ----------------------------------------------- |
+| Gateway        | Vitest    | `cd src/services/gateway && npx vitest run`     |
+| Processor      | pytest    | `cd src/services/processor && pytest tests/ -v` |
+| Metrics-Engine | Go test   | `cd src/services/metrics-engine && go test -v`  |
+| Read-Model     | Go test   | `cd src/services/read-model && go test -v`      |
+
+### Contract Tests
+
+```powershell
+pwsh scripts/validate-contracts.ps1
+```
+
+Validates schema structure and fixtures. Owned by contract layer, not services.
+
+### Integration & E2E
+
+| Script                 | Scope              | Prerequisites              |
+| ---------------------- | ------------------ | -------------------------- |
+| `smoke-test.ps1`       | Basic connectivity | K8s cluster running        |
+| `integration-gate.ps1` | Full lifecycle     | K8s cluster + all services |
+
+Integration tests skip gracefully (exit 0 with `[SKIP]`) when prerequisites are unavailable.
+
+### Testing Responsibility Matrix
+
+| Layer              | Owns                                                 | Does NOT Own            |
+| ------------------ | ---------------------------------------------------- | ----------------------- |
+| Contract tests     | Schema structure, `$id`/`$version`, fixture validity | Request/response wiring |
+| Service unit tests | API wiring, error shape, status codes                | Schema correctness      |
+| Integration tests  | Cross-service event flow                             | Schema validation       |
 
 ---
 

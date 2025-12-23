@@ -25,6 +25,6 @@ go_binary(
 
 go_test(
     name = "read-model_test",
-    srcs = ["main_test.go"],
+    srcs = ["read_model_test.go"],
     data = ["VERSION"],
 )
