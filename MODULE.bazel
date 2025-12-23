@@ -60,15 +60,15 @@ oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 
 oci.pull(
     name = "distroless_node",
-    digest = "sha256:4f9fc149af97d9ef355f3e4663e800a74704095a56396e983ca1e72e81110098",
     image = "gcr.io/distroless/nodejs20-debian12",
+    tag = "latest",
 )
 use_repo(oci, "distroless_node")
 
 oci.pull(
     name = "distroless_python",
-    digest = "sha256:79493f0b24bf4c96576856a9359e190e3cd16e7f8f94af505f1345f34045f2be",
     image = "gcr.io/distroless/python3-debian12",
+    tag = "latest",
 )
 use_repo(oci, "distroless_python")
 
