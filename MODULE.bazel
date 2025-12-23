@@ -61,6 +61,7 @@ oci.pull(
     name = "distroless_node",
     image = "gcr.io/distroless/nodejs20-debian12",
     tag = "latest",
+    platforms = ["linux/amd64", "linux/arm64"],
 )
 use_repo(oci, "distroless_node")
 
@@ -68,6 +69,7 @@ oci.pull(
     name = "distroless_python",
     image = "gcr.io/distroless/python3-debian12",
     tag = "latest",
+    platforms = ["linux/amd64", "linux/arm64"],
 )
 use_repo(oci, "distroless_python")
 
