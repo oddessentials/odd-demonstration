@@ -20,4 +20,98 @@ metadata:
   name: grafana-dashboards
 data:
   main-dashboard.json: |
-    {"annotations":{"list":[]},"editable":true,"panels":[{"datasource":{"type":"prometheus","uid":"PBFA97CFB590B2093"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]}},"overrides":[]},"gridPos":{"h":4,"w":6,"x":0,"y":0},"id":1,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"textMode":"auto"},"targets":[{"expr":"gateway_jobs_submitted_total","refId":"A"}],"title":"Jobs Submitted","type":"stat"},{"datasource":{"type":"prometheus","uid":"PBFA97CFB590B2093"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]}},"overrides":[]},"gridPos":{"h":4,"w":6,"x":6,"y":0},"id":2,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"textMode":"auto"},"targets":[{"expr":"gateway_jobs_accepted_total","refId":"A"}],"title":"Jobs Accepted","type":"stat"},{"datasource":{"type":"prometheus","uid":"PBFA97CFB590B2093"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]}},"overrides":[]},"gridPos":{"h":4,"w":6,"x":12,"y":0},"id":3,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"textMode":"auto"},"targets":[{"expr":"processor_jobs_completed_total","refId":"A"}],"title":"Jobs Completed","type":"stat"},{"datasource":{"type":"prometheus","uid":"PBFA97CFB590B2093"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":1}]}},"overrides":[]},"gridPos":{"h":4,"w":6,"x":18,"y":0},"id":4,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"textMode":"auto"},"targets":[{"expr":"processor_jobs_failed_total","refId":"A"}],"title":"Jobs Failed","type":"stat"},{"datasource":{"type":"prometheus","uid":"PBFA97CFB590B2093"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"drawStyle":"line","fillOpacity":10,"lineWidth":1},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]}},"overrides":[]},"gridPos":{"h":8,"w":12,"x":0,"y":4},"id":5,"options":{"legend":{"displayMode":"list","placement":"bottom","showLegend":true},"tooltip":{"mode":"single"}},"targets":[{"expr":"rate(gateway_jobs_submitted_total[1m])","legendFormat":"Submitted/min","refId":"A"},{"expr":"rate(processor_jobs_completed_total[1m])","legendFormat":"Completed/min","refId":"B"}],"title":"Job Throughput","type":"timeseries"},{"datasource":{"type":"prometheus","uid":"PBFA97CFB590B2093"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"drawStyle":"line","fillOpacity":10,"lineWidth":1},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"s"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":12,"y":4},"id":6,"options":{"legend":{"calcs":["mean","max"],"displayMode":"list","placement":"bottom","showLegend":true},"tooltip":{"mode":"single"}},"targets":[{"expr":"histogram_quantile(0.50, rate(processor_job_processing_seconds_bucket[5m]))","legendFormat":"p50","refId":"A"},{"expr":"histogram_quantile(0.95, rate(processor_job_processing_seconds_bucket[5m]))","legendFormat":"p95","refId":"B"},{"expr":"histogram_quantile(0.99, rate(processor_job_processing_seconds_bucket[5m]))","legendFormat":"p99","refId":"C"}],"title":"Job Processing Latency","type":"timeseries"}],"refresh":"5s","schemaVersion":38,"style":"dark","tags":["distributed-task-observatory"],"time":{"from":"now-15m","to":"now"},"title":"Distributed Task Observatory","uid":"dto-main","version":1}
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "gateway_jobs_submitted_total", "refId": "A"}],
+          "title": "Jobs Submitted",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "gateway_jobs_accepted_total", "refId": "A"}],
+          "title": "Jobs Accepted",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "processor_jobs_completed_total", "refId": "A"}],
+          "title": "Jobs Completed",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []},
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+          "id": 4,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "processor_jobs_failed_total", "refId": "A"}],
+          "title": "Jobs Failed",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "id": 5,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single"}},
+          "targets": [
+            {"expr": "rate(gateway_jobs_submitted_total[1m])", "legendFormat": "Submitted/min", "refId": "A"},
+            {"expr": "rate(processor_jobs_completed_total[1m])", "legendFormat": "Completed/min", "refId": "B"}
+          ],
+          "title": "Job Throughput",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "s"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "id": 6,
+          "options": {"legend": {"calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single"}},
+          "targets": [
+            {"expr": "histogram_quantile(0.50, rate(processor_job_processing_seconds_bucket[5m]))", "legendFormat": "p50", "refId": "A"},
+            {"expr": "histogram_quantile(0.95, rate(processor_job_processing_seconds_bucket[5m]))", "legendFormat": "p95", "refId": "B"},
+            {"expr": "histogram_quantile(0.99, rate(processor_job_processing_seconds_bucket[5m]))", "legendFormat": "p99", "refId": "C"}
+          ],
+          "title": "Job Processing Latency",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"drawStyle": "line", "fillOpacity": 20, "lineWidth": 2}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 50}, {"color": "red", "value": 100}]}}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+          "id": 7,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single"}},
+          "targets": [
+            {"expr": "rabbitmq_queue_messages", "legendFormat": "Total Depth", "refId": "A"},
+            {"expr": "rabbitmq_queue_messages_ready", "legendFormat": "Ready", "refId": "B"},
+            {"expr": "rabbitmq_queue_messages_unacked", "legendFormat": "Unacked", "refId": "C"}
+          ],
+          "title": "RabbitMQ Queue Depth",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "5s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["distributed-task-observatory"],
+      "time": {"from": "now-15m", "to": "now"},
+      "title": "Distributed Task Observatory",
+      "uid": "dto-main",
+      "version": 2
+    }
