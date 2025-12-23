@@ -52,10 +52,11 @@ dist/
 build/
 *.egg-info/
 
-# Test coverage
+# Test coverage & Results
 coverage/
 .coverage
 htmlcov/
+contracts/validation-results.json
 
 # Temporary files
 tmp/
