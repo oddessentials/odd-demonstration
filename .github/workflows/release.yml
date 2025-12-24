@@ -43,11 +43,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Release info
-        if: steps.semantic.outputs.new_release_published == 'true'
+      - name: Debug release outputs
         run: |
-          echo "New release: v${{ steps.semantic.outputs.new_release_version }}"
-          echo "Git tag: ${{ steps.semantic.outputs.new_release_git_tag }}"
+          echo "=== Release Output Debug ==="
+          echo "new_release_published: '${{ steps.semantic.outputs.new_release_published }}'"
+          echo "new_release_version: '${{ steps.semantic.outputs.new_release_version }}'"
+          echo "new_release_git_tag: '${{ steps.semantic.outputs.new_release_git_tag }}'"
+          echo "Job output new_release will be: '${{ steps.semantic.outputs.new_release_published }}'"
 
   # Build binaries for all platforms (only if new release)
   build:

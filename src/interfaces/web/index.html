@@ -588,6 +588,9 @@
         <div class="last-update">
             Last updated: <span id="lastUpdate">-</span>
         </div>
+        <div class="last-update" style="margin-top: 8px;">
+            <span id="appVersion" style="color: #00d4ff;">v-</span> | oddessentials.com
+        </div>
     </div>
 
     <script>
@@ -993,7 +996,24 @@
             }
         }
 
+        // Load version from VERSION file
+        async function loadVersion() {
+            try {
+                const response = await fetch('/VERSION');
+                if (response.ok) {
+                    const version = (await response.text()).trim();
+                    const versionEl = document.getElementById('appVersion');
+                    if (versionEl) {
+                        versionEl.textContent = `v${version}`;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load version:', e);
+            }
+        }
+
         // Initial load
+        loadVersion();
         refresh();
 
         // Auto-refresh every 5 seconds
