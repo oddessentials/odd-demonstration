@@ -236,6 +236,41 @@ jobs:
         run: ./scripts/audit-workflows.ps1
 
   # ============================================================
+  # TUI Build (Rust) - Catches API breaking changes in dependencies
+  # ============================================================
+  tui-build:
+    name: TUI Build (Rust)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src/interfaces/tui/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src/interfaces/tui/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      
+      - name: Check TUI builds
+        run: |
+          cd src/interfaces/tui
+          cargo check --locked
+          
+      - name: Run TUI tests
+        run: |
+          cd src/interfaces/tui
+          cargo test --locked
+
+  # ============================================================
   # Container Image Builds (Future extensibility)
   # ============================================================
   # docker:
