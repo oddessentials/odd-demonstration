@@ -223,10 +223,12 @@ jobs:
         with:
           tag_name: ${{ needs.release.outputs.tag }}
           files: release/*
+          generate_release_notes: true
+          append_body: true
           body: |
             ## ⚠️ Bootstrap Release (Unsigned)
             
-            This is a **v0.1.x bootstrap release**. Binaries are NOT code-signed.
+            Binaries are NOT code-signed.
             - Your OS may show security prompts — this is expected.
             - Verify integrity via SHA256 checksums (see below).
             - Signing will be introduced in a future release.
