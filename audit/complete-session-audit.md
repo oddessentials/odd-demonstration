@@ -254,8 +254,7 @@ cargo run --release
 ## Phase 14: Distribution Strategy (2025-12-24)
 
 ### Binary Rename
-- **Before:** `observatory-tui`
-- **After:** `odd-dashboard`
+- **Name:** `odd-dashboard`
 - Build metadata injection (commit, timestamp, rustc version)
 
 ### CLI Features

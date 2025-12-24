@@ -49,7 +49,7 @@ Implement a complete, production-grade distributed task processing system demons
 - **Web:** Glassmorphic design, loading splash, Add Task form, UI Launcher modal
 
 ### Distribution (Phase 14)
-- **Binary:** `odd-dashboard` (renamed from observatory-tui)
+- **Binary:** `odd-dashboard` (production release binary)
 - **Install scripts:** `install.sh` (Linux/macOS), `install.ps1` (Windows)
 - **npm shim:** `@oddessentials/odd-dashboard`
 - **Release workflow:** Multi-platform builds with checksums
