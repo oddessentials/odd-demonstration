@@ -70,10 +70,24 @@
         }
 
         @keyframes dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80%, 100% { content: '...'; }
+
+            0%,
+            20% {
+                content: '';
+            }
+
+            40% {
+                content: '.';
+            }
+
+            60% {
+                content: '..';
+            }
+
+            80%,
+            100% {
+                content: '...';
+            }
         }
 
         .loading-branding {
@@ -148,7 +162,8 @@
             flex-wrap: wrap;
         }
 
-        .header-links a, .header-links button {
+        .header-links a,
+        .header-links button {
             color: #00d4ff;
             text-decoration: none;
             padding: 8px 16px;
@@ -161,7 +176,8 @@
             font-family: inherit;
         }
 
-        .header-links a:hover, .header-links button:hover {
+        .header-links a:hover,
+        .header-links button:hover {
             background: #00d4ff;
             color: #0f0c29;
         }
@@ -337,8 +353,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
 
         .live-indicator {
@@ -420,18 +443,18 @@
     <!-- Loading Splash Screen -->
     <div class="loading-splash" id="loadingSplash">
         <div class="loading-logo">
-            .....        
-         .#########.     
-        .#####      ##    
-       ####+###+    ##+   
-     ######  +###+  ###   
-   #### -######+######+   
- +###.   +####.  +###+    
-  ..   -###+########.     
-     .###+   .####.       
-      -+    +###.         
-          -###-           
-          -#-             
+            .....
+            .#########.
+            .##### ##
+            ####+###+ ##+
+            ###### +###+ ###
+            #### -######+######+
+            +###. +####. +###+
+            .. -###+########.
+            .###+ .####.
+            -+ +###.
+            -###-
+            -#-
         </div>
         <div class="loading-spinner">⠋</div>
         <div class="loading-message">
@@ -442,22 +465,43 @@
 
     <!-- New Task Modal -->
     <div class="modal-overlay" id="newTaskModal">
-        <div class="modal">
-            <h3>🚧 Coming Soon!</h3>
-            <p>Task creation from the Web UI is under development.</p>
-            <p style="font-size: 0.85rem; color: #888;">For now, use the Gateway API or TUI to submit tasks.</p>
-            <button onclick="closeNewTaskModal()">Got it</button>
+        <div class="modal" style="max-width: 450px;">
+            <h3>➕ Create New Task</h3>
+            <form id="taskForm" onsubmit="submitNewTask(event)" style="margin: 20px 0;">
+                <input type="text" id="taskType" placeholder="Job type (e.g., PROCESS, ANALYZE)"
+                    style="width: 100%; padding: 12px; border: 1px solid #00d4ff; background: rgba(0,0,0,0.3); color: #fff; border-radius: 8px; font-size: 1rem; margin-bottom: 15px;"
+                    required autocomplete="off">
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button type="submit" id="submitBtn"
+                        style="background: #00ff88; color: #0f0c29; border: none; padding: 10px 25px; border-radius: 20px; cursor: pointer; font-size: 1rem;">Submit</button>
+                    <button type="button" onclick="closeNewTaskModal()"
+                        style="background: transparent; color: #ff6b6b; border: 1px solid #ff6b6b; padding: 10px 25px; border-radius: 20px; cursor: pointer; font-size: 1rem;">Cancel</button>
+                </div>
+            </form>
+            <div id="taskResult" style="margin-top: 15px; min-height: 20px;"></div>
         </div>
     </div>
+
+    <!-- UI Launcher Modal -->
+    <div class="modal-overlay" id="uiLauncherModal">
+        <div class="modal" style="max-width: 550px; max-height: 80vh; overflow-y: auto;">
+            <h3>🚀 Launch UIs</h3>
+            <p style="color: #888; font-size: 0.85rem; margin-bottom: 20px;">Click to open in new tab</p>
+            <div id="uiLauncherCards" style="display: grid; gap: 10px;"></div>
+            <button onclick="closeUiLauncherModal()"
+                style="margin-top: 20px; background: transparent; color: #00d4ff; border: 1px solid #00d4ff; padding: 10px 25px; border-radius: 20px; cursor: pointer;">Close</button>
+        </div>
+    </div>
+
 
     <div class="container">
         <header>
             <div class="header-top">
                 <div class="header-logo">
-    .....        
- .#########.     
-.#####      ##    
-####+###+    ##+   
+                    .....
+                    .#########.
+                    .##### ##
+                    ####+###+ ##+
                 </div>
                 <div class="header-title-section">
                     <h1>📡 Distributed Task Observatory</h1>
@@ -467,6 +511,8 @@
             </div>
             <div class="header-links">
                 <button class="new-task-btn" onclick="openNewTaskModal()">➕ New Task</button>
+                <button class="new-task-btn" onclick="openUiLauncherModal()"
+                    style="background: linear-gradient(135deg, #00d4ff, #00ff88);">🚀 UIs</button>
                 <a href="http://localhost:3002" target="_blank">📊 Grafana</a>
                 <a href="http://localhost:9090" target="_blank">📈 Prometheus</a>
                 <a href="http://localhost:15672" target="_blank">🐰 RabbitMQ</a>
@@ -567,12 +613,12 @@
         function animateLoading() {
             const spinner = document.querySelector('.loading-spinner');
             const text = document.getElementById('loadingText');
-            
+
             if (spinner) {
                 spinner.textContent = spinnerFrames[spinnerIdx % spinnerFrames.length];
                 spinnerIdx++;
             }
-            
+
             if (text && spinnerIdx % 15 === 0) {
                 messageIdx = (messageIdx + 1) % loadingMessages.length;
                 text.textContent = loadingMessages[messageIdx];
@@ -592,28 +638,228 @@
         // Start loading animation
         loadingInterval = setInterval(animateLoading, 80);
 
+
+        // UI Registry (loaded from contracts/)
+        let uiRegistry = null;
+        let registryError = null;
+
+        // Validate registry structure (matches TUI validation)
+        function validateRegistry(registry) {
+            if (!registry || typeof registry !== 'object') {
+                return 'Registry is not an object';
+            }
+            if (!registry.baseUrl || !registry.baseUrl.startsWith('http')) {
+                return 'Registry baseUrl must start with http';
+            }
+            if (!Array.isArray(registry.entries) || registry.entries.length === 0) {
+                return 'Registry has no entries';
+            }
+            for (const entry of registry.entries) {
+                if (!entry.id || !entry.name) {
+                    return 'Entry missing id or name';
+                }
+                if (entry.port <= 0 || entry.port > 65535) {
+                    return `Invalid port ${entry.port} for ${entry.id}`;
+                }
+            }
+            return null;
+        }
+
+        // Validate job type (matches TUI validation)
+        function validateJobType(jobType) {
+            const trimmed = (jobType || '').trim();
+            if (!trimmed) {
+                return 'Job type cannot be empty';
+            }
+            if (trimmed.length > 50) {
+                return 'Job type too long (max 50 chars)';
+            }
+            if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
+                return 'Job type must be alphanumeric (underscores/hyphens allowed)';
+            }
+            return null;
+        }
+
+        async function loadUiRegistry() {
+            try {
+                const response = await fetch('/ui-registry.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const registry = await response.json();
+                const validationError = validateRegistry(registry);
+                if (validationError) {
+                    console.warn('Registry validation failed:', validationError);
+                    registryError = validationError;
+                    // Still use fallback
+                    throw new Error(validationError);
+                }
+                uiRegistry = registry;
+                registryError = null;
+            } catch (error) {
+                console.warn('Could not load UI registry:', error);
+                registryError = error.message;
+                // Fallback registry (validated inline)
+                uiRegistry = {
+                    baseUrl: 'http://localhost',
+                    entries: [
+                        { id: 'dashboard', name: 'Web Dashboard', port: 8081, path: '/', emoji: '📊', description: 'Main dashboard' },
+                        { id: 'gateway-docs', name: 'Gateway API Docs', port: 3000, path: '/docs', emoji: '📖', description: 'Swagger UI' },
+                        { id: 'grafana', name: 'Grafana', port: 3002, path: '/', emoji: '📈', description: 'Metrics dashboards' },
+                        { id: 'prometheus', name: 'Prometheus', port: 9090, path: '/', emoji: '🔥', description: 'Metrics collection' },
+                        { id: 'rabbitmq', name: 'RabbitMQ', port: 15672, path: '/', emoji: '🐰', description: 'Message queue' }
+                    ]
+                };
+            }
+        }
+
+
         // Modal functions
         function openNewTaskModal() {
             document.getElementById('newTaskModal').classList.add('visible');
+            document.getElementById('taskType').value = '';
+            document.getElementById('taskResult').innerHTML = '';
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('taskType').focus();
         }
 
         function closeNewTaskModal() {
             document.getElementById('newTaskModal').classList.remove('visible');
         }
 
-        // Close modal on overlay click
-        document.getElementById('newTaskModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeNewTaskModal();
+        function openUiLauncherModal() {
+            document.getElementById('uiLauncherModal').classList.add('visible');
+            renderUiLauncherCards();
+        }
+
+        function closeUiLauncherModal() {
+            document.getElementById('uiLauncherModal').classList.remove('visible');
+        }
+
+        function renderUiLauncherCards() {
+            const container = document.getElementById('uiLauncherCards');
+            if (!uiRegistry) {
+                container.innerHTML = '<p style="color: #ff6b6b;">UI registry not loaded</p>';
+                return;
             }
+
+            container.innerHTML = uiRegistry.entries.map(entry => `
+                <div onclick="launchUi('${entry.id}')" style="
+                    padding: 15px;
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid rgba(0,212,255,0.3);
+                    border-radius: 10px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                " onmouseover="this.style.background='rgba(0,212,255,0.1)'; this.style.borderColor='#00d4ff';"
+                   onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.borderColor='rgba(0,212,255,0.3)';">
+                    <span style="font-size: 1.5rem;">${entry.emoji}</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #fff;">${entry.name}</div>
+                        <div style="font-size: 0.8rem; color: #888;">${entry.description}</div>
+                    </div>
+                    <span style="color: #00d4ff;">→</span>
+                </div>
+            `).join('');
+        }
+
+        function launchUi(id) {
+            if (!uiRegistry) return;
+            const entry = uiRegistry.entries.find(e => e.id === id);
+            if (entry) {
+                window.open(`${uiRegistry.baseUrl}:${entry.port}${entry.path}`, '_blank');
+                closeUiLauncherModal();
+            }
+        }
+
+        // Task submission
+        async function submitNewTask(event) {
+            event.preventDefault();
+            const jobType = document.getElementById('taskType').value.trim();
+
+            const resultEl = document.getElementById('taskResult');
+            const submitBtn = document.getElementById('submitBtn');
+
+            // Early validation (matches TUI)
+            const validationError = validateJobType(jobType);
+            if (validationError) {
+                resultEl.innerHTML = `<span style="color: #ff6b6b;">✗ ${validationError}</span>`;
+                return;
+            }
+
+            submitBtn.disabled = true;
+            resultEl.innerHTML = '<span style="color: #00d4ff;">⏳ Submitting...</span>';
+
+            const jobId = crypto.randomUUID();
+            const payload = {
+                id: jobId,
+                type: jobType.toUpperCase(),  // Normalize to uppercase (matches TUI)
+                status: 'PENDING',
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 2000);
+
+                const response = await fetch(`${GATEWAY_URL}/jobs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                clearTimeout(timeout);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                resultEl.innerHTML = `<span style="color: #00ff88;">✓ Job created: ${result.jobId || jobId}</span>`;
+
+                // Refresh data after short delay
+                setTimeout(() => {
+                    refresh();
+                    closeNewTaskModal();
+                }, 1500);
+            } catch (error) {
+                let errorMsg = error.message;
+                if (error.name === 'AbortError') {
+                    errorMsg = 'Request timeout - Gateway may be unavailable';
+                }
+                resultEl.innerHTML = `<span style="color: #ff6b6b;">✗ ${errorMsg}</span>`;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Close modals on overlay click
+        document.getElementById('newTaskModal').addEventListener('click', function (e) {
+            if (e.target === this) closeNewTaskModal();
+        });
+        document.getElementById('uiLauncherModal').addEventListener('click', function (e) {
+            if (e.target === this) closeUiLauncherModal();
         });
 
         // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 closeNewTaskModal();
+                closeUiLauncherModal();
             }
         });
+
+        // Keyboard isolation for modals
+        document.getElementById('newTaskModal').addEventListener('keydown', function (e) {
+            e.stopPropagation();
+        });
+
+        // Load UI registry on startup
+        loadUiRegistry();
+
 
         async function fetchStats() {
             try {
@@ -740,7 +986,7 @@
         async function refresh() {
             const results = await Promise.all([fetchStats(), fetchJobs(), fetchAlerts(), fetchEvents()]);
             updateTimestamp();
-            
+
             // Hide loading splash after first successful fetch
             if (results.some(r => r)) {
                 hideLoadingSplash();

@@ -11,9 +11,10 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table},
     Terminal,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
+    fs,
     io::{self, BufRead, BufReader},
     process::{Command, Stdio},
     sync::{
@@ -23,6 +24,9 @@ use std::{
     thread,
     time::Duration,
 };
+use chrono::Utc;
+use uuid::Uuid;
+
 
 /// ASCII art logo for the Distributed Task Observatory
 const LOGO: &str = r#"
@@ -54,11 +58,14 @@ const LOADING_MESSAGES: &[&str] = &[
 /// Application mode - controls which view is displayed
 #[derive(Debug, Clone, PartialEq)]
 enum AppMode {
-    Loading,       // Initial loading splash
-    Launcher,      // Cluster not detected - show launch option
-    SetupProgress, // Running setup script
-    Dashboard,     // Normal dashboard view
+    Loading,        // Initial loading splash
+    Launcher,       // Cluster not detected - show launch option
+    SetupProgress,  // Running setup script
+    Dashboard,      // Normal dashboard view
+    TaskCreation,   // Task creation modal
+    UiLauncher,     // UI launcher selection
 }
+
 
 /// Cluster status after checking
 #[derive(Debug, Clone, PartialEq)]
@@ -82,6 +89,242 @@ struct SetupProgress {
     log_lines: Vec<String>,
     start_time: Option<std::time::Instant>,  // For elapsed time tracking
 }
+
+/// Task creation state
+#[derive(Debug, Clone, PartialEq)]
+enum TaskCreationStatus {
+    Editing,
+    Submitting,
+    Success(String),  // contains job_id
+    Error(String),    // contains error message
+}
+
+#[derive(Debug, Clone)]
+struct TaskCreationState {
+    job_type: String,
+    status: TaskCreationStatus,
+}
+
+impl Default for TaskCreationState {
+    fn default() -> Self {
+        Self {
+            job_type: String::new(),
+            status: TaskCreationStatus::Editing,
+        }
+    }
+}
+
+/// Job payload for submission to Gateway
+#[derive(Serialize, Debug)]
+struct JobPayload {
+    id: String,
+    #[serde(rename = "type")]
+    job_type: String,
+    status: String,
+    #[serde(rename = "createdAt")]
+    created_at: String,
+}
+
+/// UI Registry entry from contracts/ui-registry.json
+#[derive(Deserialize, Debug, Clone)]
+struct UiEntry {
+    id: String,
+    name: String,
+    port: u16,
+    path: String,
+    emoji: String,
+    description: String,
+}
+
+/// UI Registry containing all launchable UIs
+#[derive(Deserialize, Debug, Clone)]
+struct UiRegistry {
+    #[serde(rename = "baseUrl")]
+    base_url: String,
+    entries: Vec<UiEntry>,
+}
+
+/// UI Launcher state
+#[derive(Debug, Clone, Default)]
+struct UiLauncherState {
+    selected_index: usize,
+    registry: Option<UiRegistry>,
+    error: Option<String>,  // For displaying browser/registry errors
+}
+
+
+/// Load UI registry from contracts/ui-registry.json
+/// Registry load error categories for consistent handling
+#[derive(Debug, Clone, PartialEq)]
+enum RegistryError {
+    NotFound(String),
+    Malformed(String),
+    InvalidEntry(String),
+}
+
+impl std::fmt::Display for RegistryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RegistryError::NotFound(msg) => write!(f, "Registry not found: {}", msg),
+            RegistryError::Malformed(msg) => write!(f, "Registry malformed: {}", msg),
+            RegistryError::InvalidEntry(msg) => write!(f, "Invalid entry: {}", msg),
+        }
+    }
+}
+
+/// Load UI registry from contracts/ui-registry.json with explicit error categories
+fn load_ui_registry() -> Result<UiRegistry, RegistryError> {
+    let registry_path = find_project_root()
+        .ok_or_else(|| RegistryError::NotFound("Could not find project root".to_string()))?
+        .join("contracts")
+        .join("ui-registry.json");
+    
+    let content = fs::read_to_string(&registry_path)
+        .map_err(|e| RegistryError::NotFound(format!("Failed to read: {}", e)))?;
+    
+    let registry: UiRegistry = serde_json::from_str(&content)
+        .map_err(|e| RegistryError::Malformed(format!("JSON parse error: {}", e)))?;
+    
+    // Validate registry entries
+    if registry.entries.is_empty() {
+        return Err(RegistryError::InvalidEntry("Registry has no entries".to_string()));
+    }
+    
+    for entry in &registry.entries {
+        if entry.port == 0 || entry.port > 65535 {
+            return Err(RegistryError::InvalidEntry(format!("Invalid port {} for {}", entry.port, entry.id)));
+        }
+        if entry.id.is_empty() || entry.name.is_empty() {
+            return Err(RegistryError::InvalidEntry(format!("Entry missing id or name")));
+        }
+    }
+    
+    if !registry.base_url.starts_with("http") {
+        return Err(RegistryError::Malformed(format!("baseUrl must start with http: {}", registry.base_url)));
+    }
+    
+    Ok(registry)
+}
+
+/// Job submission error categories
+#[derive(Debug, Clone, PartialEq)]
+enum SubmitError {
+    Timeout,
+    ConnectionRefused,
+    ValidationFailed(String),
+    ServerError(u16, String),
+    NetworkError(String),
+}
+
+impl std::fmt::Display for SubmitError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SubmitError::Timeout => write!(f, "Gateway timeout (2s) - cluster may be starting or unavailable"),
+            SubmitError::ConnectionRefused => write!(f, "Cannot connect to Gateway - ensure cluster is running"),
+            SubmitError::ValidationFailed(msg) => write!(f, "Validation failed: {}", msg),
+            SubmitError::ServerError(code, body) => write!(f, "Gateway returned {}: {}", code, body),
+            SubmitError::NetworkError(msg) => write!(f, "Network error: {}", msg),
+        }
+    }
+}
+
+/// Validate job type input (alphanumeric with underscores, reasonable length)
+fn validate_job_type(job_type: &str) -> Result<(), String> {
+    let trimmed = job_type.trim();
+    if trimmed.is_empty() {
+        return Err("Job type cannot be empty".to_string());
+    }
+    if trimmed.len() > 50 {
+        return Err("Job type too long (max 50 chars)".to_string());
+    }
+    // Allow alphanumeric, underscores, hyphens
+    if !trimmed.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+        return Err("Job type must be alphanumeric (underscores/hyphens allowed)".to_string());
+    }
+    Ok(())
+}
+
+/// Submit a job to the Gateway API with validation
+fn submit_job(gateway_url: &str, job_type: &str) -> Result<String, SubmitError> {
+    // Early validation
+    validate_job_type(job_type).map_err(|e| SubmitError::ValidationFailed(e))?;
+    
+    let job_id = Uuid::new_v4().to_string();
+    let payload = JobPayload {
+        id: job_id.clone(),
+        job_type: job_type.trim().to_uppercase(),
+        status: "PENDING".to_string(),
+        created_at: Utc::now().to_rfc3339(),
+    };
+
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(format!("{}/jobs", gateway_url))
+        .json(&payload)
+        .timeout(Duration::from_secs(2))
+        .send()
+        .map_err(|e| {
+            if e.is_timeout() {
+                SubmitError::Timeout
+            } else if e.is_connect() {
+                SubmitError::ConnectionRefused
+            } else {
+                SubmitError::NetworkError(e.to_string())
+            }
+        })?;
+
+    if response.status().is_success() {
+        Ok(job_id)
+    } else {
+        let status = response.status().as_u16();
+        let body = response.text().unwrap_or_default();
+        Err(SubmitError::ServerError(status, body))
+    }
+}
+
+/// Browser launch error categories
+#[derive(Debug, Clone, PartialEq)]
+enum BrowserError {
+    NotAvailable(String),
+    EnvironmentRestricted(String),
+    LaunchFailed(String),
+}
+
+impl std::fmt::Display for BrowserError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BrowserError::NotAvailable(msg) => write!(f, "No browser available: {}", msg),
+            BrowserError::EnvironmentRestricted(msg) => write!(f, "Environment restriction: {}", msg),
+            BrowserError::LaunchFailed(msg) => write!(f, "Launch failed: {}", msg),
+        }
+    }
+}
+
+/// Open URL in default browser with environment-aware error handling
+fn open_browser(url: &str) -> Result<(), BrowserError> {
+    // Check for headless/restricted environments
+    if std::env::var("SSH_CLIENT").is_ok() || std::env::var("SSH_TTY").is_ok() {
+        return Err(BrowserError::EnvironmentRestricted(
+            "SSH session detected - browser launch not available. URL: ".to_string() + url
+        ));
+    }
+    
+    if std::env::var("DISPLAY").is_err() && cfg!(target_os = "linux") {
+        return Err(BrowserError::EnvironmentRestricted(
+            "No DISPLAY set (headless environment). URL: ".to_string() + url
+        ));
+    }
+    
+    open::that(url).map_err(|e| {
+        let error_str = e.to_string().to_lowercase();
+        if error_str.contains("not found") || error_str.contains("no such file") {
+            BrowserError::NotAvailable(format!("Default browser not found: {}", e))
+        } else {
+            BrowserError::LaunchFailed(format!("{}", e))
+        }
+    })
+}
+
 
 #[derive(Deserialize, Debug, Clone, Default)]
 struct Stats {
@@ -127,13 +370,17 @@ struct App {
     gateway_url: String,
     alert_retry_count: u8,
     setup_progress: Arc<Mutex<SetupProgress>>,
-    show_new_task_modal: bool,
+    task_state: TaskCreationState,
+    launcher_state: UiLauncherState,
 }
 
 const MAX_ALERT_RETRIES: u8 = 3;
 
 impl App {
     fn new(api_url: String, gateway_url: String) -> App {
+        // Load UI registry at startup
+        let registry = load_ui_registry().ok();
+        
         App {
             mode: AppMode::Loading,
             stats: Stats::default(),
@@ -144,9 +391,15 @@ impl App {
             gateway_url,
             alert_retry_count: 0,
             setup_progress: Arc::new(Mutex::new(SetupProgress::default())),
-            show_new_task_modal: false,
+            task_state: TaskCreationState::default(),
+            launcher_state: UiLauncherState {
+                selected_index: 0,
+                registry,
+                error: None,
+            },
         }
     }
+
 
     fn refresh(&mut self) {
         // Fetch stats
@@ -1320,60 +1573,139 @@ fn main() -> Result<(), Box<dyn Error>> {
                         Span::raw(" Quit  "),
                         Span::styled("R", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
                         Span::raw(" Refresh  "),
-                        Span::styled("N", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-                        Span::raw(" New Task"),
+                        Span::styled("N", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                        Span::raw(" New Task  "),
+                        Span::styled("U", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                        Span::raw(" UIs"),
                     ]));
                     f.render_widget(help, main_chunks[3]);
 
-                    // Render modal if showing
-                    if app.show_new_task_modal {
-                        let area = f.size();
-                        let modal_width = 50u16;
-                        let modal_height = 8u16;
-                        let x = (area.width.saturating_sub(modal_width)) / 2;
-                        let y = (area.height.saturating_sub(modal_height)) / 2;
-                        let modal_area = Rect::new(x, y, modal_width, modal_height);
-                        
-                        f.render_widget(Clear, modal_area);
-                        
-                        let modal_lines = vec![
-                            Line::from(""),
+
+                })?;
+            }
+            AppMode::TaskCreation => {
+                terminal.draw(|f| {
+                    let area = f.size();
+                    let modal_width = 55u16;
+                    let modal_height = 10u16;
+                    let x = (area.width.saturating_sub(modal_width)) / 2;
+                    let y = (area.height.saturating_sub(modal_height)) / 2;
+                    let modal_area = Rect::new(x, y, modal_width, modal_height);
+                    
+                    f.render_widget(Clear, modal_area);
+                    
+                    let (status_line, status_color) = match &app.task_state.status {
+                        TaskCreationStatus::Editing => ("Type job name, Enter to submit, Esc to cancel", Color::Gray),
+                        TaskCreationStatus::Submitting => ("⏳ Submitting...", Color::Yellow),
+                        TaskCreationStatus::Success(id) => {
+                            let msg = format!("✓ Created job: {}...", &id[..8.min(id.len())]);
+                            // We can't borrow, so we'll handle this inline
+                            ("✓ Job created! Press any key to close", Color::Green)
+                        }
+                        TaskCreationStatus::Error(e) => ("✗ Error - Press any key to close", Color::Red),
+                    };
+                    
+                    let input_display = format!("  Job Type: {}_", app.task_state.job_type);
+                    let error_msg = if let TaskCreationStatus::Error(e) = &app.task_state.status {
+                        format!("  {}", e)
+                    } else if let TaskCreationStatus::Success(id) = &app.task_state.status {
+                        format!("  Job ID: {}", id)
+                    } else {
+                        String::new()
+                    };
+                    
+                    let modal_lines = vec![
+                        Line::from(""),
+                        Line::from(vec![
+                            Span::styled(&input_display, Style::default().fg(Color::White)),
+                        ]),
+                        Line::from(""),
+                        Line::from(vec![
+                            Span::styled(status_line, Style::default().fg(status_color)),
+                        ]),
+                        if !error_msg.is_empty() {
                             Line::from(vec![
-                                Span::styled(
-                                    "  🚧 Task Creation Coming Soon!",
-                                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
-                                ),
-                            ]),
-                            Line::from(""),
-                            Line::from(vec![
-                                Span::styled(
-                                    "  This feature is under development.",
-                                    Style::default().fg(Color::Gray),
-                                ),
-                            ]),
-                            Line::from(""),
-                            Line::from(vec![
-                                Span::styled(
-                                    "  Press any key to close",
-                                    Style::default().fg(Color::Green),
-                                ),
-                            ]),
-                        ];
-                        
-                        let modal = Paragraph::new(modal_lines)
-                            .block(
-                                Block::default()
-                                    .borders(Borders::ALL)
-                                    .border_style(Style::default().fg(Color::Yellow))
-                                    .title(" New Task ")
-                                    .title_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
-                            );
-                        
-                        f.render_widget(modal, modal_area);
+                                Span::styled(&error_msg, Style::default().fg(status_color)),
+                            ])
+                        } else {
+                            Line::from("")
+                        },
+                    ];
+                    
+                    let border_color = match &app.task_state.status {
+                        TaskCreationStatus::Success(_) => Color::Green,
+                        TaskCreationStatus::Error(_) => Color::Red,
+                        _ => Color::Cyan,
+                    };
+                    
+                    let modal = Paragraph::new(modal_lines)
+                        .block(
+                            Block::default()
+                                .borders(Borders::ALL)
+                                .border_style(Style::default().fg(border_color))
+                                .title(" ➕ New Task ")
+                                .title_style(Style::default().fg(border_color).add_modifier(Modifier::BOLD))
+                        );
+                    
+                    f.render_widget(modal, modal_area);
+                })?;
+            }
+            AppMode::UiLauncher => {
+                terminal.draw(|f| {
+                    let area = f.size();
+                    let modal_width = 60u16.min(area.width.saturating_sub(4));
+                    let modal_height = 16u16.min(area.height.saturating_sub(4));
+                    let x = (area.width.saturating_sub(modal_width)) / 2;
+                    let y = (area.height.saturating_sub(modal_height)) / 2;
+                    let modal_area = Rect::new(x, y, modal_width, modal_height);
+                    
+                    f.render_widget(Clear, modal_area);
+                    
+                    let mut lines: Vec<Line> = vec![
+                        Line::from("  ↑/↓ Navigate, Enter to open, Esc to close"),
+                        Line::from(""),
+                    ];
+                    
+                    if let Some(ref registry) = app.launcher_state.registry {
+                        for (i, entry) in registry.entries.iter().enumerate() {
+                            let is_selected = i == app.launcher_state.selected_index;
+                            let prefix = if is_selected { "▶ " } else { "  " };
+                            let style = if is_selected {
+                                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                            } else {
+                                Style::default().fg(Color::White)
+                            };
+                            
+                            lines.push(Line::from(vec![
+                                Span::styled(format!("{}{} {}", prefix, entry.emoji, entry.name), style),
+                            ]));
+                            
+                            if is_selected {
+                                lines.push(Line::from(vec![
+                                    Span::styled(format!("     {}", entry.description), Style::default().fg(Color::DarkGray)),
+                                ]));
+                            }
+                        }
+                    } else {
+                        lines.push(Line::from(vec![
+                            Span::styled("  ⚠ Could not load UI registry", Style::default().fg(Color::Yellow)),
+                        ]));
                     }
+                    
+                    let launcher = Paragraph::new(lines)
+                        .block(
+                            Block::default()
+                                .borders(Borders::ALL)
+                                .border_style(Style::default().fg(Color::Cyan))
+                                .title(" 🚀 Launch UI ")
+                                .title_style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+                        );
+                    
+                    f.render_widget(launcher, modal_area);
                 })?;
             }
         }
+
 
         frame_idx += 1;
 
@@ -1402,21 +1734,103 @@ fn main() -> Result<(), Box<dyn Error>> {
                         }
                     }
                     AppMode::Dashboard => {
-                        if app.show_new_task_modal {
-                            // Any key closes the modal
-                            app.show_new_task_modal = false;
-                        } else {
-                            match key.code {
-                                KeyCode::Char('q') | KeyCode::Char('Q') => break,
-                                KeyCode::Char('r') | KeyCode::Char('R') => {
-                                    app.alert_retry_count = 0;
-                                    app.refresh();
-                                }
-                                KeyCode::Char('n') | KeyCode::Char('N') => {
-                                    app.show_new_task_modal = true;
-                                }
-                                _ => {}
+                        match key.code {
+                            KeyCode::Char('q') | KeyCode::Char('Q') => break,
+                            KeyCode::Char('r') | KeyCode::Char('R') => {
+                                app.alert_retry_count = 0;
+                                app.refresh();
                             }
+                            KeyCode::Char('n') | KeyCode::Char('N') => {
+                                app.task_state = TaskCreationState::default();
+                                app.mode = AppMode::TaskCreation;
+                            }
+                            KeyCode::Char('u') | KeyCode::Char('U') => {
+                                app.launcher_state.selected_index = 0;
+                                app.mode = AppMode::UiLauncher;
+                            }
+                            _ => {}
+                        }
+                    }
+                    AppMode::TaskCreation => {
+                        // Isolated key handling for task creation modal
+                        match &app.task_state.status {
+                            TaskCreationStatus::Editing => {
+                                match key.code {
+                                    KeyCode::Esc => {
+                                        app.mode = AppMode::Dashboard;
+                                    }
+                                    KeyCode::Enter => {
+                                        if !app.task_state.job_type.trim().is_empty() {
+                                            app.task_state.status = TaskCreationStatus::Submitting;
+                                            let gateway_url = app.gateway_url.clone();
+                                            let job_type = app.task_state.job_type.clone();
+                                            
+                                            // Submit job (blocking but with timeout)
+                                            match submit_job(&gateway_url, &job_type) {
+                                                Ok(job_id) => {
+                                                    app.task_state.status = TaskCreationStatus::Success(job_id);
+                                                }
+                                                Err(e) => {
+                                                    app.task_state.status = TaskCreationStatus::Error(e.to_string());
+                                                }
+                                            }
+                                        }
+                                    }
+                                    KeyCode::Char(c) => {
+                                        app.task_state.job_type.push(c);
+                                    }
+                                    KeyCode::Backspace => {
+                                        app.task_state.job_type.pop();
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            TaskCreationStatus::Submitting => {
+                                // Ignore keys while submitting
+                            }
+                            TaskCreationStatus::Success(_) | TaskCreationStatus::Error(_) => {
+                                // Any key closes and returns to dashboard
+                                app.refresh(); // Refresh to show new job
+                                app.mode = AppMode::Dashboard;
+                            }
+                        }
+                    }
+                    AppMode::UiLauncher => {
+                        // Isolated key handling for UI launcher
+                        match key.code {
+                            KeyCode::Esc => {
+                                app.mode = AppMode::Dashboard;
+                            }
+                            KeyCode::Up => {
+                                if app.launcher_state.selected_index > 0 {
+                                    app.launcher_state.selected_index -= 1;
+                                }
+                            }
+                            KeyCode::Down => {
+                                if let Some(ref registry) = app.launcher_state.registry {
+                                    if app.launcher_state.selected_index < registry.entries.len().saturating_sub(1) {
+                                        app.launcher_state.selected_index += 1;
+                                    }
+                                }
+                            }
+                            KeyCode::Enter => {
+                                if let Some(ref registry) = app.launcher_state.registry {
+                                    if let Some(entry) = registry.entries.get(app.launcher_state.selected_index) {
+                                        let url = format!("{}:{}{}", registry.base_url, entry.port, entry.path);
+                                        match open_browser(&url) {
+                                            Ok(()) => {
+                                                app.launcher_state.error = None;
+                                                app.mode = AppMode::Dashboard;
+                                            }
+                                            Err(e) => {
+                                                // Show error in launcher, don't close
+                                                app.launcher_state.error = Some(e.to_string());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {}
                         }
                     }
                     _ => {
@@ -1426,10 +1840,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
                 }
             }
-        } else if app.mode == AppMode::Dashboard && !app.show_new_task_modal {
+        } else if app.mode == AppMode::Dashboard {
             app.refresh();
         }
     }
+
 
     disable_raw_mode()?;
     execute!(
@@ -1465,8 +1880,12 @@ mod tests {
         assert!(app.alerts.is_empty());
         assert!(app.alerts_error.is_none());
         assert_eq!(app.alert_retry_count, 0);
-        assert!(!app.show_new_task_modal);
+        // Check new task/launcher state fields
+        assert!(app.task_state.job_type.is_empty());
+        assert_eq!(app.task_state.status, TaskCreationStatus::Editing);
+        assert_eq!(app.launcher_state.selected_index, 0);
     }
+
 
     #[test]
     fn test_app_mode_initial() {
@@ -1838,4 +2257,174 @@ mod tests {
         assert!(ps_command.starts_with("& '"), "Command should use call operator");
         assert!(ps_command.ends_with("' -OutputJson"), "Command should include -OutputJson flag");
     }
+
+    // Task creation tests
+    #[test]
+    fn test_task_creation_state_default() {
+        let state = TaskCreationState::default();
+        assert!(state.job_type.is_empty());
+        assert_eq!(state.status, TaskCreationStatus::Editing);
+    }
+
+    #[test]
+    fn test_task_creation_status_variants() {
+        let editing = TaskCreationStatus::Editing;
+        let submitting = TaskCreationStatus::Submitting;
+        let success = TaskCreationStatus::Success("job-123".to_string());
+        let error = TaskCreationStatus::Error("Connection failed".to_string());
+        
+        assert_eq!(editing, TaskCreationStatus::Editing);
+        assert_eq!(submitting, TaskCreationStatus::Submitting);
+        assert!(matches!(success, TaskCreationStatus::Success(_)));
+        assert!(matches!(error, TaskCreationStatus::Error(_)));
+    }
+
+    #[test]
+    fn test_job_payload_serialization() {
+        let payload = JobPayload {
+            id: "test-uuid".to_string(),
+            job_type: "PROCESS".to_string(),
+            status: "PENDING".to_string(),
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+        };
+        
+        let json = serde_json::to_string(&payload).expect("Failed to serialize JobPayload");
+        assert!(json.contains("\"id\":\"test-uuid\""));
+        assert!(json.contains("\"type\":\"PROCESS\""));
+        assert!(json.contains("\"status\":\"PENDING\""));
+        assert!(json.contains("\"createdAt\":\"2024-01-01T00:00:00Z\""));
+    }
+
+    // UI Launcher tests
+    #[test]
+    fn test_ui_launcher_state_default() {
+        let state = UiLauncherState::default();
+        assert_eq!(state.selected_index, 0);
+        assert!(state.registry.is_none());
+    }
+
+    #[test]
+    fn test_ui_entry_deserialization() {
+        let json = r#"{
+            "id": "dashboard",
+            "name": "Web Dashboard",
+            "port": 8081,
+            "path": "/",
+            "emoji": "📊",
+            "description": "Main dashboard"
+        }"#;
+        let entry: UiEntry = serde_json::from_str(json).expect("Failed to deserialize UiEntry");
+        assert_eq!(entry.id, "dashboard");
+        assert_eq!(entry.name, "Web Dashboard");
+        assert_eq!(entry.port, 8081);
+        assert_eq!(entry.path, "/");
+    }
+
+    #[test]
+    fn test_ui_registry_deserialization() {
+        let json = r#"{
+            "baseUrl": "http://localhost",
+            "entries": [
+                {"id": "test", "name": "Test", "port": 8080, "path": "/", "emoji": "🧪", "description": "Test UI"}
+            ]
+        }"#;
+        let registry: UiRegistry = serde_json::from_str(json).expect("Failed to deserialize UiRegistry");
+        assert_eq!(registry.base_url, "http://localhost");
+        assert_eq!(registry.entries.len(), 1);
+        assert_eq!(registry.entries[0].port, 8080);
+    }
+
+    #[test]
+    fn test_app_mode_includes_new_modes() {
+        let task_creation = AppMode::TaskCreation;
+        let ui_launcher = AppMode::UiLauncher;
+        
+        assert_eq!(task_creation, AppMode::TaskCreation);
+        assert_eq!(ui_launcher, AppMode::UiLauncher);
+        assert_ne!(task_creation, AppMode::Dashboard);
+        assert_ne!(ui_launcher, AppMode::Dashboard);
+    }
+
+    #[test]
+    fn test_ui_registry_loads_from_file() {
+        // This test will pass if the registry file exists, skip silently otherwise
+        if let Ok(registry) = load_ui_registry() {
+            assert!(!registry.entries.is_empty(), "Registry should have at least one entry");
+            assert!(registry.base_url.starts_with("http"), "Base URL should be http");
+            
+            // Verify all entries have required fields
+            for entry in &registry.entries {
+                assert!(!entry.id.is_empty());
+                assert!(!entry.name.is_empty());
+                assert!(entry.port > 0);
+            }
+        }
+    }
+
+    // Validation tests
+    #[test]
+    fn test_validate_job_type_empty() {
+        assert!(validate_job_type("").is_err());
+        assert!(validate_job_type("   ").is_err());
+    }
+
+    #[test]
+    fn test_validate_job_type_too_long() {
+        let long_type = "A".repeat(51);
+        let result = validate_job_type(&long_type);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("too long"));
+    }
+
+    #[test]
+    fn test_validate_job_type_special_chars() {
+        assert!(validate_job_type("job@type").is_err());
+        assert!(validate_job_type("job type").is_err());
+        assert!(validate_job_type("job.type").is_err());
+    }
+
+    #[test]
+    fn test_validate_job_type_valid() {
+        assert!(validate_job_type("PROCESS").is_ok());
+        assert!(validate_job_type("my_job").is_ok());
+        assert!(validate_job_type("job-123").is_ok());
+        assert!(validate_job_type("Test_Job-1").is_ok());
+    }
+
+    // Error enum tests
+    #[test]
+    fn test_registry_error_display() {
+        let not_found = RegistryError::NotFound("file.json".to_string());
+        let malformed = RegistryError::Malformed("bad json".to_string());
+        let invalid = RegistryError::InvalidEntry("port 0".to_string());
+        
+        assert!(not_found.to_string().contains("not found"));
+        assert!(malformed.to_string().contains("malformed"));
+        assert!(invalid.to_string().contains("Invalid"));
+    }
+
+    #[test]
+    fn test_submit_error_display() {
+        let timeout = SubmitError::Timeout;
+        let conn = SubmitError::ConnectionRefused;
+        let validation = SubmitError::ValidationFailed("empty".to_string());
+        let server = SubmitError::ServerError(400, "bad request".to_string());
+        
+        assert!(timeout.to_string().contains("timeout"));
+        assert!(conn.to_string().contains("connect"));
+        assert!(validation.to_string().contains("Validation"));
+        assert!(server.to_string().contains("400"));
+    }
+
+    #[test]
+    fn test_browser_error_display() {
+        let restricted = BrowserError::EnvironmentRestricted("SSH".to_string());
+        let not_avail = BrowserError::NotAvailable("no browser".to_string());
+        let failed = BrowserError::LaunchFailed("error".to_string());
+        
+        assert!(restricted.to_string().contains("Environment"));
+        assert!(not_avail.to_string().contains("available"));
+        assert!(failed.to_string().contains("failed"));
+    }
 }
+
