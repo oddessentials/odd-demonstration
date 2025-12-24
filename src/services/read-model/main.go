@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
-	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -18,36 +16,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// ServiceVersion is read from VERSION file at startup
-var ServiceVersion string
-
-// readVersion reads and validates the VERSION file
-func readVersion() string {
-	data, err := os.ReadFile("VERSION")
-	if err != nil {
-		log.Fatalf("FATAL: Failed to read VERSION file: %v", err)
-	}
-	version := strings.TrimSpace(string(data))
-
-	// Validate SemVer format
-	semverRegex := regexp.MustCompile(`^\d+\.\d+\.\d+$`)
-	if !semverRegex.MatchString(version) {
-		log.Fatalf("FATAL: Invalid SemVer format in VERSION file: %s", version)
-	}
-
-	return version
-}
-
 type StatsResponse struct {
 	TotalJobs     int64  `json:"totalJobs"`
 	CompletedJobs int64  `json:"completedJobs"`
 	FailedJobs    int64  `json:"failedJobs"`
 	LastEventTime string `json:"lastEventTime"`
-}
-
-type HealthResponse struct {
-	Status  string `json:"status"`
-	Version string `json:"version"`
 }
 
 type Job struct {
@@ -71,12 +44,8 @@ func getEnv(key, fallback string) string {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	resp := HealthResponse{
-		Status:  "ok",
-		Version: ServiceVersion,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
 }
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
@@ -160,9 +129,7 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func main() {
-	// Read and validate version at startup
-	ServiceVersion = readVersion()
-	log.Printf("Read Model API version %s starting...", ServiceVersion)
+	log.Println("Read Model API starting...")
 
 	redisURL := getEnv("REDIS_URL", "redis:6379")
 	postgresURL := getEnv("POSTGRES_URL", "postgres://admin:password123@postgres:5432/task_db?sslmode=disable")

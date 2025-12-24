@@ -162,65 +162,42 @@ nodes:
     }
 }
 
-# Get version from VERSION file
-function Get-ServiceVersion {
-    param([string]$ServicePath)
-
-    $versionFile = Join-Path $ProjectRoot $ServicePath "VERSION"
-    if (Test-Path $versionFile) {
-        return (Get-Content $versionFile -Raw).Trim()
-    }
-    return "latest"
-}
-
 function Build-DockerImages {
     Write-Progress-Step -Step "images" -Status "starting" -Message "Building Docker images..."
-
+    
     $images = @(
-        @{ Name = "gateway"; Dockerfile = "src/services/gateway/Dockerfile"; Context = "."; VersionPath = "src/services/gateway" }
-        @{ Name = "processor"; Dockerfile = "src/services/processor/Dockerfile"; Context = "."; VersionPath = "src/services/processor" }
-        @{ Name = "metrics-engine"; Dockerfile = "src/services/metrics-engine/Dockerfile"; Context = "src/services/metrics-engine"; VersionPath = "src/services/metrics-engine" }
-        @{ Name = "read-model"; Dockerfile = "src/services/read-model/Dockerfile"; Context = "src/services/read-model"; VersionPath = "src/services/read-model" }
-        @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web"; VersionPath = $null }
+        @{ Name = "gateway"; Dockerfile = "src/services/gateway/Dockerfile"; Context = "." }
+        @{ Name = "processor"; Dockerfile = "src/services/processor/Dockerfile"; Context = "." }
+        @{ Name = "metrics-engine"; Dockerfile = "src/services/metrics-engine/Dockerfile"; Context = "src/services/metrics-engine" }
+        @{ Name = "read-model"; Dockerfile = "src/services/read-model/Dockerfile"; Context = "src/services/read-model" }
+        @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web" }
     )
-
+    
     $failedImages = @()
-
+    
     foreach ($img in $images) {
         $dockerfilePath = Join-Path $ProjectRoot $img.Dockerfile
         $contextPath = Join-Path $ProjectRoot $img.Context
-
-        # Get version for this service
-        $version = "latest"
-        if ($img.VersionPath) {
-            $version = Get-ServiceVersion -ServicePath $img.VersionPath
-        }
-
-        Write-Progress-Step -Step "images" -Status "starting" -Message "Building $($img.Name):$version..."
-
-        # Build with version tag
+        
+        Write-Progress-Step -Step "images" -Status "starting" -Message "Building $($img.Name)..."
+        
+        # Build sequentially for more reliable error handling
         $ErrorActionPreference = "Continue"
-        docker build -t "$($img.Name):$version" -f $dockerfilePath $contextPath 2>&1 | Out-Null
+        docker build -t "$($img.Name):latest" -f $dockerfilePath $contextPath 2>&1 | Out-Null
         $exitCode = $LASTEXITCODE
         $ErrorActionPreference = "Stop"
-
+        
         if ($exitCode -ne 0) {
             $failedImages += $img.Name
             Write-Progress-Step -Step "images" -Status "error" -Message "Failed to build $($img.Name)"
-            continue
-        }
-
-        # Also tag as :latest for TUI/local dev compatibility
-        if ($version -ne "latest") {
-            docker tag "$($img.Name):$version" "$($img.Name):latest" 2>&1 | Out-Null
         }
     }
-
+    
     if ($failedImages.Count -gt 0) {
         Write-Progress-Step -Step "images" -Status "error" -Message "Failed to build: $($failedImages -join ', ')"
         return $false
     }
-
+    
     Write-Progress-Step -Step "images" -Status "complete" -Message "All images built successfully"
     return $true
 }
