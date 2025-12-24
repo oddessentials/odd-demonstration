@@ -55,6 +55,9 @@ const LOADING_MESSAGES: &[&str] = &[
     "Checking alerts",
 ];
 
+/// Application version from VERSION file (set by build.rs)
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// Application mode - controls which view is displayed
 #[derive(Debug, Clone, PartialEq)]
 enum AppMode {
@@ -1780,7 +1783,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .block(Block::default().title(" Recent Jobs ").borders(Borders::ALL));
                     f.render_widget(table, main_chunks[2]);
 
-                    // Help bar
+                    // Help bar with version
                     let help = Paragraph::new(Line::from(vec![
                         Span::styled(" Q", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
                         Span::raw(" Quit  "),
@@ -1790,6 +1793,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         Span::raw(" New Task  "),
                         Span::styled("U", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
                         Span::raw(" UIs"),
+                        Span::raw("  │  "),
+                        Span::styled(format!("v{}", APP_VERSION), Style::default().fg(Color::DarkGray)),
                     ]));
                     f.render_widget(help, main_chunks[3]);
 
