@@ -141,9 +141,8 @@ jobs:
       
       - name: Rename artifact
         run: |
-          cd src/interfaces/tui/target/${{ matrix.target }}/release
-          cp ${{ matrix.binary }} ${{ github.workspace }}/${{ matrix.artifact }}
-        shell: bash
+          Copy-Item "src/interfaces/tui/target/${{ matrix.target }}/release/${{ matrix.binary }}" -Destination "${{ matrix.artifact }}"
+        shell: pwsh
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
