@@ -18,21 +18,32 @@ Write-Host "Verifying artifact name consistency..." -ForegroundColor Cyan
 $Errors = @()
 $Checked = 0
 
-# Check install.sh
+# Check install.sh - uses dynamic pattern: odd-dashboard-${PLATFORM}
 $InstallSh = Join-Path $Root "install.sh"
 if (Test-Path $InstallSh) {
     $Checked++
     $content = Get-Content $InstallSh -Raw
+    
+    # install.sh uses: ARTIFACT="odd-dashboard-${PLATFORM}"
+    # and sets PLATFORM to linux-x64, linux-arm64, macos-x64, macos-arm64
+    # So we verify the pattern and platform mappings exist
+    $hasPattern = $content -match 'ARTIFACT="odd-dashboard-\$\{PLATFORM\}"' -or $content -match "ARTIFACT=.*odd-dashboard.*PLATFORM"
+    $hasLinuxX64 = $content -match 'PLATFORM="linux-x64"'
+    $hasLinuxArm64 = $content -match 'PLATFORM="linux-arm64"'
+    $hasMacosX64 = $content -match 'PLATFORM="macos-x64"'
+    $hasMacosArm64 = $content -match 'PLATFORM="macos-arm64"'
+    
     $missing = @()
-    foreach ($entry in $CanonicalNames.GetEnumerator()) {
-        if ($content -notmatch [regex]::Escape($entry.Value)) {
-            $missing += $entry.Value
-        }
-    }
+    if (-not $hasPattern) { $missing += "artifact pattern" }
+    if (-not $hasLinuxX64) { $missing += "linux-x64" }
+    if (-not $hasLinuxArm64) { $missing += "linux-arm64" }
+    if (-not $hasMacosX64) { $missing += "macos-x64" }
+    if (-not $hasMacosArm64) { $missing += "macos-arm64" }
+    
     if ($missing.Count -gt 0) {
-        $Errors += "install.sh: missing artifact names: $($missing -join ', ')"
+        $Errors += "install.sh: missing: $($missing -join ', ')"
     } else {
-        Write-Host "  [OK] install.sh: all artifact names present" -ForegroundColor Green
+        Write-Host "  [OK] install.sh: artifact pattern and all platforms present" -ForegroundColor Green
     }
 }
 
