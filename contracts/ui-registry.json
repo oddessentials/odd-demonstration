@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://odd-demonstration.local/contracts/ui-registry.json",
+    "registryVersion": "1.0.0",
+    "baseUrl": "http://localhost",
+    "entries": [
+        {
+            "id": "dashboard",
+            "name": "Web Dashboard",
+            "port": 8081,
+            "path": "/",
+            "emoji": "📊",
+            "description": "Main observatory dashboard with stats and job table"
+        },
+        {
+            "id": "gateway-docs",
+            "name": "Gateway API Docs",
+            "port": 3000,
+            "path": "/docs",
+            "emoji": "📖",
+            "description": "Swagger UI for Gateway service API"
+        },
+        {
+            "id": "read-model-docs",
+            "name": "Read Model API Docs",
+            "port": 8080,
+            "path": "/docs",
+            "emoji": "📖",
+            "description": "OpenAPI docs for Read Model query service"
+        },
+        {
+            "id": "rabbitmq",
+            "name": "RabbitMQ",
+            "port": 15672,
+            "path": "/",
+            "emoji": "🐰",
+            "description": "Message queue management console"
+        },
+        {
+            "id": "grafana",
+            "name": "Grafana",
+            "port": 3002,
+            "path": "/",
+            "emoji": "📈",
+            "description": "Metrics dashboards and visualizations"
+        },
+        {
+            "id": "prometheus",
+            "name": "Prometheus",
+            "port": 9090,
+            "path": "/",
+            "emoji": "🔥",
+            "description": "Metrics collection and alerting"
+        },
+        {
+            "id": "pgadmin",
+            "name": "pgAdmin",
+            "port": 5050,
+            "path": "/",
+            "emoji": "🐘",
+            "description": "PostgreSQL database administration"
+        },
+        {
+            "id": "mongo-express",
+            "name": "Mongo Express",
+            "port": 8082,
+            "path": "/",
+            "emoji": "🍃",
+            "description": "MongoDB document browser"
+        },
+        {
+            "id": "redisinsight",
+            "name": "RedisInsight",
+            "port": 8001,
+            "path": "/",
+            "emoji": "🔴",
+            "description": "Redis cache inspection tool"
+        }
+    ]
+}

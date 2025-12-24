@@ -1,8 +1,8 @@
 # Distributed Task Observatory - Complete Session Audit
 
-**Last Updated:** 2025-12-23
+**Last Updated:** 2025-12-24
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-12
+**Phases Completed:** 0-13
 
 ---
 
@@ -36,6 +36,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 10 | Startup Automation | ✅ Complete |
 | Phase 11 | Version Governance | ✅ Complete |
 | Phase 12 | Consumer Validation & TUI Enhancements | ✅ Complete |
+| Phase 13 | Add Task/UI Launcher & Hardening | ✅ Complete |
 
 ---
 
@@ -71,14 +72,17 @@ The Distributed Task Observatory is a production-grade distributed task processi
 - **Cluster Launcher Mode** - Detects if cluster is running, offers one-key launch
 - **Animated Loading Splash** - Braille spinner with cycling messages
 - **Dashboard Mode** - Real-time stats, alerts, and job table
-- **Task Creation Placeholder** - Press 'N' for future task creation
+- **Add Task (N)** - Form with validation, 2s timeout, Gateway submission
+- **UI Launcher (U)** - Arrow navigation, 9 UIs from centralized registry
 - **Graceful Alert Degradation** - Bounded retries, no UI freeze
+- **Environment-Aware Errors** - SSH/headless detection for browser launch
 
 ### Web Dashboard
 - **Glassmorphic Design** - Modern, premium aesthetic
 - **Loading Animation** - Animated splash matching TUI
 - **Feature Parity** - Alerts, stats, jobs, events tables
-- **New Task Modal** - Placeholder for future API integration
+- **Add Task Form** - Real form with validation and Gateway submission
+- **UI Launcher Modal** - Clickable cards for all observatory UIs
 
 ### Startup Automation
 - **One-Click Script** - `scripts/start-all.ps1`
@@ -118,7 +122,9 @@ The Distributed Task Observatory is a production-grade distributed task processi
 |------|-------------|
 | `contracts/schemas/event-envelope.json` | Event message schema |
 | `contracts/schemas/job.json` | Job domain object schema |
+| `contracts/ui-registry.json` | Centralized UI registry (9 launchable UIs) |
 | `contracts/VERSIONS.md` | Schema versioning documentation |
+
 
 ---
 
@@ -208,6 +214,31 @@ cargo run --release
 
 ---
 
+## Phase 13: Add Task/UI Launcher & Hardening (2025-12-24)
+
+### Features Added
+- **Add Task** - TUI (N key) and Web form with Gateway submission
+- **UI Launcher** - TUI (U key) and Web modal from `contracts/ui-registry.json`
+
+### Hardening
+- Error enums: `RegistryError`, `SubmitError`, `BrowserError`
+- Input validation: alphanumeric job types, max 50 chars
+- Environment-aware browser launch (SSH/headless detection)
+- Graceful degradation (fallback registry on load failure)
+- Cross-surface invariant tests
+
+### Test Results
+| Service | Tests |
+|---------|-------|
+| TUI (Rust) | 52 pass |
+| Gateway (Node.js) | 7 pass |
+| Web Smoke (Vitest) | 19 pass |
+| Processor (Python) | 5 pass |
+| Read Model (Go) | 1 suite pass |
+| Metrics Engine (Go) | 2 suites pass |
+
+---
+
 ## Session Complete ✓
 
-All 12 implementation phases completed successfully.
+All 13 implementation phases completed successfully.
