@@ -1,127 +1,124 @@
-# Verifying Release Signatures
+# Verifying Release Integrity
 
-All `odd-dashboard` releases include cryptographically signed checksums.
+## Bootstrap Releases (v0.1.x) — Unsigned
 
-## GPG Public Key
+> [!IMPORTANT]
+> **v0.1.x releases are unsigned bootstrap releases.**
+> 
+> - Integrity is guaranteed via **SHA256 checksums** and **HTTPS transport**.
+> - Binary releases are **not code-signed** (no Authenticode, notarization, or GPG).
+> - Your OS may show security prompts when running the binary — this is expected.
+> - Signing will be introduced in a future release.
 
-**Key ID**: `(to be generated)`  
-**Fingerprint**: `(to be generated)`
+## Trust Model
 
-### Obtaining the Key
+| Layer | Guarantee | Verified By |
+|-------|-----------|-------------|
+| Transport | HTTPS encryption | GitHub infrastructure |
+| Integrity | SHA256 checksums | Install scripts, manual verification |
+| Authenticity | *Not yet implemented* | Future: code signing, GPG |
 
-**Option 1: From GitHub**
+**For v0.1.x bootstrap releases:**
+- Always verify checksums before running downloaded binaries.
+- Install scripts (`install.sh`, `install.ps1`, npm shim) will hard-fail on checksum mismatch.
+- If your workflow requires signed binaries, wait for a future signed release.
+
+---
+
+## Quick Verification
+
+### Linux/macOS
 ```bash
-curl -fsSL https://github.com/oddessentials.gpg | gpg --import
-```
-
-**Option 2: From a keyserver**
-```bash
-gpg --keyserver keys.openpgp.org --recv-keys KEY_ID
-```
-
-**Option 3: From this repository**
-```bash
-gpg --import keys/release-signing.pub
-```
-
-## Verification Steps
-
-### Linux
-
-```bash
-# 1. Download release files
 VERSION="0.1.0"
 BASE_URL="https://github.com/oddessentials/odd-demonstration/releases/download/v$VERSION"
 
-curl -LO "$BASE_URL/SHA256SUMS"
-curl -LO "$BASE_URL/SHA256SUMS.sig"
+# Download binary and checksums
 curl -LO "$BASE_URL/odd-dashboard-linux-x64"
+curl -LO "$BASE_URL/SHA256SUMS"
 
-# 2. Verify GPG signature
-gpg --verify SHA256SUMS.sig SHA256SUMS
-# Should show: "Good signature from..."
-
-# 3. Verify checksum
+# Verify checksum
 sha256sum -c SHA256SUMS --ignore-missing
-# Should show: "odd-dashboard-linux-x64: OK"
+# Expected: "odd-dashboard-linux-x64: OK"
 
-# 4. Make executable and run
+# Run
 chmod +x odd-dashboard-linux-x64
 ./odd-dashboard-linux-x64 --version
 ```
 
-### macOS
-
+### macOS (Apple Silicon)
 ```bash
-# Use shasum instead of sha256sum
+# Use shasum and arm64 binary
+curl -LO "$BASE_URL/odd-dashboard-macos-arm64"
 shasum -a 256 -c SHA256SUMS --ignore-missing
+chmod +x odd-dashboard-macos-arm64
+./odd-dashboard-macos-arm64 --version
 ```
 
-### Windows (PowerShell)
+> [!NOTE]
+> macOS will show "cannot be opened because the developer cannot be verified."
+> Right-click → Open, or: `xattr -d com.apple.quarantine odd-dashboard-macos-*`
 
+### Windows (PowerShell)
 ```powershell
-# 1. Download files
 $Version = "0.1.0"
 $BaseUrl = "https://github.com/oddessentials/odd-demonstration/releases/download/v$Version"
 
-Invoke-WebRequest "$BaseUrl/SHA256SUMS" -OutFile SHA256SUMS
-Invoke-WebRequest "$BaseUrl/SHA256SUMS.sig" -OutFile SHA256SUMS.sig
+# Download
 Invoke-WebRequest "$BaseUrl/odd-dashboard-windows-x64.exe" -OutFile odd-dashboard.exe
+Invoke-WebRequest "$BaseUrl/SHA256SUMS" -OutFile SHA256SUMS
 
-# 2. Verify GPG signature (requires Gpg4win)
-gpg --verify SHA256SUMS.sig SHA256SUMS
-
-# 3. Verify checksum
+# Verify checksum
 $expected = (Get-Content SHA256SUMS | Select-String "odd-dashboard-windows-x64.exe").ToString().Split()[0]
 $actual = (Get-FileHash -Algorithm SHA256 odd-dashboard.exe).Hash
 if ($expected.ToLower() -eq $actual.ToLower()) {
-    Write-Host "✓ Checksum OK" -ForegroundColor Green
+    Write-Host "[OK] Checksum verified" -ForegroundColor Green
 } else {
-    Write-Host "✗ CHECKSUM MISMATCH" -ForegroundColor Red
+    Write-Host "[FAIL] CHECKSUM MISMATCH - DO NOT RUN" -ForegroundColor Red
+    exit 1
 }
 
-# 4. Run
+# Run
 .\odd-dashboard.exe --version
 ```
 
-## Troubleshooting
+> [!NOTE]
+> Windows SmartScreen may show "Windows protected your PC."
+> Click "More info" → "Run anyway" (after verifying checksum).
 
-### "No public key" error
+---
 
-Import the key first:
+## Install Script Verification
+
+The install scripts (`install.sh`, `install.ps1`) perform automatic checksum verification:
+
+| Failure Mode | Exit Code | Message |
+|--------------|-----------|---------|
+| Download failed | 1 | "Failed to download" |
+| Checksum mismatch | 1 | "Checksum mismatch!" |
+| Unsupported platform | 1 | "Unsupported platform: {os}-{arch}" |
+| Success | 0 | "Successfully installed" |
+
+The npm shim (`@oddessentials/odd-dashboard`) creates a `.install-failed` sentinel file on failure, which the CLI wrapper reads to provide specific error messages.
+
+---
+
+## Future: GPG Signing
+
+GPG signing of checksums will be added in a future release. When available:
+
 ```bash
-gpg --keyserver keys.openpgp.org --recv-keys KEY_ID
+# Import key
+gpg --import keys/release-signing.pub
+
+# Verify signature
+gpg --verify SHA256SUMS.sig SHA256SUMS
+
+# Then verify checksum
+sha256sum -c SHA256SUMS --ignore-missing
 ```
 
-### "BAD signature" error
-
-The file may have been tampered with. **Do NOT use it.**
-
-1. Delete the downloaded files
-2. Report the issue via GitHub Security Advisories
-3. Wait for official response before re-downloading
-
-### Windows: GPG not installed
-
-Option 1: Install [Gpg4win](https://www.gpg4win.org/)
-
-Option 2: Verify checksum only (skip signature):
-```powershell
-$expected = (Get-Content SHA256SUMS | Select-String "odd-dashboard-windows-x64.exe").ToString().Split()[0]
-$actual = (Get-FileHash -Algorithm SHA256 odd-dashboard.exe).Hash
-$expected.ToLower() -eq $actual.ToLower()
-```
-
-### Signature valid but "unknown trust"
-
-This is normal if you haven't marked the key as trusted:
-```bash
-gpg --edit-key KEY_ID
-gpg> trust
-# Select trust level (e.g., 4 = fully)
-gpg> quit
-```
+---
 
 ## Security Contact
 
-Report security issues to: security@oddessentials.com (or via GitHub Security Advisories)
+Report security issues via [GitHub Security Advisories](https://github.com/oddessentials/odd-demonstration/security/advisories).

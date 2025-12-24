@@ -212,6 +212,13 @@ jobs:
           generate_release_notes: true
           files: release/*
           body: |
+            ## ⚠️ Bootstrap Release (Unsigned)
+            
+            This is a **v0.1.x bootstrap release**. Binaries are NOT code-signed.
+            - Your OS may show security prompts — this is expected.
+            - Verify integrity via SHA256 checksums (see below).
+            - Signing will be introduced in a future release.
+            
             ## Installation
             
             ### Quick Install
@@ -231,11 +238,35 @@ jobs:
             npm install -g @oddessentials/odd-dashboard
             ```
             
-            ### Verify Download
+            ### Verify Checksum
             
             ```bash
-            # Download and verify checksum
             sha256sum -c SHA256SUMS --ignore-missing
             ```
             
-            See [VERIFYING_RELEASES.md](./docs/VERIFYING_RELEASES.md) for GPG signature verification.
+            See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for full verification instructions.
+
+  # Publish npm package
+  npm-publish:
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Update npm package version
+        run: |
+          cd packages/npm-shim
+          npm version ${{ needs.validate.outputs.version }} --no-git-tag-version --allow-same-version
+      
+      - name: Publish to npm
+        run: |
+          cd packages/npm-shim
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

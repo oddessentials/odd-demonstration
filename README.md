@@ -46,6 +46,51 @@ See [README_beginner.md](./README_beginner.md) for step-by-step instructions (Wi
 
 ---
 
+## 📦 Installation (Binary Release)
+
+> **Note:** v0.1.x are unsigned bootstrap releases. Your OS may show security prompts.
+> See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for checksum verification.
+
+### Quick Install
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/oddessentials/odd-demonstration/main/install.sh | sh
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr -useb https://raw.githubusercontent.com/oddessentials/odd-demonstration/main/install.ps1 | iex
+```
+
+**npm:**
+```bash
+npm install -g @oddessentials/odd-dashboard
+```
+
+### Verify Installation
+
+```bash
+odd-dashboard --version
+# Shows: odd-dashboard 0.1.0
+#   commit: abc1234
+#   built:  2024-12-24T10:00:00Z
+#   rustc:  rustc 1.75.0
+
+odd-dashboard doctor
+# Checks: Docker, PowerShell, kubectl, kind
+```
+
+### Supported Platforms
+
+| OS | Architecture | Artifact |
+|----|--------------|----------|
+| Windows | x64 | `odd-dashboard-windows-x64.exe` |
+| macOS | Intel | `odd-dashboard-macos-x64` |
+| macOS | Apple Silicon | `odd-dashboard-macos-arm64` |
+| Linux | x64 | `odd-dashboard-linux-x64` |
+| Linux | ARM64 | `odd-dashboard-linux-arm64` |
+
 ## 🏗️ Architecture
 
 ![Architecture diagram](./mermaid-diagram.svg)
