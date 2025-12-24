@@ -246,14 +246,21 @@ jobs:
         run: brew install powershell
       
       - name: Verify pwsh is available
-        run: pwsh -Command 'Write-Host "PowerShell Core version: $($PSVersionTable.PSVersion)"'
+        run: pwsh -Command "Write-Host 'PowerShell Core is available'"
       
       - name: Verify scripts have valid syntax
+        shell: pwsh
         run: |
-          for script in scripts/*.ps1; do
-            echo "Checking $script..."
-            pwsh -NoProfile -Command "try { \$null = [System.Management.Automation.Language.Parser]::ParseFile('$script', [ref]\$null, [ref]\$null); Write-Host '[OK] $script' } catch { Write-Host '[FAIL] $script: $_'; exit 1 }"
-          done
+          foreach ($script in Get-ChildItem scripts/*.ps1) {
+            Write-Host "Checking $script..."
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$null, [ref]$errors) | Out-Null
+            if ($errors) {
+              Write-Host "[FAIL] $script"
+              exit 1
+            }
+            Write-Host "[OK] $script"
+          }
       
       - name: Test contract validation script
         run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/validate-contracts.ps1
