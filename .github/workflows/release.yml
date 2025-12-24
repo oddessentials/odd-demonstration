@@ -164,11 +164,20 @@ jobs:
       - name: Generate SHA256SUMS
         run: |
           cd artifacts
-          find . -type f -name "odd-dashboard-*" -exec mv {} . \;
-          rm -rf odd-dashboard-*/
+          # download-artifact@v4 creates subdirectories for each artifact
+          # Move files to flat structure
+          find . -mindepth 2 -type f -exec mv {} . \;
+          # Remove empty directories
+          find . -type d -empty -delete
+          
+          # List what we have
+          echo "=== Artifacts ==="
+          ls -la
+          
+          # Generate checksums
           sha256sum odd-dashboard-* > SHA256SUMS
           
-          echo "SHA256SUMS contents:"
+          echo "=== SHA256SUMS contents ==="
           cat SHA256SUMS
       
       - name: Upload checksums
