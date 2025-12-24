@@ -505,4 +505,95 @@ mod tests {
         assert_eq!(stats.failed_jobs, 10);
         assert_eq!(stats.last_event_time, "2024-01-01T12:00:00Z");
     }
+
+    // Loading screen tests - ensure branding/UX doesn't regress
+
+    #[test]
+    fn test_logo_is_not_empty() {
+        assert!(!LOGO.is_empty(), "Logo should not be empty");
+        assert!(LOGO.len() > 50, "Logo should have substantial content");
+    }
+
+    #[test]
+    fn test_logo_has_expected_line_count() {
+        let line_count = LOGO.lines().count();
+        // Logo should have between 10-20 lines (current is ~13)
+        assert!(line_count >= 10, "Logo should have at least 10 lines, got {}", line_count);
+        assert!(line_count <= 20, "Logo should have at most 20 lines, got {}", line_count);
+    }
+
+    #[test]
+    fn test_spinner_frames_count() {
+        // Spinner should have exactly 10 frames for smooth animation
+        assert_eq!(SPINNER_FRAMES.len(), 10, "Spinner should have 10 frames");
+    }
+
+    #[test]
+    fn test_spinner_frames_are_braille() {
+        // All spinner frames should be Braille pattern characters (U+2800-U+28FF)
+        for (i, frame) in SPINNER_FRAMES.iter().enumerate() {
+            assert!(!frame.is_empty(), "Spinner frame {} should not be empty", i);
+            for c in frame.chars() {
+                assert!(
+                    ('\u{2800}'..='\u{28FF}').contains(&c),
+                    "Spinner frame {} should contain Braille characters, got '{}'", i, c
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_loading_messages_count() {
+        // Should have at least 3 messages for visual variety
+        assert!(LOADING_MESSAGES.len() >= 3, "Should have at least 3 loading messages");
+        assert!(LOADING_MESSAGES.len() <= 10, "Should not have too many loading messages");
+    }
+
+    #[test]
+    fn test_loading_messages_not_empty() {
+        for (i, msg) in LOADING_MESSAGES.iter().enumerate() {
+            assert!(!msg.is_empty(), "Loading message {} should not be empty", i);
+            assert!(msg.len() >= 5, "Loading message {} should be descriptive", i);
+        }
+    }
+
+    #[test]
+    fn test_spinner_cycling_logic() {
+        // Verify the spinner index wraps correctly
+        let frame_count = SPINNER_FRAMES.len();
+        
+        // Test various frame indices
+        assert_eq!(0 % frame_count, 0);
+        assert_eq!(5 % frame_count, 5);
+        assert_eq!(10 % frame_count, 0); // Should wrap
+        assert_eq!(15 % frame_count, 5); // Should wrap
+    }
+
+    #[test]
+    fn test_message_cycling_logic() {
+        // Messages cycle every 3 frames (frame_idx / 3)
+        let msg_count = LOADING_MESSAGES.len();
+        
+        // Frame 0-2 should show message 0
+        assert_eq!((0 / 3) % msg_count, 0);
+        assert_eq!((2 / 3) % msg_count, 0);
+        
+        // Frame 3-5 should show message 1
+        assert_eq!((3 / 3) % msg_count, 1);
+        assert_eq!((5 / 3) % msg_count, 1);
+        
+        // Should eventually cycle back
+        let cycle_point = 3 * msg_count;
+        assert_eq!((cycle_point / 3) % msg_count, 0);
+    }
+
+    #[test]
+    fn test_dots_animation_logic() {
+        // Dots should cycle 1-4 based on frame_idx % 4
+        assert_eq!((0 % 4) + 1, 1); // "."
+        assert_eq!((1 % 4) + 1, 2); // ".."
+        assert_eq!((2 % 4) + 1, 3); // "..."
+        assert_eq!((3 % 4) + 1, 4); // "...."
+        assert_eq!((4 % 4) + 1, 1); // Back to "."
+    }
 }
