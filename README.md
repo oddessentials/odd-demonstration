@@ -11,12 +11,20 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 ### Prerequisites
 
 - **Docker Desktop** (running)
+  - [Windows](https://docs.docker.com/desktop/install/windows-install/) | [macOS](https://docs.docker.com/desktop/install/mac-install/) | [Linux](https://docs.docker.com/desktop/install/linux-install/)
 - **Rust** (for TUI) - [Install](https://rustup.rs)
-- **kubectl** and **kind** (auto-installed if missing via Chocolatey)
+- **PowerShell Core** (`pwsh`) - Required on all platforms
+  - Windows: `winget install Microsoft.PowerShell` (or pre-installed PowerShell)
+  - macOS: `brew install powershell`
+  - Linux: [Install instructions](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux)
+- **kubectl** and **kind**
+  - Windows: `winget install Kubernetes.kubectl Kubernetes.kind`
+  - macOS: `brew install kubectl kind`
+  - Linux: See [kind installation](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
 
 ### Option 1: TUI Launcher (Recommended)
 
-```powershell
+```bash
 cd src/interfaces/tui
 cargo run --release
 # Press 'L' when prompted to launch the cluster
@@ -24,13 +32,17 @@ cargo run --release
 
 ### Option 2: Script
 
-```powershell
+```bash
+# Windows (PowerShell)
 .\scripts\start-all.ps1
+
+# macOS/Linux
+pwsh ./scripts/start-all.ps1
 ```
 
 ### Option 3: Manual Setup
 
-See [README_beginner.md](./README_beginner.md) for step-by-step instructions.
+See [README_beginner.md](./README_beginner.md) for step-by-step instructions (Windows) or the platform-specific guides above.
 
 ---
 
@@ -112,14 +124,22 @@ Glassmorphic UI with loading animation, stats, alerts, and job tables.
 
 ### Run All Tests
 
-```powershell
+```bash
+# Windows
 .\scripts\run-all-tests.ps1
+
+# macOS/Linux
+pwsh ./scripts/run-all-tests.ps1
 ```
 
 ### Integration Gate
 
-```powershell
+```bash
+# Windows
 .\scripts\integration-gate.ps1
+
+# macOS/Linux
+pwsh ./scripts/integration-gate.ps1
 ```
 
 ### Per-Service Tests
@@ -171,11 +191,14 @@ odd-demonstration/
 
 ## 🛑 Cleanup
 
-```powershell
-# Stop port-forwards
+```bash
+# Stop port-forwards (Windows PowerShell)
 Get-Job | Stop-Job | Remove-Job
 
-# Delete cluster
+# Stop port-forwards (macOS/Linux - if running in background)
+pkill -f "kubectl port-forward"
+
+# Delete cluster (all platforms)
 kind delete cluster --name task-observatory
 ```
 

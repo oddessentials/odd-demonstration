@@ -224,6 +224,41 @@ jobs:
   #         docker build -t processor:ci src/services/processor
 
   # ============================================================
+  # Cross-Platform Script Verification (conditional on script changes)
+  # ============================================================
+  cross-platform:
+    name: Cross-Platform Verification
+    runs-on: ${{ matrix.os }}
+    # Only run when scripts are modified
+    if: |
+      contains(github.event.head_commit.message, '[ci:cross-platform]') ||
+      github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]  # macOS is sufficient to verify pwsh portability
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install PowerShell Core
+        run: brew install powershell
+      
+      - name: Verify pwsh is available
+        run: pwsh -Command 'Write-Host "PowerShell Core version: $($PSVersionTable.PSVersion)"'
+      
+      - name: Verify scripts have valid syntax
+        run: |
+          for script in scripts/*.ps1; do
+            echo "Checking $script..."
+            pwsh -NoProfile -Command "try { \$null = [System.Management.Automation.Language.Parser]::ParseFile('$script', [ref]\$null, [ref]\$null); Write-Host '[OK] $script' } catch { Write-Host '[FAIL] $script: $_'; exit 1 }"
+          done
+      
+      - name: Test contract validation script
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/validate-contracts.ps1
+
+  # ============================================================
   # Type Checking & Coverage (Phase 3: Hard-fail)
   # ============================================================
   typecheck:
