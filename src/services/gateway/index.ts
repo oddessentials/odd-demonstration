@@ -7,6 +7,7 @@ import addFormats from 'ajv-formats';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import swaggerUi from 'swagger-ui-express';
 
 // ESM __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -165,6 +166,66 @@ app.get('/healthz', (_req: Request, res: Response) => res.json(healthResponse())
 app.get('/readyz', (_req: Request, res: Response) => res.json(healthResponse()));
 
 const PORT = process.env.PORT || 3000;
+
+// OpenAPI Specification
+const openApiSpec = {
+    openapi: '3.0.3',
+    info: {
+        title: 'Gateway API',
+        description: 'Distributed Task Observatory Gateway Service - accepts jobs and publishes events to RabbitMQ',
+        version: SERVICE_VERSION,
+        contact: { name: 'Odd Essentials', url: 'https://oddessentials.com' },
+    },
+    servers: [{ url: 'http://localhost:3000', description: 'Local development' }],
+    paths: {
+        '/jobs': {
+            post: {
+                summary: 'Submit a new job',
+                description: 'Validates job data against schema and publishes to RabbitMQ',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'string', description: 'Unique job identifier' },
+                                    type: { type: 'string', description: 'Job type' },
+                                    payload: { type: 'object', description: 'Job payload data' },
+                                },
+                                required: ['id', 'type'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '202': { description: 'Job accepted', content: { 'application/json': { schema: { type: 'object', properties: { jobId: { type: 'string' }, eventId: { type: 'string' } } } } } },
+                    '400': { description: 'Invalid job data' },
+                    '500': { description: 'Server error' },
+                },
+            },
+        },
+        '/healthz': {
+            get: { summary: 'Health check', responses: { '200': { description: 'Service healthy' } } },
+        },
+        '/readyz': {
+            get: { summary: 'Readiness check', responses: { '200': { description: 'Service ready' } } },
+        },
+        '/metrics': {
+            get: { summary: 'Prometheus metrics', responses: { '200': { description: 'Prometheus metrics in text format' } } },
+        },
+        '/proxy/alerts': {
+            get: { summary: 'Proxy Alertmanager alerts', responses: { '200': { description: 'Current alerts' }, '502': { description: 'Alertmanager unavailable' } } },
+        },
+        '/proxy/targets': {
+            get: { summary: 'Proxy Prometheus targets', responses: { '200': { description: 'Prometheus targets' }, '502': { description: 'Prometheus unavailable' } } },
+        },
+    },
+};
+
+// API Documentation endpoints
+app.get('/openapi.json', (_req: Request, res: Response) => res.json(openApiSpec));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 // Metrics endpoint
 app.get('/metrics', async (_req: Request, res: Response) => {

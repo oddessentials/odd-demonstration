@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -171,5 +174,133 @@ func TestJobStruct(t *testing.T) {
 	}
 	if job.Status != "PENDING" {
 		t.Errorf("Expected Status 'PENDING', got '%s'", job.Status)
+	}
+}
+
+// ============================================================
+// Tests for OpenAPI documentation endpoints
+// ============================================================
+
+// TestOpenApiHandler tests the /openapi.json endpoint returns valid JSON.
+func TestOpenApiHandler(t *testing.T) {
+	// Set ServiceVersion for test
+	ServiceVersion = "0.1.0"
+
+	req := httptest.NewRequest("GET", "/openapi.json", nil)
+	w := httptest.NewRecorder()
+
+	openApiHandler(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType != "application/json" {
+		t.Errorf("Expected Content-Type 'application/json', got '%s'", contentType)
+	}
+
+	// Parse response as JSON
+	var spec map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&spec); err != nil {
+		t.Fatalf("Failed to decode OpenAPI spec: %v", err)
+	}
+
+	// Verify OpenAPI structure
+	if spec["openapi"] != "3.0.3" {
+		t.Errorf("Expected openapi '3.0.3', got '%v'", spec["openapi"])
+	}
+
+	info, ok := spec["info"].(map[string]interface{})
+	if !ok {
+		t.Fatal("Expected 'info' object in spec")
+	}
+
+	if info["title"] != "Read Model API" {
+		t.Errorf("Expected title 'Read Model API', got '%v'", info["title"])
+	}
+
+	if info["version"] != "0.1.0" {
+		t.Errorf("Expected version '0.1.0', got '%v'", info["version"])
+	}
+}
+
+// TestOpenApiHandlerIncludesAllPaths tests that all API paths are documented.
+func TestOpenApiHandlerIncludesAllPaths(t *testing.T) {
+	ServiceVersion = "0.1.0"
+
+	req := httptest.NewRequest("GET", "/openapi.json", nil)
+	w := httptest.NewRecorder()
+
+	openApiHandler(w, req)
+
+	var spec map[string]interface{}
+	json.NewDecoder(w.Result().Body).Decode(&spec)
+
+	paths, ok := spec["paths"].(map[string]interface{})
+	if !ok {
+		t.Fatal("Expected 'paths' object in spec")
+	}
+
+	requiredPaths := []string{"/health", "/stats", "/jobs/recent", "/events"}
+	for _, path := range requiredPaths {
+		if _, exists := paths[path]; !exists {
+			t.Errorf("Expected path '%s' to be documented", path)
+		}
+	}
+}
+
+// TestDocsHandler tests the /docs endpoint returns HTML.
+func TestDocsHandler(t *testing.T) {
+	req := httptest.NewRequest("GET", "/docs", nil)
+	w := httptest.NewRecorder()
+
+	docsHandler(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType != "text/html" {
+		t.Errorf("Expected Content-Type 'text/html', got '%s'", contentType)
+	}
+
+	// Read body and verify it contains Swagger UI elements
+	body := w.Body.String()
+	if !strings.Contains(body, "swagger-ui") {
+		t.Error("Expected HTML to contain 'swagger-ui'")
+	}
+	if !strings.Contains(body, "/openapi.json") {
+		t.Error("Expected HTML to reference '/openapi.json'")
+	}
+}
+
+// TestOpenApiContactInfo tests that contact info is included.
+func TestOpenApiContactInfo(t *testing.T) {
+	ServiceVersion = "0.1.0"
+
+	req := httptest.NewRequest("GET", "/openapi.json", nil)
+	w := httptest.NewRecorder()
+
+	openApiHandler(w, req)
+
+	var spec map[string]interface{}
+	json.NewDecoder(w.Result().Body).Decode(&spec)
+
+	info := spec["info"].(map[string]interface{})
+	contact, ok := info["contact"].(map[string]interface{})
+	if !ok {
+		t.Fatal("Expected 'contact' object in info")
+	}
+
+	if contact["name"] != "Odd Essentials" {
+		t.Errorf("Expected contact name 'Odd Essentials', got '%v'", contact["name"])
+	}
+
+	if contact["url"] != "https://oddessentials.com" {
+		t.Errorf("Expected contact url 'https://oddessentials.com', got '%v'", contact["url"])
 	}
 }

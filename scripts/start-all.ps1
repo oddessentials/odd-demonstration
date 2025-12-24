@@ -312,6 +312,9 @@ function Start-PortForwards {
         @{ Service = "rabbitmq"; LocalPort = 15672; RemotePort = 15672 }
         @{ Service = "grafana"; LocalPort = 3002; RemotePort = 3000 }
         @{ Service = "prometheus"; LocalPort = 9090; RemotePort = 9090 }
+        @{ Service = "pgadmin"; LocalPort = 5050; RemotePort = 80 }
+        @{ Service = "mongo-express"; LocalPort = 8082; RemotePort = 8081 }
+        @{ Service = "redisinsight"; LocalPort = 8001; RemotePort = 8001 }
     )
     
     $pids = @()
@@ -378,10 +381,17 @@ function Show-AccessInfo {
         Write-Host "  Access Points:" -ForegroundColor Yellow
         Write-Host "  • Web Dashboard:  http://localhost:8081" -ForegroundColor White
         Write-Host "  • Gateway API:    http://localhost:3000" -ForegroundColor White
+        Write-Host "    └─ API Docs:    http://localhost:3000/docs" -ForegroundColor Gray
         Write-Host "  • Read Model API: http://localhost:8080/stats" -ForegroundColor White
+        Write-Host "    └─ API Docs:    http://localhost:8080/docs" -ForegroundColor Gray
         Write-Host "  • RabbitMQ:       http://localhost:15672 (guest/guest)" -ForegroundColor White
         Write-Host "  • Grafana:        http://localhost:3002 (admin/admin)" -ForegroundColor White
         Write-Host "  • Prometheus:     http://localhost:9090" -ForegroundColor White
+        Write-Host ""
+        Write-Host "  Database Admin UIs:" -ForegroundColor Yellow
+        Write-Host "  • pgAdmin:        http://localhost:5050 (admin@example.com/admin)" -ForegroundColor White
+        Write-Host "  • Mongo Express:  http://localhost:8082 (admin/password123)" -ForegroundColor White
+        Write-Host "  • RedisInsight:   http://localhost:8001" -ForegroundColor White
         Write-Host ""
         Write-Host "  To run the TUI:" -ForegroundColor Yellow
         Write-Host "  cd src/interfaces/tui && cargo run --release" -ForegroundColor White
@@ -395,12 +405,17 @@ function Show-AccessInfo {
             status  = "complete"
             message = "System ready"
             urls    = @{
-                webDashboard = "http://localhost:8081"
-                gateway      = "http://localhost:3000"
-                readModel    = "http://localhost:8080"
-                rabbitmq     = "http://localhost:15672"
-                grafana      = "http://localhost:3002"
-                prometheus   = "http://localhost:9090"
+                webDashboard  = "http://localhost:8081"
+                gateway       = "http://localhost:3000"
+                gatewayDocs   = "http://localhost:3000/docs"
+                readModel     = "http://localhost:8080"
+                readModelDocs = "http://localhost:8080/docs"
+                rabbitmq      = "http://localhost:15672"
+                grafana       = "http://localhost:3002"
+                prometheus    = "http://localhost:9090"
+                pgadmin       = "http://localhost:5050"
+                mongoExpress  = "http://localhost:8082"
+                redisinsight  = "http://localhost:8001"
             }
         } | ConvertTo-Json -Compress | Write-Host
     }
