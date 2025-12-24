@@ -2,6 +2,12 @@
 
 Welcome! This guide will walk you through setting up and running the Distributed Task Observatory from scratch. Follow each step in order.
 
+> **📌 Platform Note:** This guide is written for **Windows** users. The Distributed Task Observatory supports **all platforms** (Windows, macOS, Linux). For macOS/Linux users:
+> - Install Docker Desktop for your platform
+> - Install PowerShell Core: `brew install powershell` (macOS) or [Linux instructions](https://aka.ms/install-powershell)
+> - Install kind and kubectl via Homebrew or your package manager
+> - Run scripts with: `pwsh ./scripts/start-all.ps1`
+
 ---
 
 ## Part 1: Installing Required Software

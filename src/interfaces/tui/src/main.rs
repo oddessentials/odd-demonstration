@@ -248,34 +248,52 @@ fn run_setup_script(progress: Arc<Mutex<SetupProgress>>) {
         return;
     }
     
-    // Step 3: Check for PowerShell (try pwsh first, then powershell.exe)
-    // Use -Command "exit 0" as a simple test that's more reliable than -Version
+    // Step 3: Check for PowerShell Core (pwsh) - required on all platforms
+    // pwsh is cross-platform and available via:
+    //   Windows: winget install Microsoft.PowerShell
+    //   macOS: brew install powershell
+    //   Linux: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux
     let pwsh_check = Command::new("pwsh")
         .args(["-NoProfile", "-Command", "exit 0"])
         .output();
     let shell_cmd = match pwsh_check {
         Ok(output) if output.status.success() => "pwsh",
         _ => {
-            // Fallback to Windows PowerShell (powershell.exe)
-            let ps_check = Command::new("powershell.exe")
-                .args(["-NoProfile", "-Command", "exit 0"])
-                .output();
-            match ps_check {
-                Ok(output) if output.status.success() => "powershell.exe",
-                _ => {
-                    if let Ok(mut p) = progress.lock() {
-                        p.has_error = true;
-                        p.message = "PowerShell not found".to_string();
-                        p.error_hint = "This launcher requires PowerShell to run the setup script".to_string();
-                        p.remediation = vec![
-                            "Windows PowerShell should be pre-installed on Windows".to_string(),
-                            "Try running: powershell.exe -Command 'echo hello'".to_string(),
-                            "Or install PowerShell 7: winget install Microsoft.PowerShell".to_string(),
-                        ];
-                        p.is_complete = true;
+            // On Windows, fall back to Windows PowerShell (powershell.exe)
+            #[cfg(target_os = "windows")]
+            {
+                let ps_check = Command::new("powershell.exe")
+                    .args(["-NoProfile", "-Command", "exit 0"])
+                    .output();
+                match ps_check {
+                    Ok(output) if output.status.success() => "powershell.exe",
+                    _ => {
+                        if let Ok(mut p) = progress.lock() {
+                            p.has_error = true;
+                            p.message = "PowerShell not found".to_string();
+                            p.error_hint = "This launcher requires PowerShell to run the setup script".to_string();
+                            p.remediation = vec![
+                                "Windows PowerShell should be pre-installed on Windows".to_string(),
+                                "Try running: powershell.exe -Command 'echo hello'".to_string(),
+                                "Or install PowerShell 7: winget install Microsoft.PowerShell".to_string(),
+                            ];
+                            p.is_complete = true;
+                        }
+                        return;
                     }
-                    return;
                 }
+            }
+            // On Linux/macOS, pwsh is required (no fallback)
+            #[cfg(not(target_os = "windows"))]
+            {
+                if let Ok(mut p) = progress.lock() {
+                    p.has_error = true;
+                    p.message = "PowerShell Core (pwsh) not found".to_string();
+                    p.error_hint = "This launcher requires PowerShell Core to run the setup script".to_string();
+                    p.remediation = get_pwsh_install_steps();
+                    p.is_complete = true;
+                }
+                return;
             }
         }
     };
@@ -445,10 +463,12 @@ fn find_project_root() -> Option<std::path::PathBuf> {
         }
     }
     
-    // Hardcoded fallback for known location
-    let fallback = std::path::PathBuf::from("e:\\projects\\odd-demonstration");
-    if fallback.exists() && markers.iter().all(|m| fallback.join(m).exists()) {
-        return Some(fallback);
+    // Environment variable fallback for custom project locations
+    if let Ok(env_root) = std::env::var("ODTO_PROJECT_ROOT") {
+        let fallback = std::path::PathBuf::from(env_root);
+        if fallback.exists() && markers.iter().all(|m| fallback.join(m).exists()) {
+            return Some(fallback);
+        }
     }
     
     None
@@ -469,13 +489,16 @@ fn get_error_hint(message: &str) -> String {
     } else if msg_lower.contains("port") && msg_lower.contains("in use") {
         "A required port is already in use by another application".to_string()
     } else if msg_lower.contains("permission") || msg_lower.contains("access denied") {
-        "Permission denied - try running as administrator".to_string()
+        #[cfg(target_os = "windows")]
+        { "Permission denied - try running as administrator".to_string() }
+        #[cfg(not(target_os = "windows"))]
+        { "Permission denied - try running with sudo or check file permissions".to_string() }
     } else {
         "An error occurred during setup".to_string()
     }
 }
 
-/// Get remediation steps based on the error message
+/// Get remediation steps based on the error message (cross-platform)
 fn get_remediation_steps(message: &str) -> Vec<String> {
     let msg_lower = message.to_lowercase();
     
@@ -486,28 +509,143 @@ fn get_remediation_steps(message: &str) -> Vec<String> {
             "3. Press any key, then 'L' to retry".to_string(),
         ]
     } else if msg_lower.contains("kind") {
+        get_kind_install_steps()
+    } else if msg_lower.contains("kubectl") {
+        get_kubectl_install_steps()
+    } else if msg_lower.contains("port") {
+        get_port_conflict_steps()
+    } else {
+        get_generic_error_steps()
+    }
+}
+
+/// Get platform-specific pwsh installation steps
+fn get_pwsh_install_steps() -> Vec<String> {
+    #[cfg(target_os = "macos")]
+    {
+        vec![
+            "Install PowerShell Core via Homebrew:".to_string(),
+            "  brew install powershell".to_string(),
+            "Then restart your terminal and retry".to_string(),
+        ]
+    }
+    #[cfg(target_os = "linux")]
+    {
+        vec![
+            "Install PowerShell Core:".to_string(),
+            "  Ubuntu/Debian: sudo apt-get install -y powershell".to_string(),
+            "  Fedora: sudo dnf install -y powershell".to_string(),
+            "  Or: https://aka.ms/install-powershell".to_string(),
+            "Then restart your terminal and retry".to_string(),
+        ]
+    }
+    #[cfg(target_os = "windows")]
+    {
+        vec![
+            "Install PowerShell 7:".to_string(),
+            "  winget install Microsoft.PowerShell".to_string(),
+            "Then restart your terminal and retry".to_string(),
+        ]
+    }
+}
+
+/// Get platform-specific kind installation steps
+fn get_kind_install_steps() -> Vec<String> {
+    #[cfg(target_os = "macos")]
+    {
+        vec![
+            "Install kind via Homebrew:".to_string(),
+            "  brew install kind".to_string(),
+            "Restart terminal and retry".to_string(),
+        ]
+    }
+    #[cfg(target_os = "linux")]
+    {
+        vec![
+            "Install kind:".to_string(),
+            "  curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64".to_string(),
+            "  chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind".to_string(),
+            "  Or: go install sigs.k8s.io/kind@latest".to_string(),
+            "Restart terminal and retry".to_string(),
+        ]
+    }
+    #[cfg(target_os = "windows")]
+    {
         vec![
             "Install kind: winget install Kubernetes.kind".to_string(),
             "Or: choco install kind".to_string(),
             "Restart terminal and retry".to_string(),
         ]
-    } else if msg_lower.contains("kubectl") {
+    }
+}
+
+/// Get platform-specific kubectl installation steps
+fn get_kubectl_install_steps() -> Vec<String> {
+    #[cfg(target_os = "macos")]
+    {
+        vec![
+            "Install kubectl via Homebrew:".to_string(),
+            "  brew install kubectl".to_string(),
+            "Restart terminal and retry".to_string(),
+        ]
+    }
+    #[cfg(target_os = "linux")]
+    {
+        vec![
+            "Install kubectl:".to_string(),
+            "  curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\"".to_string(),
+            "  chmod +x kubectl && sudo mv kubectl /usr/local/bin/".to_string(),
+            "  Or via snap: sudo snap install kubectl --classic".to_string(),
+            "Restart terminal and retry".to_string(),
+        ]
+    }
+    #[cfg(target_os = "windows")]
+    {
         vec![
             "Install kubectl: winget install Kubernetes.kubectl".to_string(),
             "Or: choco install kubernetes-cli".to_string(),
             "Restart terminal and retry".to_string(),
         ]
-    } else if msg_lower.contains("port") {
+    }
+}
+
+/// Get platform-specific port conflict steps
+fn get_port_conflict_steps() -> Vec<String> {
+    #[cfg(target_os = "windows")]
+    {
         vec![
             "Check for conflicting applications:".to_string(),
             "  netstat -ano | findstr :3000".to_string(),
             "  netstat -ano | findstr :8080".to_string(),
             "Stop the conflicting application and retry".to_string(),
         ]
-    } else {
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        vec![
+            "Check for conflicting applications:".to_string(),
+            "  lsof -i :3000".to_string(),
+            "  lsof -i :8080".to_string(),
+            "Stop the conflicting application and retry".to_string(),
+        ]
+    }
+}
+
+/// Get generic error steps (cross-platform)
+fn get_generic_error_steps() -> Vec<String> {
+    #[cfg(target_os = "windows")]
+    {
         vec![
             "Review the error messages above".to_string(),
             "Try running: .\\scripts\\start-all.ps1".to_string(),
+            "Check Docker Desktop is running".to_string(),
+        ]
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        vec![
+            "Review the error messages above".to_string(),
+            "Try running: pwsh ./scripts/start-all.ps1".to_string(),
             "Check Docker Desktop is running".to_string(),
         ]
     }
@@ -1506,7 +1644,8 @@ mod tests {
     fn test_get_remediation_steps_port_conflict() {
         let steps = get_remediation_steps("Port 8080 in use");
         assert!(!steps.is_empty(), "Should provide remediation steps");
-        assert!(steps.iter().any(|s| s.contains("netstat") || s.contains("port")), 
+        // On Windows: netstat, on Linux/macOS: lsof
+        assert!(steps.iter().any(|s| s.contains("netstat") || s.contains("lsof") || s.contains("port")), 
             "Steps should help diagnose port conflict");
     }
 
