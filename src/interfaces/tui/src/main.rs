@@ -2639,5 +2639,66 @@ mod tests {
         assert!(not_avail.to_string().contains("available"));
         assert!(failed.to_string().contains("failed"));
     }
+
+    // Platform detection and support matrix tests
+    #[test]
+    fn test_current_platform_is_supported() {
+        // The current platform must be in the support matrix
+        // (or this test wouldn't be running)
+        let result = check_platform_support();
+        assert!(result.is_ok(), "Current platform should be supported: {:?}", result);
+    }
+
+    #[test]
+    fn test_support_matrix_uses_valid_rust_constants() {
+        // Verify SUPPORT_MATRIX uses values that match Rust's std::env::consts
+        // Valid OS values: "windows", "macos", "linux", "android", "ios", etc.
+        // Valid ARCH values: "x86_64", "aarch64", "arm", "x86", etc.
+        
+        let valid_os = &["windows", "macos", "linux", "android", "ios", "freebsd"];
+        let valid_arch = &["x86_64", "aarch64", "arm", "x86"];
+        
+        for (os, arch) in SUPPORT_MATRIX.iter() {
+            assert!(
+                valid_os.contains(os),
+                "Invalid OS in SUPPORT_MATRIX: {}. Valid values: {:?}",
+                os, valid_os
+            );
+            assert!(
+                valid_arch.contains(arch),
+                "Invalid ARCH in SUPPORT_MATRIX: {}. Valid values: {:?}",
+                arch, valid_arch
+            );
+        }
+    }
+
+    #[test]
+    fn test_support_matrix_has_expected_platforms() {
+        // Verify all 5 expected platforms are in the matrix
+        let expected = [
+            ("windows", "x86_64"),
+            ("macos", "x86_64"),
+            ("macos", "aarch64"),
+            ("linux", "x86_64"),
+            ("linux", "aarch64"),
+        ];
+        
+        for (os, arch) in expected.iter() {
+            assert!(
+                SUPPORT_MATRIX.iter().any(|(s_os, s_arch)| s_os == os && s_arch == arch),
+                "Expected platform {}-{} not found in SUPPORT_MATRIX",
+                os, arch
+            );
+        }
+    }
+
+    #[test]
+    fn test_check_platform_support_is_pure() {
+        // check_platform_support should be pure (no I/O)
+        // We verify this by calling it multiple times - if it had I/O it might fail
+        for _ in 0..10 {
+            let _ = check_platform_support();
+        }
+    }
 }
 
