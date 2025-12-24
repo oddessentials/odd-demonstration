@@ -1,7 +1,17 @@
 [package]
-name = "observatory-tui"
+name = "odd-dashboard"
 version = "0.1.0"
 edition = "2021"
+description = "Terminal dashboard for Distributed Task Observatory"
+repository = "https://github.com/oddessentials/odd-demonstration"
+license = "MIT"
+readme = "README.md"
+keywords = ["kubernetes", "observability", "dashboard", "tui"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "odd-dashboard"
+path = "src/main.rs"
 
 [dependencies]
 ratatui = "0.24"
@@ -14,3 +24,5 @@ open = "5"
 chrono = "0.4"
 uuid = { version = "1", features = ["v4"] }
 
+[build-dependencies]
+chrono = "0.4"
