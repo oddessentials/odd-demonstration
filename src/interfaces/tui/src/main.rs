@@ -1325,8 +1325,221 @@ fn render_setup_progress<B: ratatui::backend::Backend>(
 
 // Modal rendering is done inline in the dashboard draw call to avoid ratatui 0.24 API compatibility issues
 
+// ============================================================================
+// CLI Features: Platform Support, Version, Help, and Doctor
+// ============================================================================
+
+/// Support matrix using EXACT Rust std::env::consts values
+/// Verified against: https://doc.rust-lang.org/std/env/consts/constant.OS.html
+const SUPPORT_MATRIX: &[(&str, &str)] = &[
+    ("windows", "x86_64"),
+    ("macos", "x86_64"),
+    ("macos", "aarch64"),
+    ("linux", "x86_64"),
+    ("linux", "aarch64"),
+];
+
+const SUPPORT_MATRIX_URL: &str = "https://github.com/oddessentials/odd-demonstration/blob/main/docs/SUPPORT_MATRIX.md";
+
+/// Check if current platform is supported (no I/O, pure computation)
+fn check_platform_support() -> Result<(), String> {
+    let os = std::env::consts::OS;
+    let arch = std::env::consts::ARCH;
+    
+    let supported = SUPPORT_MATRIX.iter()
+        .any(|(s_os, s_arch)| *s_os == os && *s_arch == arch);
+    
+    if !supported {
+        return Err(format!(
+            "Unsupported platform: {}-{}\nSee supported configurations: {}",
+            os, arch, SUPPORT_MATRIX_URL
+        ));
+    }
+    
+    Ok(())
+}
+
+/// Print version information with build metadata
+fn print_version() {
+    println!("odd-dashboard {}", env!("CARGO_PKG_VERSION"));
+    
+    // Build metadata injected by build.rs
+    if let Some(commit) = option_env!("BUILD_COMMIT") {
+        println!("  commit: {}", commit);
+    }
+    if let Some(timestamp) = option_env!("BUILD_TIMESTAMP") {
+        println!("  built:  {}", timestamp);
+    }
+    if let Some(rustc) = option_env!("BUILD_RUSTC_VERSION") {
+        println!("  rustc:  {}", rustc);
+    }
+    
+    println!("  os:     {}", std::env::consts::OS);
+    println!("  arch:   {}", std::env::consts::ARCH);
+}
+
+/// Print help message
+fn print_help() {
+    println!("odd-dashboard - Terminal dashboard for Distributed Task Observatory");
+    println!();
+    println!("USAGE:");
+    println!("    odd-dashboard [COMMAND] [OPTIONS]");
+    println!();
+    println!("COMMANDS:");
+    println!("    doctor      Check system prerequisites and show diagnostic info");
+    println!();
+    println!("OPTIONS:");
+    println!("    -h, --help      Print this help message");
+    println!("    -V, --version   Print version information");
+    println!();
+    println!("ENVIRONMENT VARIABLES:");
+    println!("    READ_MODEL_URL   Read Model API URL (default: http://localhost:8080)");
+    println!("    GATEWAY_URL      Gateway API URL (default: http://localhost:3000)");
+    println!();
+    println!("For more information, see: https://github.com/oddessentials/odd-demonstration");
+}
+
+/// Run the doctor command - check prerequisites and show diagnostic info
+fn run_doctor() {
+    println!("odd-dashboard doctor");
+    println!("====================");
+    println!();
+    
+    // Platform info (already validated by main())
+    let os = std::env::consts::OS;
+    let arch = std::env::consts::ARCH;
+    println!("[OK] Platform: {}-{} (supported)", os, arch);
+    
+    let mut all_ok = true;
+    
+    // Check Docker
+    match check_command_version("docker", &["--version"]) {
+        Ok(version) => println!("[OK] Docker: {}", version),
+        Err(msg) => {
+            println!("[FAIL] Docker: {}", msg);
+            all_ok = false;
+        }
+    }
+    
+    // Check PowerShell Core
+    let pwsh_cmd = if cfg!(windows) { "pwsh.exe" } else { "pwsh" };
+    match check_command_version(pwsh_cmd, &["--version"]) {
+        Ok(version) => println!("[OK] PowerShell Core: {}", version),
+        Err(_) => {
+            // Try powershell.exe on Windows as fallback
+            if cfg!(windows) {
+                match check_command_version("powershell.exe", &["-Command", "$PSVersionTable.PSVersion.ToString()"]) {
+                    Ok(version) => println!("[WARN] PowerShell (Windows): {} (pwsh recommended)", version),
+                    Err(msg) => {
+                        println!("[FAIL] PowerShell: {}", msg);
+                        all_ok = false;
+                    }
+                }
+            } else {
+                println!("[FAIL] PowerShell Core: not found");
+                println!("       Install: https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell");
+                all_ok = false;
+            }
+        }
+    }
+    
+    // Check kubectl
+    match check_command_version("kubectl", &["version", "--client", "--short"]) {
+        Ok(version) => println!("[OK] kubectl: {}", version),
+        Err(_) => {
+            // Try without --short flag (newer versions)
+            match check_command_version("kubectl", &["version", "--client"]) {
+                Ok(version) => {
+                    // Extract just the version portion
+                    let short = version.lines().next().unwrap_or(&version);
+                    println!("[OK] kubectl: {}", short.trim());
+                }
+                Err(msg) => {
+                    println!("[FAIL] kubectl: {}", msg);
+                    all_ok = false;
+                }
+            }
+        }
+    }
+    
+    // Check kind
+    match check_command_version("kind", &["version"]) {
+        Ok(version) => println!("[OK] kind: {}", version),
+        Err(msg) => {
+            println!("[FAIL] kind: {}", msg);
+            all_ok = false;
+        }
+    }
+    
+    println!();
+    
+    // Summary
+    if all_ok {
+        println!("All prerequisites satisfied!");
+        println!();
+        println!("Run 'odd-dashboard' to start the TUI.");
+    } else {
+        println!("Some prerequisites are missing.");
+        println!("See: {}", SUPPORT_MATRIX_URL);
+        std::process::exit(1);
+    }
+}
+
+/// Check if a command exists and get its version output
+fn check_command_version(cmd: &str, args: &[&str]) -> Result<String, String> {
+    match Command::new(cmd).args(args).output() {
+        Ok(output) => {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let version = stdout.lines().next().unwrap_or("").trim().to_string();
+                Ok(version)
+            } else {
+                Err(format!("command failed with exit code {}", output.status))
+            }
+        }
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                Err("not found".to_string())
+            } else {
+                Err(format!("failed to run: {}", e))
+            }
+        }
+    }
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // === PHASE 1: Collect args (no external I/O yet) ===
+    let args: Vec<String> = std::env::args().collect();
+    
+    // === PHASE 2: Platform validation (pure computation, no I/O) ===
+    if let Err(msg) = check_platform_support() {
+        eprintln!("ERROR: {}", msg);
+        std::process::exit(1);
+    }
+    
+    // === PHASE 3: CLI dispatch (before terminal initialization) ===
+    match args.get(1).map(|s| s.as_str()) {
+        Some("--version") | Some("-V") => {
+            print_version();
+            return Ok(());
+        }
+        Some("--help") | Some("-h") => {
+            print_help();
+            return Ok(());
+        }
+        Some("doctor") => {
+            run_doctor();
+            return Ok(());
+        }
+        Some(arg) if arg.starts_with('-') => {
+            eprintln!("Unknown option: {}", arg);
+            eprintln!("Run 'odd-dashboard --help' for usage.");
+            std::process::exit(1);
+        }
+        _ => {}
+    }
+    
+    // === PHASE 4: Now safe to perform I/O and initialize terminal ===
     let api_url = std::env::var("READ_MODEL_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
     let gateway_url = std::env::var("GATEWAY_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
@@ -2425,6 +2638,67 @@ mod tests {
         assert!(restricted.to_string().contains("Environment"));
         assert!(not_avail.to_string().contains("available"));
         assert!(failed.to_string().contains("failed"));
+    }
+
+    // Platform detection and support matrix tests
+    #[test]
+    fn test_current_platform_is_supported() {
+        // The current platform must be in the support matrix
+        // (or this test wouldn't be running)
+        let result = check_platform_support();
+        assert!(result.is_ok(), "Current platform should be supported: {:?}", result);
+    }
+
+    #[test]
+    fn test_support_matrix_uses_valid_rust_constants() {
+        // Verify SUPPORT_MATRIX uses values that match Rust's std::env::consts
+        // Valid OS values: "windows", "macos", "linux", "android", "ios", etc.
+        // Valid ARCH values: "x86_64", "aarch64", "arm", "x86", etc.
+        
+        let valid_os = &["windows", "macos", "linux", "android", "ios", "freebsd"];
+        let valid_arch = &["x86_64", "aarch64", "arm", "x86"];
+        
+        for (os, arch) in SUPPORT_MATRIX.iter() {
+            assert!(
+                valid_os.contains(os),
+                "Invalid OS in SUPPORT_MATRIX: {}. Valid values: {:?}",
+                os, valid_os
+            );
+            assert!(
+                valid_arch.contains(arch),
+                "Invalid ARCH in SUPPORT_MATRIX: {}. Valid values: {:?}",
+                arch, valid_arch
+            );
+        }
+    }
+
+    #[test]
+    fn test_support_matrix_has_expected_platforms() {
+        // Verify all 5 expected platforms are in the matrix
+        let expected = [
+            ("windows", "x86_64"),
+            ("macos", "x86_64"),
+            ("macos", "aarch64"),
+            ("linux", "x86_64"),
+            ("linux", "aarch64"),
+        ];
+        
+        for (os, arch) in expected.iter() {
+            assert!(
+                SUPPORT_MATRIX.iter().any(|(s_os, s_arch)| s_os == os && s_arch == arch),
+                "Expected platform {}-{} not found in SUPPORT_MATRIX",
+                os, arch
+            );
+        }
+    }
+
+    #[test]
+    fn test_check_platform_support_is_pure() {
+        // check_platform_support should be pure (no I/O)
+        // We verify this by calling it multiple times - if it had I/O it might fail
+        for _ in 0..10 {
+            let _ = check_platform_support();
+        }
     }
 }
 

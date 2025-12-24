@@ -1,0 +1,32 @@
+{
+    "name": "@oddessentials/odd-dashboard",
+    "version": "0.1.0",
+    "description": "Terminal dashboard for Distributed Task Observatory",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/oddessentials/odd-demonstration.git"
+    },
+    "keywords": [
+        "kubernetes",
+        "observability",
+        "dashboard",
+        "tui",
+        "cli"
+    ],
+    "author": "OddEssentials",
+    "license": "MIT",
+    "homepage": "https://github.com/oddessentials/odd-demonstration#readme",
+    "bin": {
+        "odd-dashboard": "bin/odd-dashboard.js"
+    },
+    "scripts": {
+        "postinstall": "node scripts/install.js"
+    },
+    "engines": {
+        "node": ">=16"
+    },
+    "files": [
+        "bin/",
+        "scripts/"
+    ]
+}

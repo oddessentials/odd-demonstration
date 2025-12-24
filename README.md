@@ -46,6 +46,54 @@ See [README_beginner.md](./README_beginner.md) for step-by-step instructions (Wi
 
 ---
 
+## 📦 Installation (Binary Release)
+
+> **Note:** v0.1.x are unsigned bootstrap releases. Your OS may show security prompts.
+> See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for checksum verification.
+
+### Quick Install
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/oddessentials/odd-demonstration/main/install.sh | sh
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr -useb https://raw.githubusercontent.com/oddessentials/odd-demonstration/main/install.ps1 | iex
+```
+
+**npm:**
+```bash
+npm install -g @oddessentials/odd-dashboard
+```
+
+### Verify Installation
+
+```bash
+odd-dashboard --version
+# Shows: odd-dashboard 0.1.0
+#   commit: abc1234
+#   built:  2024-12-24T10:00:00Z
+#   rustc:  rustc 1.75.0
+
+odd-dashboard doctor
+# Checks: Docker, PowerShell, kubectl, kind
+```
+
+### Supported Platforms
+
+| OS | Architecture | Artifact |
+|----|--------------|----------|
+| Windows | x64 | `odd-dashboard-windows-x64.exe` |
+| macOS | Intel | `odd-dashboard-macos-x64` |
+| macOS | Apple Silicon | `odd-dashboard-macos-arm64` |
+| Linux | x64 | `odd-dashboard-linux-x64` |
+| Linux | ARM64 | `odd-dashboard-linux-arm64` |
+
+**System Requirements:** 8GB RAM minimum (16GB recommended), 4+ CPU cores, 15GB disk.
+See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.
+
 ## 🏗️ Architecture
 
 ![Architecture diagram](./mermaid-diagram.svg)
@@ -67,7 +115,7 @@ See [README_beginner.md](./README_beginner.md) for step-by-step instructions (Wi
        │                  │          │          │                  │
 ┌──────▼──────┐   ┌───────▼───────┐  │  ┌───────▼───────┐  ┌───────▼───────┐
 │   Redis     │   │   MongoDB     │  │  │  PostgreSQL   │  │   RabbitMQ    │
-│  (Cache)    │   │ (Event Store) │  │  │ (Authoritative)│  │ (Event Spine) │
+│  (Cache)    │   │ (Event Store) │  │  │(Authoritative)│  │ (Event Spine) │
 └─────────────┘   └───────────────┘  │  └───────────────┘  └───────┬───────┘
                                      │                             │
                               ┌──────┴─────────────────────────────┤
@@ -84,19 +132,19 @@ See [README_beginner.md](./README_beginner.md) for step-by-step instructions (Wi
 
 After startup, access services via port-forwards:
 
-| Service             | URL                                | Credentials               |
-| ------------------- | ---------------------------------- | ------------------------- |
-| **Web Dashboard**   | http://localhost:8081              | -                         |
-| **Gateway API**     | http://localhost:3000              | -                         |
-| ↳ API Docs          | http://localhost:3000/docs         | -                         |
-| **Read Model API**  | http://localhost:8080/stats        | -                         |
-| ↳ API Docs          | http://localhost:8080/docs         | -                         |
-| **RabbitMQ**        | http://localhost:15672             | guest / guest             |
-| **Grafana**         | http://localhost:3002              | admin / admin             |
-| **Prometheus**      | http://localhost:9090              | -                         |
-| **pgAdmin**         | http://localhost:5050              | admin@example.com / admin |
-| **Mongo Express**   | http://localhost:8082              | admin / password123       |
-| **RedisInsight**    | http://localhost:8001              | -                         |
+| Service            | URL                         | Credentials               |
+| ------------------ | --------------------------- | ------------------------- |
+| **Web Dashboard**  | http://localhost:8081       | -                         |
+| **Gateway API**    | http://localhost:3000       | -                         |
+| ↳ API Docs         | http://localhost:3000/docs  | -                         |
+| **Read Model API** | http://localhost:8080/stats | -                         |
+| ↳ API Docs         | http://localhost:8080/docs  | -                         |
+| **RabbitMQ**       | http://localhost:15672      | guest / guest             |
+| **Grafana**        | http://localhost:3002       | admin / admin             |
+| **Prometheus**     | http://localhost:9090       | -                         |
+| **pgAdmin**        | http://localhost:5050       | admin@example.com / admin |
+| **Mongo Express**  | http://localhost:8082       | admin / password123       |
+| **RedisInsight**   | http://localhost:8001       | -                         |
 
 ---
 

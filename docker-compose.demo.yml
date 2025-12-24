@@ -1,0 +1,159 @@
+version: '3.8'
+
+# Demo Mode: Docker-Only Distributed Task Observatory
+# All containers use odto-demo- prefix to avoid conflicts with full (kind) installation
+# All ports are in 13000+ range to avoid conflicts with common dev ports
+
+networks:
+  odto-demo-net:
+    name: odto-demo-net
+
+volumes:
+  odto-demo-postgres:
+  odto-demo-mongo:
+  odto-demo-redis:
+  odto-demo-rabbitmq:
+
+services:
+  # PostgreSQL - Event sourcing store
+  postgres:
+    container_name: odto-demo-postgres
+    image: postgres:15-alpine
+    networks: [odto-demo-net]
+    volumes:
+      - odto-demo-postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: observatory
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: events
+    # NOT exposed on host - internal only
+
+  # MongoDB - Job metadata store
+  mongodb:
+    container_name: odto-demo-mongo
+    image: mongo:7
+    networks: [odto-demo-net]
+    volumes:
+      - odto-demo-mongo:/data/db
+    # NOT exposed on host - internal only
+
+  # Redis - Caching layer
+  redis:
+    container_name: odto-demo-redis
+    image: redis:7-alpine
+    networks: [odto-demo-net]
+    volumes:
+      - odto-demo-redis:/data
+    # NOT exposed on host - internal only
+
+  # RabbitMQ - Message broker
+  rabbitmq:
+    container_name: odto-demo-rabbitmq
+    image: rabbitmq:3-management-alpine
+    networks: [odto-demo-net]
+    volumes:
+      - odto-demo-rabbitmq:/var/lib/rabbitmq
+    ports:
+      - "25672:15672"  # Management UI only - AMQP intentionally NOT exposed
+    environment:
+      RABBITMQ_DEFAULT_USER: observatory
+      RABBITMQ_DEFAULT_PASS: demo
+
+  # Gateway - API entry point
+  gateway:
+    container_name: odto-demo-gateway
+    image: node:20-alpine
+    working_dir: /app
+    networks: [odto-demo-net]
+    ports:
+      - "13000:3000"
+    depends_on:
+      - rabbitmq
+      - postgres
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - RABBITMQ_URL=amqp://observatory:demo@odto-demo-rabbitmq:5672
+      - POSTGRES_URL=postgres://observatory:demo@odto-demo-postgres:5432/events
+    volumes:
+      - ../../src/services/gateway:/app:ro
+    command: sh -c "npm install --omit=dev && npm start"
+
+  # Processor - Job execution (Python)
+  processor:
+    container_name: odto-demo-processor
+    image: python:3.11-slim
+    working_dir: /app
+    networks: [odto-demo-net]
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://observatory:demo@odto-demo-rabbitmq:5672
+    volumes:
+      - ../../src/services/processor:/app:ro
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && python main.py"
+    # NOT exposed on host - internal only
+
+  # Metrics Engine - Observability (Go)
+  metrics-engine:
+    container_name: odto-demo-metrics-engine
+    image: golang:1.21-alpine
+    working_dir: /app
+    networks: [odto-demo-net]
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://observatory:demo@odto-demo-rabbitmq:5672
+    volumes:
+      - ../../src/services/metrics-engine:/app:ro
+    command: sh -c "go run ."
+    # NOT exposed on host - internal only
+
+  # Read Model - Query API (Go)
+  read-model:
+    container_name: odto-demo-read-model
+    image: golang:1.21-alpine
+    working_dir: /app
+    networks: [odto-demo-net]
+    ports:
+      - "18080:8080"
+    depends_on:
+      - mongodb
+      - postgres
+    environment:
+      - MONGO_URL=mongodb://odto-demo-mongo:27017
+      - POSTGRES_URL=postgres://observatory:demo@odto-demo-postgres:5432/events
+    volumes:
+      - ../../src/services/read-model:/app:ro
+    command: sh -c "go run ."
+
+  # Web Dashboard UI
+  web-ui:
+    container_name: odto-demo-web
+    image: node:20-alpine
+    working_dir: /app
+    networks: [odto-demo-net]
+    ports:
+      - "18081:8080"
+    depends_on:
+      - gateway
+      - read-model
+    environment:
+      - GATEWAY_URL=http://odto-demo-gateway:3000
+      - READ_MODEL_URL=http://odto-demo-read-model:8080
+    volumes:
+      - ../../src/interfaces/web:/app:ro
+    command: sh -c "npm install --omit=dev && npm start"
+
+# Port mapping summary (demo mode uses 13000+ range):
+# 
+# | Service        | Internal | Demo Host | Purpose           |
+# |----------------|----------|-----------|-------------------|
+# | gateway        | 3000     | 13000     | API               |
+# | read-model     | 8080     | 18080     | Query API         |
+# | web-ui         | 8080     | 18081     | Dashboard         |
+# | rabbitmq-mgmt  | 15672    | 25672     | RabbitMQ UI       |
+# | postgres       | 5432     | -         | Internal only     |
+# | mongodb        | 27017    | -         | Internal only     |
+# | redis          | 6379     | -         | Internal only     |
+# | rabbitmq-amqp  | 5672     | -         | Internal only     |

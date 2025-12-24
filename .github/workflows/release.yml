@@ -1,0 +1,302 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  # Also support manual tag triggers for hotfixes
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.0)'
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Determine version via semantic-release (dry-run first)
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_release: ${{ steps.semantic.outputs.new_release_published }}
+      version: ${{ steps.semantic.outputs.new_release_version }}
+      tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install semantic-release
+        run: npm install -g semantic-release @semantic-release/exec @semantic-release/git
+      
+      - name: Semantic Release (dry-run)
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OUTPUT=$(npx semantic-release --dry-run 2>&1) || true
+          echo "$OUTPUT"
+          
+          if echo "$OUTPUT" | grep -q "Published release"; then
+            VERSION=$(echo "$OUTPUT" | grep -oP "Published release \K[0-9]+\.[0-9]+\.[0-9]+")
+            echo "new_release_published=true" >> $GITHUB_OUTPUT
+            echo "new_release_version=$VERSION" >> $GITHUB_OUTPUT
+            echo "new_release_git_tag=v$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "new_release_published=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Build binaries for all platforms (only if new release)
+  build:
+    needs: version
+    if: needs.version.outputs.new_release == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: odd-dashboard-windows-x64.exe
+            binary: odd-dashboard.exe
+            
+          - os: macos-13  # Intel
+            target: x86_64-apple-darwin
+            artifact: odd-dashboard-macos-x64
+            binary: odd-dashboard
+            
+          - os: macos-14  # Apple Silicon
+            target: aarch64-apple-darwin
+            artifact: odd-dashboard-macos-arm64
+            binary: odd-dashboard
+            
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: odd-dashboard-linux-x64
+            binary: odd-dashboard
+            
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact: odd-dashboard-linux-arm64
+            binary: odd-dashboard
+            cross: true
+            
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+      
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src/interfaces/tui/target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.target }}-cargo-
+      
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+        working-directory: src/interfaces/tui
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+      
+      - name: Rename binary to canonical name
+        shell: bash
+        run: |
+          cp src/interfaces/tui/target/${{ matrix.target }}/release/${{ matrix.binary }} ${{ matrix.artifact }}
+      
+      - name: Smoke test (native platforms only)
+        if: ${{ !matrix.cross }}
+        shell: bash
+        run: |
+          ./${{ matrix.artifact }} --version
+          ./${{ matrix.artifact }} --help
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+          retention-days: 1
+
+  # Generate checksums
+  checksums:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Generate SHA256SUMS
+        run: |
+          cd artifacts
+          # Move all binaries to current directory
+          find . -type f -name "odd-dashboard-*" -exec mv {} . \;
+          
+          # Generate checksums (GNU format: hash  filename)
+          sha256sum odd-dashboard-* > SHA256SUMS
+          
+          echo "SHA256SUMS contents:"
+          cat SHA256SUMS
+      
+      - name: Upload checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: SHA256SUMS
+          path: artifacts/SHA256SUMS
+          retention-days: 1
+
+  # Create GitHub Release
+  release:
+    needs: [version, build, checksums]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name "odd-dashboard-*" -o -name "SHA256SUMS" \) -exec mv {} release/ \;
+          ls -la release/
+      
+      - name: Verify all expected artifacts present
+        run: |
+          EXPECTED=(
+            "odd-dashboard-windows-x64.exe"
+            "odd-dashboard-macos-x64"
+            "odd-dashboard-macos-arm64"
+            "odd-dashboard-linux-x64"
+            "odd-dashboard-linux-arm64"
+            "SHA256SUMS"
+          )
+          
+          for artifact in "${EXPECTED[@]}"; do
+            if [[ ! -f "release/$artifact" ]]; then
+              echo "::error::Missing artifact: $artifact"
+              exit 1
+            fi
+          done
+          echo "All expected artifacts present"
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: release/*
+          body: |
+            ## ⚠️ Bootstrap Release (Unsigned)
+            
+            This is a **v0.1.x bootstrap release**. Binaries are NOT code-signed.
+            - Your OS may show security prompts — this is expected.
+            - Verify integrity via SHA256 checksums (see below).
+            - Signing will be introduced in a future release.
+            
+            ## Installation
+            
+            ### Quick Install
+            
+            **Linux/macOS:**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | sh
+            ```
+            
+            **Windows (PowerShell):**
+            ```powershell
+            iwr -useb https://raw.githubusercontent.com/${{ github.repository }}/main/install.ps1 | iex
+            ```
+            
+            **npm:**
+            ```bash
+            npm install -g @oddessentials/odd-dashboard
+            ```
+            
+            ### Verify Checksum
+            
+            ```bash
+            sha256sum -c SHA256SUMS --ignore-missing
+            ```
+            
+            See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for full verification instructions.
+
+  # Publish npm package
+  npm-publish:
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Update npm package version
+        run: |
+          cd packages/npm-shim
+          npm version ${{ needs.version.outputs.version }} --no-git-tag-version --allow-same-version
+      
+      - name: Publish to npm
+        run: |
+          cd packages/npm-shim
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Finalize: run semantic-release to create tag and commit VERSION update
+  finalize:
+    needs: [version, npm-publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install semantic-release
+        run: npm install -g semantic-release @semantic-release/exec @semantic-release/git
+      
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release

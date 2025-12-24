@@ -1,7 +1,7 @@
 # Distributed Task Observatory - Session Summary
 
 **Last Updated:** 2025-12-24
-**Phases Completed:** 0-13
+**Phases Completed:** 0-14
 
 ## Objective
 
@@ -48,6 +48,12 @@ Implement a complete, production-grade distributed task processing system demons
 - **TUI:** Animated loading, alerts panel, Add Task (N), UI Launcher (U)
 - **Web:** Glassmorphic design, loading splash, Add Task form, UI Launcher modal
 
+### Distribution (Phase 14)
+- **Binary:** `odd-dashboard` (production release binary)
+- **Install scripts:** `install.sh` (Linux/macOS), `install.ps1` (Windows)
+- **npm shim:** `@oddessentials/odd-dashboard`
+- **Release workflow:** Multi-platform builds with checksums
+
 ### Testing
 - Unit tests for all services
 - Integration gate v2 with MongoDB validation
@@ -58,7 +64,7 @@ Implement a complete, production-grade distributed task processing system demons
 ```powershell
 # Using TUI (recommended)
 cd src/interfaces/tui && cargo run --release
-# Press 'L' to launch
+# or use installed binary: odd-dashboard
 
 # Using script
 .\scripts\start-all.ps1

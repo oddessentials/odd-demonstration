@@ -209,6 +209,33 @@ jobs:
           retention-days: 7
 
   # ============================================================
+  # Distribution Audit (naming, version, artifact consistency)
+  # ============================================================
+  distribution-audit:
+    name: Distribution Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Verify naming consistency
+        shell: pwsh
+        run: ./scripts/audit-naming-consistency.ps1
+        
+      - name: Verify version sync
+        shell: pwsh
+        run: ./scripts/verify-version-sync.ps1
+        
+      - name: Verify artifact naming
+        shell: pwsh
+        run: ./scripts/verify-artifact-names.ps1
+        
+      - name: Audit workflow isolation
+        shell: pwsh
+        run: ./scripts/audit-workflows.ps1
+
+  # ============================================================
   # Container Image Builds (Future extensibility)
   # ============================================================
   # docker:
