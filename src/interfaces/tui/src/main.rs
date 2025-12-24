@@ -5,14 +5,41 @@ use crossterm::{
 };
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
     Terminal,
 };
 use serde::Deserialize;
-use std::{error::Error, io, time::Duration};
+use std::{error::Error, io, sync::{Arc, atomic::{AtomicBool, Ordering}}, thread, time::Duration};
+
+/// ASCII art logo for the Distributed Task Observatory
+const LOGO: &str = r#"
+            .....        
+         .#########.     
+       .#####      ##    
+      ####+###+    ##+   
+    ######  +###+  ###   
+  #### -######+######+   
++###.   +####.  +###+    
+ ..   -###+########.     
+    .###+   .####.       
+     -+    +###.         
+         -###-           
+         -#-             
+"#;
+
+/// Animated spinner frames (Braille dots pattern)
+const SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+/// Loading messages that cycle for visual interest
+const LOADING_MESSAGES: &[&str] = &[
+    "Connecting to services",
+    "Fetching statistics",
+    "Loading job data",
+    "Checking alerts",
+];
 
 #[derive(Deserialize, Debug, Clone, Default)]
 struct Stats {
@@ -113,6 +140,90 @@ impl App {
     }
 }
 
+/// Renders the loading splash screen with animated spinner
+fn render_loading_splash<B: ratatui::backend::Backend>(
+    terminal: &mut Terminal<B>,
+    frame_idx: usize,
+) -> Result<(), Box<dyn Error>> {
+    let spinner = SPINNER_FRAMES[frame_idx % SPINNER_FRAMES.len()];
+    let message = LOADING_MESSAGES[frame_idx / 3 % LOADING_MESSAGES.len()];
+    
+    terminal.draw(|f| {
+        let size = f.size();
+        
+        // Center the content vertically
+        let vertical_center = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(25),
+                Constraint::Length(18),
+                Constraint::Percentage(25),
+            ])
+            .split(size);
+        
+        // Center the content horizontally
+        let horizontal_center = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(25),
+                Constraint::Min(40),
+                Constraint::Percentage(25),
+            ])
+            .split(vertical_center[1]);
+        
+        let center_area = horizontal_center[1];
+        
+        // Build the splash content
+        let mut lines: Vec<Line> = Vec::new();
+        
+        // Add logo lines with cyan color
+        for line in LOGO.lines() {
+            lines.push(Line::from(vec![
+                Span::styled(line, Style::default().fg(Color::Cyan))
+            ]));
+        }
+        
+        // Add spacing
+        lines.push(Line::from(""));
+        
+        // Add animated loading line with spinner
+        let dots = ".".repeat((frame_idx % 4) + 1);
+        lines.push(Line::from(vec![
+            Span::styled(
+                format!("  {} ", spinner),
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}{}", message, dots),
+                Style::default().fg(Color::White),
+            ),
+        ]));
+        
+        // Add subtle branding line
+        lines.push(Line::from(""));
+        lines.push(Line::from(vec![
+            Span::styled(
+                "Distributed Task Observatory",
+                Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+            ),
+        ]));
+        
+        let splash = Paragraph::new(lines)
+            .alignment(Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Cyan))
+                    .title(" oddessentials.com ")
+                    .title_style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            );
+        
+        f.render_widget(splash, center_area);
+    })?;
+    
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let api_url = std::env::var("READ_MODEL_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
     let gateway_url = std::env::var("GATEWAY_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
@@ -123,21 +234,93 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    // Create app and spawn background refresh
     let mut app = App::new(api_url, gateway_url);
-    app.refresh();
+    let loading_done = Arc::new(AtomicBool::new(false));
+    let loading_done_clone = Arc::clone(&loading_done);
+    
+    // Spawn refresh in background thread
+    let api_url_clone = app.api_url.clone();
+    let gateway_url_clone = app.gateway_url.clone();
+    let handle = thread::spawn(move || {
+        let mut background_app = App::new(api_url_clone, gateway_url_clone);
+        background_app.refresh();
+        loading_done_clone.store(true, Ordering::SeqCst);
+        background_app
+    });
+    
+    // Animated loading splash while data loads
+    let mut frame_idx = 0;
+    while !loading_done.load(Ordering::SeqCst) {
+        render_loading_splash(&mut terminal, frame_idx)?;
+        frame_idx += 1;
+        thread::sleep(Duration::from_millis(80));
+        
+        // Allow user to quit during loading with 'q'
+        if event::poll(Duration::from_millis(0))? {
+            if let Event::Key(key) = event::read()? {
+                if key.code == KeyCode::Char('q') {
+                    disable_raw_mode()?;
+                    execute!(
+                        terminal.backend_mut(),
+                        LeaveAlternateScreen,
+                        DisableMouseCapture
+                    )?;
+                    terminal.show_cursor()?;
+                    return Ok(());
+                }
+            }
+        }
+    }
+    
+    // Get the loaded app data from background thread
+    app = handle.join().expect("Background thread panicked");
 
     loop {
         terminal.draw(|f| {
-            let chunks = Layout::default()
+            // Main vertical layout
+            let main_chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
                 .constraints([
-                    Constraint::Length(3),
-                    Constraint::Length(7),
-                    Constraint::Length(6),
-                    Constraint::Min(8),
+                    Constraint::Length(15), // Header with logo + title + stats (smaller logo)
+                    Constraint::Length(6),  // Alerts
+                    Constraint::Min(8),     // Jobs table
                 ])
                 .split(f.size());
+
+            // Header area: Logo on left, Title+Stats on right
+            let header_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Length(32), // Logo width (smaller)
+                    Constraint::Min(30),    // Title + Stats
+                ])
+                .split(main_chunks[0]);
+
+            // Render the ASCII logo (centered)
+            let logo_lines: Vec<Line> = LOGO
+                .lines()
+                .map(|line| {
+                    Line::from(vec![Span::styled(
+                        line,
+                        Style::default().fg(Color::Cyan),
+                    )])
+                })
+                .collect();
+            let logo_widget = Paragraph::new(logo_lines)
+                .alignment(ratatui::layout::Alignment::Center)
+                .block(Block::default().borders(Borders::ALL).title(" oddessentials.com "));
+            f.render_widget(logo_widget, header_chunks[0]);
+
+            // Right side: Title + Stats stacked vertically
+            let right_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(3), // Title
+                    Constraint::Min(5),    // Stats
+                ])
+                .split(header_chunks[1]);
 
             // Title
             let title = Paragraph::new(vec![Line::from(vec![
@@ -147,7 +330,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ),
             ])])
             .block(Block::default().borders(Borders::ALL));
-            f.render_widget(title, chunks[0]);
+            f.render_widget(title, right_chunks[0]);
 
             // Stats
             let stats_text = vec![
@@ -179,7 +362,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             ];
             let stats_block = Paragraph::new(stats_text)
                 .block(Block::default().title(" Statistics ").borders(Borders::ALL));
-            f.render_widget(stats_block, chunks[1]);
+            f.render_widget(stats_block, right_chunks[1]);
 
             // Alerts pane (with graceful degradation)
             let alerts_content: Vec<Line> = if let Some(ref err) = app.alerts_error {
@@ -204,7 +387,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             };
             let alerts_block = Paragraph::new(alerts_content)
                 .block(Block::default().title(format!(" Alerts ({}) ", app.alerts.len())).borders(Borders::ALL));
-            f.render_widget(alerts_block, chunks[2]);
+            f.render_widget(alerts_block, main_chunks[1]);
 
             // Jobs table
             let header = Row::new(vec!["ID", "Type", "Status", "Created"])
@@ -241,7 +424,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .header(header)
             .widths(&widths)
             .block(Block::default().title(" Recent Jobs ").borders(Borders::ALL));
-            f.render_widget(table, chunks[3]);
+            f.render_widget(table, main_chunks[2]);
         })?;
 
         // Handle input
