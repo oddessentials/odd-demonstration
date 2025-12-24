@@ -164,14 +164,27 @@ jobs:
       - name: Generate SHA256SUMS
         run: |
           cd artifacts
-          # download-artifact@v4 creates subdirectories for each artifact
-          # Move files to flat structure
-          find . -mindepth 2 -type f -exec mv {} . \;
-          # Remove empty directories
-          find . -type d -empty -delete
           
-          # List what we have
-          echo "=== Artifacts ==="
+          # Debug: show initial structure
+          echo "=== Initial artifact structure ==="
+          ls -laR
+          
+          # download-artifact@v4 creates: artifacts/<name>/<name>
+          # We need to copy files to a flat directory since mv can't
+          # overwrite a directory with a file of the same name
+          mkdir -p flat
+          for dir in */; do
+            # Find the actual file inside each artifact directory
+            if [ -f "${dir%/}/${dir%/}" ]; then
+              cp "${dir%/}/${dir%/}" "flat/${dir%/}"
+            else
+              # Fallback: copy any file found
+              find "$dir" -type f -exec cp {} flat/ \;
+            fi
+          done
+          
+          cd flat
+          echo "=== Flat artifacts ==="
           ls -la
           
           # Generate checksums
@@ -179,6 +192,11 @@ jobs:
           
           echo "=== SHA256SUMS contents ==="
           cat SHA256SUMS
+          
+          # Move SHA256SUMS to parent for upload
+          mv SHA256SUMS ..
+          cd ..
+          rm -rf flat
       
       - name: Upload checksums
         uses: actions/upload-artifact@v4
