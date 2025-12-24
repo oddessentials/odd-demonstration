@@ -270,64 +270,9 @@ jobs:
           cd src/interfaces/tui
           cargo test --locked
 
-  # ============================================================
-  # Release Dry-Run - Catches semantic-release config issues before merge
-  # ============================================================
-  release-dry-run:
-    name: Release Dry-Run
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      - name: Validate release workflow structure
-        run: |
-          echo "Checking release.yml for required outputs and conditions..."
-          
-          # Check that release job defines required outputs
-          if ! grep -q "new_release:" .github/workflows/release.yml; then
-            echo "::error::release.yml missing 'new_release' output"
-            exit 1
-          fi
-          
-          # Check that build job has correct condition
-          if ! grep -q "needs.release.outputs.new_release" .github/workflows/release.yml; then
-            echo "::error::release.yml build job missing new_release condition"
-            exit 1
-          fi
-          
-          # Check for permissions block
-          if ! grep -q "contents: write" .github/workflows/release.yml; then
-            echo "::error::release.yml missing 'contents: write' permission"
-            exit 1
-          fi
-          
-          echo "✓ Release workflow structure validated"
-      
-      - name: Semantic Release (dry-run)
-        id: semantic
-        uses: cycjimmy/semantic-release-action@v4
-        with:
-          dry_run: true
-          extra_plugins: |
-            @semantic-release/exec
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Verify dry-run outputs
-        run: |
-          echo "Semantic release dry-run outputs:"
-          echo "  new_release_published: '${{ steps.semantic.outputs.new_release_published }}'"
-          echo "  new_release_version: '${{ steps.semantic.outputs.new_release_version }}'"
 
+  # NOTE: Release dry-run validation moved to release.yml where it runs
+  # in the correct permission context (on main, not on PR branches)
   # ============================================================
   # Container Image Builds (Future extensibility)
   # ============================================================
