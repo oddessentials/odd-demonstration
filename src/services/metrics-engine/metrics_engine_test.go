@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/distributed-task-observatory/metrics-engine/validator"
 )
 
 // ReadVersion reads the VERSION file and returns the version string.
@@ -111,5 +113,80 @@ func TestMetricLabelsIncludeVersion(t *testing.T) {
 
 	if labels["version"] != "0.1.0" {
 		t.Errorf("Expected version '0.1.0', got '%s'", labels["version"])
+	}
+}
+
+// ============================================================
+// Tests for main.go functions
+// ============================================================
+
+// TestGetEnvWithValue tests getEnv returns env var when set.
+func TestGetEnvWithValue(t *testing.T) {
+	os.Setenv("TEST_METRICS_VAR", "custom_value")
+	defer os.Unsetenv("TEST_METRICS_VAR")
+
+	result := getEnv("TEST_METRICS_VAR", "default")
+	if result != "custom_value" {
+		t.Errorf("Expected 'custom_value', got '%s'", result)
+	}
+}
+
+// TestGetEnvWithFallback tests getEnv returns fallback when not set.
+func TestGetEnvWithFallback(t *testing.T) {
+	os.Unsetenv("NONEXISTENT_VAR")
+
+	result := getEnv("NONEXISTENT_VAR", "fallback_value")
+	if result != "fallback_value" {
+		t.Errorf("Expected 'fallback_value', got '%s'", result)
+	}
+}
+
+// TestGetEnvEmptyValue tests getEnv with empty string value.
+func TestGetEnvEmptyValue(t *testing.T) {
+	os.Setenv("TEST_EMPTY_VAR", "")
+	defer os.Unsetenv("TEST_EMPTY_VAR")
+
+	result := getEnv("TEST_EMPTY_VAR", "default")
+	// Empty string is still a set value
+	if result != "" {
+		t.Errorf("Expected empty string, got '%s'", result)
+	}
+}
+
+// TestFormatValidationErrorsEmpty tests formatValidationErrors with no errors.
+func TestFormatValidationErrorsEmpty(t *testing.T) {
+	result := formatValidationErrors(nil)
+	if result != "unknown error" {
+		t.Errorf("Expected 'unknown error', got '%s'", result)
+	}
+
+	result2 := formatValidationErrors([]validator.ValidationError{})
+	if result2 != "unknown error" {
+		t.Errorf("Expected 'unknown error', got '%s'", result2)
+	}
+}
+
+// TestFormatValidationErrorsSingle tests formatValidationErrors with one error.
+func TestFormatValidationErrorsSingle(t *testing.T) {
+	errors := []validator.ValidationError{
+		{Field: "eventId", Message: "required field missing"},
+	}
+	result := formatValidationErrors(errors)
+	expected := "eventId: required field missing"
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+// TestFormatValidationErrorsMultiple tests formatValidationErrors with multiple errors.
+func TestFormatValidationErrorsMultiple(t *testing.T) {
+	errors := []validator.ValidationError{
+		{Field: "eventId", Message: "required"},
+		{Field: "producer", Message: "invalid format"},
+	}
+	result := formatValidationErrors(errors)
+	expected := "eventId: required; producer: invalid format"
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
 	}
 }

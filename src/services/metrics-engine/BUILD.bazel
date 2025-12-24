@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/distributed-task-observatory/metrics-engine",
     visibility = ["//visibility:private"],
     deps = [
+        "//src/services/metrics-engine/validator",
         "@com_github_rabbitmq_amqp091_go//:amqp091-go",
         "@com_github_redis_go_redis_v9//:go-redis",
         "@org_mongodb_go_mongo_driver//mongo",
@@ -25,5 +26,7 @@ go_binary(
 go_test(
     name = "metrics-engine_test",
     srcs = ["metrics_engine_test.go"],
+    embed = [":metrics-engine_lib"],
+    deps = ["//src/services/metrics-engine/validator"],
     data = ["VERSION"],
 )

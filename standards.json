@@ -1,0 +1,1591 @@
+{
+  "version": 2,
+  "meta": {
+    "defaultCoverageThreshold": 0.8,
+    "coverageThresholdUnit": "ratio",
+    "coverageThresholdDescription": "Expressed as a ratio (0-1), e.g., 0.8 = 80% coverage. Must be between 0 and 1.",
+    "complexityChecks": {
+      "enabledByDefault": true,
+      "description": "When supported by the stack, run cyclomatic complexity or similar metrics in CI as a warning-only check initially."
+    },
+    "qualityGatePolicy": {
+      "preferSoftFailOnLegacy": true,
+      "description": "New quality checks should warn on existing code and fail CI only for violations introduced in new or changed code, to reduce friction on legacy codebases."
+    },
+    "migrationGuide": [
+      {
+        "step": 1,
+        "title": "Establish Local Safety Nets First",
+        "description": "Start by adding pre-commit hooks and core formatting/linting so developers get fast feedback without touching CI.",
+        "focusIds": ["pre-commit-hooks", "linting", "code-formatter"],
+        "notes": "Keep hooks fast and focused on changed files to avoid slowing down day-to-day work."
+      },
+      {
+        "step": 2,
+        "title": "Mirror Local Checks in CI (Soft-Fail on Legacy)",
+        "description": "Introduce CI quality gates that mirror local checks, but treat existing violations as warnings wherever possible.",
+        "focusIds": [
+          "ci-quality-gates",
+          "linting",
+          "code-formatter",
+          "commit-linting"
+        ],
+        "notes": "Use diff-based tools or baselines so only new violations break builds; legacy issues remain visible but non-blocking."
+      },
+      {
+        "step": 3,
+        "title": "Add Type Safety, Coverage, and Dependency Security",
+        "description": "Enable type-checking, coverage thresholds, and dependency/vulnerability scanning with gradual enforcement.",
+        "focusIds": [
+          "type-checking",
+          "unit-test-runner",
+          "unit-test-reporter",
+          "dependency-security",
+          "dependency-update-automation"
+        ],
+        "notes": "Pin tool and runtime versions in CI and containers to avoid flaky differences across environments."
+      },
+      {
+        "step": 4,
+        "title": "Layer in Docs, Governance, and Recommended Checks",
+        "description": "Add documentation standards, governance files, integration testing, performance baselines, complexity analysis, accessibility auditing, and (optionally) ML-specific practices for data-heavy Python repos.",
+        "focusIds": [
+          "documentation",
+          "repository-governance",
+          "integration-testing",
+          "performance-baselining",
+          "complexity-analysis",
+          "accessibility-auditing"
+        ],
+        "notes": "Tackle recommended items in order of business value; backend-only repos can skip web-focused checks like accessibility. For AI/ML-heavy Python teams, consider extending containerization with data versioning (DVC) and unit tests with data quality checks (e.g., Great Expectations) as part of this step."
+      }
+    ],
+    "executorHints": {
+      "description": "Advisory execution substrate hints. Bazel is the first supported executor; future monorepo executors may follow the same pattern.",
+      "bazel": {
+        "detectionRules": {
+          "rootMarkers": ["MODULE.bazel", "WORKSPACE.bazel", "WORKSPACE"],
+          "optionalMarkers": [".bazelrc", ".bazelversion"],
+          "notes": "Detection uses repo-root markers only. Nested BUILD files do not trigger Bazel mode."
+        },
+        "optOut": {
+          "description": "Set meta.executorHints.bazel.enabled = false in repo config to disable Bazel hints",
+          "configPath": "meta.executorHints.bazel.enabled"
+        },
+        "targetConventions": {
+          "description": "Recommended target naming (not assumed to exist). These are illustrative patterns; actual targets are repo-defined.",
+          "lint": "//tools/lint:lint or bazel test //... with lint aspects",
+          "format": "bazel run //tools/format:check",
+          "test": "bazel test //...",
+          "coverage": "bazel coverage //...",
+          "build": "bazel build //..."
+        },
+        "ciContract": {
+          "versionPinning": "Use .bazelversion file for Bazelisk",
+          "configFlag": "--config=ci (define in .bazelrc)",
+          "deterministicFlags": ["--nokeep_going", "--test_output=errors"],
+          "remoteCache": "Optional; not required for CI"
+        },
+        "advisoryNotice": "bazelHints are suggestions, not required execution paths. Consumers should prefer stack-native commands unless explicitly adopting Bazel."
+      }
+    }
+  },
+  "ciSystems": ["azure-devops", "github-actions"],
+  "stacks": {
+    "typescript-js": {
+      "label": "TypeScript / JavaScript",
+      "languageFamily": "js"
+    },
+    "csharp-dotnet": {
+      "label": "C# / .NET",
+      "languageFamily": "dotnet"
+    },
+    "python": {
+      "label": "Python",
+      "languageFamily": "python"
+    },
+    "rust": {
+      "label": "Rust",
+      "languageFamily": "rust"
+    },
+    "go": {
+      "label": "Go",
+      "languageFamily": "go"
+    }
+  },
+  "checklist": {
+    "core": [
+      {
+        "id": "gitignore-and-dockerignore",
+        "label": "Git and Docker Ignore Files",
+        "description": "Maintain proper .gitignore and .dockerignore files to prevent committing secrets, build artifacts, or unnecessary files.",
+        "enforcement": "required",
+        "severity": "error",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleConfigFiles": [".gitignore", ".dockerignore"],
+            "notes": "Use the official github/gitignore Node template as a base and add .env*, node_modules, dist/, coverage/, *.log, npm-debug.log*, etc. .dockerignore must exclude node_modules, .git, and local build output.",
+            "verification": ".gitignore must exist; .dockerignore is recommended when containerizing or using Docker workflows.",
+            "requiredFiles": [".gitignore"],
+            "optionalFiles": [".dockerignore"]
+          },
+          "csharp-dotnet": {
+            "exampleConfigFiles": [".gitignore", ".dockerignore"],
+            "notes": "Use the official github/gitignore VisualStudio/.NET template. .dockerignore must exclude bin/, obj/, .vs/, *.user, and similar local/build artifacts.",
+            "verification": ".gitignore must exist; .dockerignore is recommended when containerizing or using Docker workflows.",
+            "requiredFiles": [".gitignore"],
+            "optionalFiles": [".dockerignore"]
+          },
+          "python": {
+            "exampleConfigFiles": [".gitignore", ".dockerignore"],
+            "notes": "Use the official github/gitignore Python template. Include **pycache**, .venv/, .pytest_cache, .env, and similar local-only files. .dockerignore must exclude .git, virtual environments, and caches.",
+            "verification": ".gitignore must exist; .dockerignore is recommended when containerizing or using Docker workflows.",
+            "requiredFiles": [".gitignore"],
+            "optionalFiles": [".dockerignore"]
+          },
+          "rust": {
+            "exampleConfigFiles": [".gitignore", ".dockerignore"],
+            "notes": "Use the official github/gitignore Rust template. Exclude target/, Cargo.lock (for libraries), *.pdb, and similar build artifacts. .dockerignore must exclude target/, .git, and local development files.",
+            "verification": ".gitignore must exist; .dockerignore is recommended when containerizing or using Docker workflows.",
+            "requiredFiles": [".gitignore"],
+            "optionalFiles": [".dockerignore"]
+          },
+          "go": {
+            "exampleConfigFiles": [".gitignore", ".dockerignore"],
+            "notes": "Use the official github/gitignore Go template. Exclude vendor/ (if not vendoring), *.exe, *.test, *.out, and IDE-specific files. .dockerignore must exclude .git and local build output.",
+            "verification": ".gitignore must exist; .dockerignore is recommended when containerizing or using Docker workflows.",
+            "requiredFiles": [".gitignore"],
+            "optionalFiles": [".dockerignore"]
+          }
+        }
+      },
+      {
+        "id": "linting",
+        "label": "Linting",
+        "description": "Run static code linting to enforce consistency and catch common issues early.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["eslint"],
+            "exampleConfigFiles": [".eslintrc.*", "eslint.config.js"],
+            "notes": "Treat new lint errors as CI failures; keep existing issues as warnings until addressed.",
+            "verification": "Presence of eslint.config.js (or any .eslintrc* file) indicates linting is enforced for the repository.",
+            "anyOfFiles": [
+              "eslint.config.js",
+              "eslint.config.mjs",
+              "eslint.config.cjs",
+              ".eslintrc.js",
+              ".eslintrc.cjs",
+              ".eslintrc.json",
+              ".eslintrc.yaml",
+              ".eslintrc.yml"
+            ],
+            "optionalFiles": [
+              ".prettierrc",
+              "prettier.config.js",
+              "prettier.config.cjs",
+              "prettier.config.json",
+              "prettier.config.yaml"
+            ],
+            "requiredScripts": ["lint"],
+            "bazelHints": {
+              "commands": [
+                "bazel test //... --aspects=//tools:lint.bzl%eslint_aspect --output_groups=report"
+              ],
+              "recommendedTargets": ["//tools/lint:lint"],
+              "notes": "Example only; actual targets are repo-defined. Wrap eslint via aspect_rules_lint or a custom sh_test rule."
+            }
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["Roslyn analyzers", "StyleCop"],
+            "exampleConfigFiles": [".editorconfig", "Directory.Build.props"],
+            "notes": "Enable analyzers or style rules for the solution and review warnings regularly; enforce stricter rules on new code.",
+            "verification": ".editorconfig must exist to drive the .NET formatting and analysis tooling.",
+            "requiredFiles": [".editorconfig"],
+            "optionalFiles": ["Directory.Build.props"],
+            "bazelHints": {
+              "commands": [
+                "bazel build //... --aspects=@rules_dotnet//dotnet:analyzers.bzl%analyzer_aspect"
+              ],
+              "notes": "Example only; actual targets are repo-defined. Use rules_dotnet analyzer aspects for Roslyn-based linting."
+            }
+          },
+          "python": {
+            "exampleTools": ["ruff", "flake8"],
+            "exampleConfigFiles": ["pyproject.toml", ".flake8", "ruff.toml"],
+            "notes": "Configure a primary linter (such as ruff) and keep rules focused on catching real issues without overwhelming developers.",
+            "verification": "pyproject.toml (or ruff.toml / .flake8 / setup.cfg) signals that linting tools are configured for the repository.",
+            "anyOfFiles": [
+              "pyproject.toml",
+              "ruff.toml",
+              ".flake8",
+              "setup.cfg",
+              "tox.ini"
+            ],
+            "bazelHints": {
+              "commands": [
+                "bazel test //...:ruff_test",
+                "bazel run //tools/lint:ruff -- check ."
+              ],
+              "notes": "Example only; actual targets are repo-defined. Use rules_python with ruff wrapped as py_test or run target."
+            }
+          },
+          "rust": {
+            "exampleTools": ["clippy", "cargo-clippy"],
+            "exampleConfigFiles": ["clippy.toml", ".clippy.toml"],
+            "notes": "Use Clippy for comprehensive Rust linting. Configure via clippy.toml for project-specific rules. Treat warnings as errors in CI with -D warnings.",
+            "verification": "Clippy is available via rustup component. Run 'cargo clippy' to verify linting is configured.",
+            "requiredFiles": ["Cargo.toml"],
+            "optionalFiles": ["clippy.toml", ".clippy.toml"],
+            "bazelHints": {
+              "commands": [
+                "bazel build //... --aspects=@rules_rust//rust:defs.bzl%clippy_aspect --output_groups=clippy_checks"
+              ],
+              "notes": "Example only; actual targets are repo-defined. rules_rust includes clippy_aspect for Bazel-native Clippy linting."
+            }
+          },
+          "go": {
+            "exampleTools": ["golangci-lint", "staticcheck"],
+            "exampleConfigFiles": [".golangci.yml", ".golangci.yaml"],
+            "notes": "Use golangci-lint as the primary linter aggregator. Configure enabled linters in .golangci.yml for consistent team-wide enforcement.",
+            "verification": ".golangci.yml or .golangci.yaml indicates linting is configured. Run 'golangci-lint run' to verify.",
+            "requiredFiles": ["go.mod"],
+            "optionalFiles": [".golangci.yml", ".golangci.yaml"],
+            "bazelHints": {
+              "commands": [
+                "bazel test //... --@io_bazel_rules_go//go/config:nogo=@//:nogo"
+              ],
+              "notes": "Use nogo for static analysis via rules_go. Configure nogo target with desired analyzers."
+            }
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "unit-test-runner",
+        "label": "Unit Test Runner",
+        "description": "Provide a deterministic unit test framework with a single command to run all tests.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "test"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["jest"],
+            "exampleConfigFiles": ["jest.config.*"],
+            "notes": "Keep unit tests fast and deterministic; move slow or flaky tests into integration or E2E suites.",
+            "verification": "Test framework configuration is present; test script is defined in package.json.",
+            "optionalFiles": [
+              "jest.config.js",
+              "jest.config.ts",
+              "vitest.config.js",
+              "vitest.config.ts"
+            ],
+            "requiredScripts": ["test"],
+            "bazelHints": {
+              "commands": ["bazel test //..."],
+              "notes": "Bazel discovers and runs all test targets. Use rules_js for Jest/Vitest integration."
+            }
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["xUnit", "NUnit", "MSTest"],
+            "exampleConfigFiles": ["*.Tests.csproj"],
+            "notes": "Group unit tests into dedicated test projects and keep them independent from external services.",
+            "verification": "Test projects are present in the solution; test configuration is defined.",
+            "optionalFiles": ["*.Tests.csproj"],
+            "bazelHints": {
+              "commands": ["bazel test //..."],
+              "notes": "Use rules_dotnet to define test targets for xUnit/NUnit/MSTest projects."
+            }
+          },
+          "python": {
+            "exampleTools": ["pytest"],
+            "exampleConfigFiles": ["pytest.ini", "pyproject.toml"],
+            "notes": "Organize unit tests under a tests/ directory and avoid real network or database calls in this layer.",
+            "verification": "Test framework configuration is present; tests/ directory or pytest configuration exists.",
+            "optionalFiles": ["pytest.ini", "pyproject.toml", "tests/"],
+            "bazelHints": {
+              "commands": ["bazel test //..."],
+              "notes": "Example only; actual targets are repo-defined. Use rules_python py_test for pytest-based tests."
+            }
+          },
+          "rust": {
+            "exampleTools": ["cargo test"],
+            "exampleConfigFiles": ["Cargo.toml"],
+            "notes": "Use cargo test as the built-in test runner. Organize tests in tests/ directory for integration tests and inline #[test] functions for unit tests.",
+            "verification": "Run 'cargo test' to verify the test suite is configured and passing.",
+            "requiredFiles": ["Cargo.toml"],
+            "optionalFiles": ["tests/"],
+            "bazelHints": {
+              "commands": ["bazel test //..."],
+              "notes": "rules_rust rust_test targets run cargo test under Bazel's hermetic environment."
+            }
+          },
+          "go": {
+            "exampleTools": ["go test"],
+            "exampleConfigFiles": ["go.mod"],
+            "notes": "Use 'go test ./...' to run all tests. Place test files alongside source files with _test.go suffix. Keep unit tests fast and isolated.",
+            "verification": "Run 'go test ./...' to verify the test suite is configured and passing.",
+            "requiredFiles": ["go.mod"],
+            "optionalFiles": [],
+            "bazelHints": {
+              "commands": ["bazel test //..."],
+              "notes": "rules_go go_test targets wrap 'go test' with Bazel's caching and hermeticity."
+            }
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "containerization",
+        "label": "Containerization (Docker / Docker Compose)",
+        "description": "Provide a Dockerfile and, if applicable, a docker-compose file for local dev and CI parity.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "build"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": [],
+            "exampleConfigFiles": ["Dockerfile", "docker-compose.yml"],
+            "notes": "Use multi-stage builds and pin Node.js and base image versions in the Dockerfile to match CI (e.g., node:22-alpine).",
+            "verification": "Dockerfile must be present; docker-compose.yml is optional and indicates orchestration usage.",
+            "requiredFiles": ["Dockerfile"],
+            "optionalFiles": ["docker-compose.yml"]
+          },
+          "csharp-dotnet": {
+            "exampleTools": [],
+            "exampleConfigFiles": ["Dockerfile", "docker-compose.yml"],
+            "notes": "Use multi-stage builds for .NET publish output and pin the SDK/runtime image versions to match CI.",
+            "verification": "Dockerfile must be present; docker-compose.yml is optional and indicates orchestration usage.",
+            "requiredFiles": ["Dockerfile"],
+            "optionalFiles": ["docker-compose.yml"]
+          },
+          "python": {
+            "exampleTools": [],
+            "exampleConfigFiles": ["Dockerfile", "docker-compose.yml"],
+            "notes": "Choose a slim Python base image, pin the version, and clearly document how to start the service in a container.",
+            "verification": "Dockerfile must be present; docker-compose.yml is optional and indicates orchestration usage.",
+            "requiredFiles": ["Dockerfile"],
+            "optionalFiles": ["docker-compose.yml"]
+          },
+          "rust": {
+            "exampleTools": [],
+            "exampleConfigFiles": ["Dockerfile", "docker-compose.yml"],
+            "notes": "Use multi-stage builds: builder stage with rust:alpine for compiling, then copy binary to distroless or alpine for minimal runtime image. Pin Rust version via rust-toolchain.toml.",
+            "verification": "Dockerfile must be present; docker-compose.yml is optional and indicates orchestration usage.",
+            "requiredFiles": ["Dockerfile"],
+            "optionalFiles": ["docker-compose.yml"]
+          },
+          "go": {
+            "exampleTools": [],
+            "exampleConfigFiles": ["Dockerfile", "docker-compose.yml"],
+            "notes": "Use multi-stage builds: builder stage with golang:alpine, then copy binary to scratch or distroless for minimal runtime. Set CGO_ENABLED=0 for static binaries.",
+            "verification": "Dockerfile must be present; docker-compose.yml is optional and indicates orchestration usage.",
+            "requiredFiles": ["Dockerfile"],
+            "optionalFiles": ["docker-compose.yml"]
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "semantic-versioning",
+        "label": "Semantic Versioning",
+        "description": "Use MAJOR.MINOR.PATCH versioning with clear rules and automated changelog generation based on commit history.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "release"
+          },
+          "github-actions": {
+            "job": "release"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["semantic-release", "standard-version"],
+            "exampleConfigFiles": [
+              ".releaserc",
+              "package.json",
+              "CHANGELOG.md"
+            ],
+            "notes": "Automate version bumping and changelog generation from Conventional Commits using semantic-release or standard-version. Configure CI to automatically bump package.json version, generate/update CHANGELOG.md, create git tags, and publish release artifacts. Protect release branches and ensure release tooling only runs there.",
+            "verification": "Check that the version field follows SemVer, and trigger the configured release workflow (for example, a dry run of semantic-release or standard-version) to confirm it automatically generates the expected next version, updates package.json, and creates/updates CHANGELOG.md with commit-based entries."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["GitVersion"],
+            "exampleConfigFiles": [
+              "GitVersion.yml",
+              "*.csproj",
+              "CHANGELOG.md"
+            ],
+            "notes": "Use GitVersion to automatically compute SemVer from git history and feed it into assembly/package versions. Configure CI to auto-generate or update CHANGELOG.md from commit messages and git tags. Integrate with release pipeline to automatically version assemblies, NuGet packages, and create release notes.",
+            "verification": "Check that versioning is driven by a SemVer-aware tool (for example, GitVersion) and verify that running the release/versioning step locally or in CI automatically produces the expected version metadata, updates project files, and generates changelog entries from commit history."
+          },
+          "python": {
+            "exampleTools": ["bumpversion", "setuptools_scm", "towncrier"],
+            "exampleConfigFiles": [
+              "pyproject.toml",
+              "setup.cfg",
+              "CHANGELOG.md"
+            ],
+            "notes": "Automate version bumping and changelog generation using setuptools_scm (git-tag based) or bumpversion with towncrier for changelog fragments. Configure CI to automatically update version in pyproject.toml, generate/update CHANGELOG.md from commit messages or changelog fragments, and create git tags. Maintain a single source of truth for versioning.",
+            "verification": "Check that the package version in pyproject or setup configuration follows SemVer and verify that the configured tool (for example, setuptools_scm or bumpversion) automatically computes or bumps the version and generates changelog entries from commit history or fragments."
+          },
+          "rust": {
+            "exampleTools": ["cargo-release", "semantic-release"],
+            "exampleConfigFiles": ["Cargo.toml", "CHANGELOG.md"],
+            "notes": "Version is defined in Cargo.toml. Use cargo-release or semantic-release-cargo for automated versioning. Follow Conventional Commits for changelog generation.",
+            "verification": "Check that Cargo.toml version follows SemVer and verify changelog generation from commit history."
+          },
+          "go": {
+            "exampleTools": ["goreleaser", "semantic-release"],
+            "exampleConfigFiles": [".goreleaser.yml", "CHANGELOG.md"],
+            "notes": "Go uses git tags for versioning (v1.2.3 format). Use goreleaser for automated releases with changelog generation. Tag versions consistently.",
+            "verification": "Check that git tags follow vMAJOR.MINOR.PATCH format and goreleaser or similar tool generates releases and changelogs."
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "commit-linting",
+        "label": "Commit Linting",
+        "description": "Enforce structured commit messages such as Conventional Commits.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": [
+              "@commitlint/cli",
+              "@commitlint/config-conventional"
+            ],
+            "exampleConfigFiles": ["commitlint.config.*"],
+            "notes": "Enforce commit message format via commit-msg hooks (e.g., Husky) before CI.",
+            "verification": "Create a test commit using the documented convention and ensure the commit message passes the configured commit linting or wizard (for example, commitlint or commitizen)."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["commitlint", "commitizen"],
+            "exampleConfigFiles": ["commitlint.config.*", ".cz.toml"],
+            "notes": "Document your commit convention and wire up a helper tool so contributors can easily follow it.",
+            "verification": "Create a test commit following the documented commit convention and confirm that any configured commit message checks (local hooks or CI) accept the message."
+          },
+          "python": {
+            "exampleTools": ["commitizen"],
+            "exampleConfigFiles": [".cz.toml", "pyproject.toml"],
+            "notes": "Standardize commit messages using commitizen or a similar helper and document the required types and scopes.",
+            "verification": "Use the configured commit helper (for example, commitizen) or hooks to create a test commit and confirm that non-conforming messages are rejected while valid ones are accepted."
+          },
+          "rust": {
+            "exampleTools": ["commitlint", "commitizen"],
+            "exampleConfigFiles": ["commitlint.config.js", ".cz.toml"],
+            "notes": "Use commitlint with husky or pre-commit for enforcing Conventional Commits. Works consistently with cargo workspaces.",
+            "verification": "Test that non-conforming commit messages are rejected by the configured hooks or CI check."
+          },
+          "go": {
+            "exampleTools": ["commitlint", "commitizen"],
+            "exampleConfigFiles": ["commitlint.config.js", ".cz.toml"],
+            "notes": "Use commitlint with pre-commit hooks for enforcing Conventional Commits. Consistent with goreleaser changelog generation.",
+            "verification": "Test that non-conforming commit messages are rejected by the configured hooks or CI check."
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "unit-test-reporter",
+        "label": "Unit Test Reporter / Coverage",
+        "description": "Generate readable unit test and coverage reports and enforce a minimum coverage threshold (around 80%) for new or changed code.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "test"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["jest", "nyc"],
+            "exampleConfigFiles": ["jest.config.*"],
+            "notes": "Collect coverage in lcov or similar format; use diff coverage so legacy gaps are visible but non-blocking.",
+            "verification": "Run the unit tests with coverage enabled and confirm that a coverage report is produced and that the configured threshold (around 80%) is enforced for new changes.",
+            "bazelHints": {
+              "commands": ["bazel coverage //..."],
+              "notes": "Bazel coverage collects coverage data from all test targets. Use --combined_report=lcov for aggregated reports."
+            }
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["coverlet", "ReportGenerator"],
+            "exampleConfigFiles": ["*.csproj"],
+            "notes": "Enable coverage collection for test projects and publish reports in a human-friendly format from CI.",
+            "verification": "Run the test suite with coverage enabled (for example, using coverlet or a similar tool) and verify that coverage reports are generated and used in CI to monitor thresholds.",
+            "bazelHints": {
+              "commands": ["bazel coverage //..."],
+              "notes": "Use rules_dotnet with coverage instrumentation enabled."
+            }
+          },
+          "python": {
+            "exampleTools": ["pytest", "pytest-cov", "coverage.py"],
+            "exampleConfigFiles": ["pytest.ini", "pyproject.toml"],
+            "notes": "Configure coverage reporting for your test suite and surface summary metrics in CI.",
+            "verification": "Run the unit tests with coverage (for example, pytest with pytest-cov) and confirm that coverage reports are generated and referenced in CI to enforce or track thresholds.",
+            "bazelHints": {
+              "commands": ["bazel coverage //..."],
+              "notes": "Use rules_python py_test with coverage instrumentation. Combine with --combined_report=lcov."
+            }
+          },
+          "rust": {
+            "exampleTools": ["cargo-tarpaulin", "llvm-cov", "grcov"],
+            "exampleConfigFiles": ["Cargo.toml"],
+            "notes": "Use cargo-tarpaulin or llvm-cov for code coverage. Generate lcov or cobertura reports for CI integration.",
+            "verification": "Run 'cargo tarpaulin' or equivalent and verify coverage reports are generated and thresholds enforced.",
+            "bazelHints": {
+              "commands": ["bazel coverage //..."],
+              "notes": "Bazel coverage with rules_rust requires LLVM instrumentation. May need additional toolchain configuration."
+            }
+          },
+          "go": {
+            "exampleTools": ["go test -cover", "go tool cover"],
+            "exampleConfigFiles": ["go.mod"],
+            "notes": "Use 'go test -coverprofile=coverage.out ./...' for coverage. Generate HTML or integrate with codecov/coveralls.",
+            "verification": "Run 'go test -cover ./...' and verify coverage reports are produced and thresholds monitored.",
+            "bazelHints": {
+              "commands": ["bazel coverage //..."],
+              "notes": "rules_go supports coverage via bazel coverage. Use --combined_report=lcov for aggregated output."
+            }
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "ci-quality-gates",
+        "label": "CI Quality Gates",
+        "description": "Single CI pipeline that runs linting, formatting, type checking, tests, coverage, build, and containerization.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "ci"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              ".github/workflows/*",
+              "azure-pipelines.yml"
+            ],
+            "notes": "Expose a single npm script (e.g., `npm run ci`) that mirrors the CI pipeline so contributors can reproduce failures locally.",
+            "verification": "Open the CI configuration and verify there is a job or stage that runs linting, type checking, tests, build, and any required container checks before merging to main.",
+            "bazelHints": {
+              "commands": ["bazel build //...", "bazel test //..."],
+              "notes": "Replace npm run ci with Bazel commands. All quality gates run as Bazel targets."
+            }
+          },
+          "csharp-dotnet": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              ".github/workflows/*",
+              "azure-pipelines.yml"
+            ],
+            "notes": "Ensure CI runs analyzers, tests, build, and packaging or container checks before changes can be merged.",
+            "verification": "Open the CI configuration and verify there is a job or stage that runs analyzers, tests, build, and any required packaging or container checks before merging to main.",
+            "bazelHints": {
+              "commands": ["bazel build //...", "bazel test //..."],
+              "notes": "Bazel handles all analysis, testing, and packaging via defined targets."
+            }
+          },
+          "python": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              ".github/workflows/*",
+              "azure-pipelines.yml"
+            ],
+            "notes": "Ensure CI runs linting, type checking (if used), tests, and packaging or container checks for Python services before merging.",
+            "verification": "Open the CI configuration and verify there is a job or stage that runs linting, type checking (if used), tests, and any packaging or container checks before merging to main.",
+            "bazelHints": {
+              "commands": ["bazel build //...", "bazel test //..."],
+              "notes": "Bazel py_binary and py_test targets replace traditional Python tooling."
+            }
+          },
+          "rust": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              ".github/workflows/*",
+              "azure-pipelines.yml"
+            ],
+            "notes": "Use 'cargo clippy', 'cargo test', 'cargo build --release' as quality gates. Consider cargo-deny for dependency auditing.",
+            "verification": "Verify CI runs cargo clippy, cargo test, and cargo build before merging to main.",
+            "bazelHints": {
+              "commands": ["bazel build //...", "bazel test //..."],
+              "notes": "rules_rust provides rust_library, rust_test, and clippy_aspect for complete CI."
+            }
+          },
+          "go": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              ".github/workflows/*",
+              "azure-pipelines.yml"
+            ],
+            "notes": "Run 'golangci-lint run', 'go test ./...', 'go build' as quality gates. Use govulncheck for security scanning.",
+            "verification": "Verify CI runs golangci-lint, go test, and go build before merging to main.",
+            "bazelHints": {
+              "commands": ["bazel build //...", "bazel test //..."],
+              "notes": "rules_go go_binary and go_test targets provide hermetic builds and tests."
+            }
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "code-formatter",
+        "label": "Code Formatter",
+        "description": "Automatic code formatting to maintain a consistent style across all contributors.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["prettier"],
+            "exampleConfigFiles": [".prettierrc.*", ".prettierignore"],
+            "notes": "Run Prettier in check mode in CI; auto-fix locally via pre-commit hooks or editor integration.",
+            "verification": "Run the formatter in check mode (for example, `npm run format:check`) and confirm it reports clean formatting on committed code and auto-fixes as expected locally.",
+            "bazelHints": {
+              "commands": [
+                "bazel run //tools/format:check",
+                "bazel test //...:format_test"
+              ],
+              "notes": "Wrap Prettier as a run target for formatting checks. Use aspect_rules_lint for format aspects."
+            }
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["dotnet format"],
+            "exampleConfigFiles": [".editorconfig"],
+            "notes": "Use .editorconfig and dotnet-format to keep C# style consistent across contributors.",
+            "verification": "Run the configured formatter or code style enforcement (for example, `dotnet format`) and confirm that code in the repository conforms to the defined rules.",
+            "bazelHints": {
+              "commands": [
+                "bazel run //tools/format:dotnet_format -- --verify-no-changes"
+              ],
+              "notes": "Wrap dotnet format as a Bazel run target."
+            }
+          },
+          "python": {
+            "exampleTools": ["black"],
+            "exampleConfigFiles": ["pyproject.toml"],
+            "notes": "Use black (or an equivalent opinionated formatter) and treat its output as the single source of truth for code style.",
+            "verification": "Run the configured formatter (for example, `black .` or `black --check .`) and confirm it reports clean formatting on committed code and auto-fixes as expected locally.",
+            "bazelHints": {
+              "commands": ["bazel run //tools/format:black -- --check ."],
+              "notes": "Wrap black as a py_binary run target for format checking."
+            }
+          },
+          "rust": {
+            "exampleTools": ["rustfmt"],
+            "exampleConfigFiles": ["rustfmt.toml", ".rustfmt.toml"],
+            "notes": "Use rustfmt (via 'cargo fmt') as the standard formatter. Configure via rustfmt.toml. Run 'cargo fmt --check' in CI.",
+            "verification": "Run 'cargo fmt --check' and confirm it reports clean formatting. Use 'cargo fmt' to auto-fix.",
+            "bazelHints": {
+              "commands": [
+                "bazel build //... --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect --output_groups=rustfmt_checks"
+              ],
+              "notes": "rules_rust includes rustfmt_aspect for Bazel-native format checking."
+            }
+          },
+          "go": {
+            "exampleTools": ["gofmt", "goimports"],
+            "exampleConfigFiles": [],
+            "notes": "Use gofmt (built-in) for formatting. goimports extends gofmt with import organization. Formatting is enforced by convention.",
+            "verification": "Run 'gofmt -d .' or 'goimports -d .' and confirm no output indicates clean formatting.",
+            "bazelHints": {
+              "commands": ["bazel run @go_sdk//:bin/gofmt -- -d ."],
+              "notes": "Run gofmt via the Bazel-managed Go SDK for hermetic formatting checks."
+            }
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "pre-commit-hooks",
+        "label": "Pre-Commit Hooks",
+        "description": "Use git hooks to run linting, formatting, tests, and commit linting before changes are committed.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["husky", "lint-staged"],
+            "exampleConfigFiles": [".husky/", "package.json"],
+            "notes": "Run ESLint and Prettier on staged files and enforce commit message format via commit-msg hooks.",
+            "verification": "Inspect the pre-commit and commit-msg hooks (for example, files under .husky or other hook tooling) and confirm they run linting/formatting and commit linting on staged changes."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["Lefthook"],
+            "exampleConfigFiles": ["lefthook.yml"],
+            "notes": "Configure Lefthook or similar to run formatting and basic checks on staged files before commits.",
+            "verification": "Inspect the hook configuration (for example, Lefthook or similar) and confirm it runs at least formatting and basic checks on staged changes before commits or pushes."
+          },
+          "python": {
+            "exampleTools": ["pre-commit"],
+            "exampleConfigFiles": [".pre-commit-config.yaml"],
+            "notes": "Use pre-commit to run ruff, black, and optionally mypy on staged files before committing.",
+            "verification": "Inspect .pre-commit-config.yaml and confirm that hooks for linting, formatting, and optionally type checking are enabled and run on changed files before commits."
+          },
+          "rust": {
+            "exampleTools": ["pre-commit", "cargo-husky"],
+            "exampleConfigFiles": [".pre-commit-config.yaml"],
+            "notes": "Use pre-commit with rust hooks for cargo fmt and cargo clippy on staged files. cargo-husky is an alternative.",
+            "verification": "Inspect .pre-commit-config.yaml and confirm that hooks run cargo fmt --check and cargo clippy before commits."
+          },
+          "go": {
+            "exampleTools": ["pre-commit", "lefthook"],
+            "exampleConfigFiles": [".pre-commit-config.yaml", "lefthook.yml"],
+            "notes": "Use pre-commit with go hooks for gofmt, goimports, and golangci-lint on staged files.",
+            "verification": "Inspect hooks configuration and confirm that go fmt and golangci-lint run before commits."
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "type-checking",
+        "label": "Type Checking",
+        "description": "Use static type checking to catch errors before runtime and enforce strictness on new code.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["TypeScript compiler (tsc)"],
+            "exampleConfigFiles": ["tsconfig.json"],
+            "notes": "Enable strict mode ('strict': true) and treat type-check failures as CI failures for new code; gradually expand strictness into legacy modules.",
+            "verification": "Presence of tsconfig.json indicates type-checking is configured for the repository.",
+            "requiredFiles": ["tsconfig.json"],
+            "requiredScripts": ["typecheck"],
+            "bazelHints": {
+              "commands": ["bazel build //..."],
+              "notes": "TypeScript type errors surface during bazel build with rules_ts. No separate typecheck step needed."
+            }
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["Roslyn analyzers"],
+            "exampleConfigFiles": [
+              ".editorconfig",
+              "Directory.Build.props",
+              "*.csproj"
+            ],
+            "notes": "Enable nullable reference types and relevant analyzers to catch type and nullability issues at compile time. C# project files (*.csproj) indicate the presence of projects that can be type-checked.",
+            "verification": ".editorconfig must exist; Directory.Build.props is optional for shared build configuration.",
+            "requiredFiles": [".editorconfig"],
+            "optionalFiles": ["Directory.Build.props"],
+            "bazelHints": {
+              "commands": ["bazel build //..."],
+              "notes": "Example only; actual targets are repo-defined. C# type errors surface during bazel build with rules_dotnet."
+            }
+          },
+          "python": {
+            "exampleTools": ["mypy"],
+            "exampleConfigFiles": ["mypy.ini", "pyproject.toml"],
+            "notes": "Adopt gradual typing with type hints and mypy, focusing first on critical modules and new code paths.",
+            "verification": "pyproject.toml (or mypy.ini) signals that mypy configuration is available for the repository.",
+            "requiredFiles": ["pyproject.toml"],
+            "optionalFiles": ["mypy.ini"],
+            "bazelHints": {
+              "commands": [
+                "bazel test //...:mypy_test",
+                "bazel run //tools/typecheck:mypy"
+              ],
+              "notes": "Example only; actual targets are repo-defined. Wrap mypy as a py_test or run target."
+            }
+          },
+          "rust": {
+            "exampleTools": ["rustc (built-in)"],
+            "exampleConfigFiles": ["Cargo.toml"],
+            "notes": "Rust has compile-time type checking built into the language. The borrow checker enforces memory safety. No additional tooling needed for type safety.",
+            "verification": "Run 'cargo check' or 'cargo build' to verify type correctness. All Rust code is type-checked by default.",
+            "requiredFiles": ["Cargo.toml"],
+            "bazelHints": {
+              "commands": ["bazel build //..."],
+              "notes": "Rust type checking is inherent to compilation. bazel build with rules_rust enforces type safety."
+            }
+          },
+          "go": {
+            "exampleTools": ["go vet", "staticcheck"],
+            "exampleConfigFiles": ["go.mod"],
+            "notes": "Go has compile-time type checking built in. Use 'go vet' for additional static analysis. staticcheck provides enhanced type-related checks.",
+            "verification": "Run 'go build ./...' to verify type correctness. Use 'go vet ./...' for additional static analysis.",
+            "requiredFiles": ["go.mod"],
+            "bazelHints": {
+              "commands": ["bazel build //..."],
+              "notes": "Go type checking is inherent to compilation. bazel build with rules_go enforces type safety."
+            }
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "dependency-security",
+        "label": "Dependency Management & Vulnerability Scanning",
+        "description": "Lock dependencies and scan regularly for known vulnerabilities; fail CI on newly introduced high-severity issues.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["npm audit", "Snyk"],
+            "exampleConfigFiles": [
+              "package-lock.json",
+              "pnpm-lock.yaml",
+              "yarn.lock"
+            ],
+            "notes": "Require a lockfile for reproducible installs and pin Node.js/tooling versions; block merges on new high-severity vulnerabilities.",
+            "verification": "Dependency lockfile is present; security scanning is configured in CI or project tooling.",
+            "optionalFiles": [
+              "package-lock.json",
+              "pnpm-lock.yaml",
+              "yarn.lock"
+            ]
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["dotnet list package --vulnerable"],
+            "exampleConfigFiles": ["packages.lock.json", "*.csproj"],
+            "notes": "Enable package lock files and use vulnerability scanning to track and remediate high-risk dependencies.",
+            "verification": "Dependency lockfile or package reference is present; security scanning is configured.",
+            "optionalFiles": ["packages.lock.json"]
+          },
+          "python": {
+            "exampleTools": ["pip-audit", "safety"],
+            "exampleConfigFiles": [
+              "requirements.txt",
+              "Pipfile.lock",
+              "poetry.lock"
+            ],
+            "notes": "Pin dependency versions and routinely scan for vulnerabilities, prioritizing fixes for critical and high-severity issues.",
+            "verification": "Dependency lockfile is present; security scanning is configured in CI or project tooling.",
+            "optionalFiles": ["requirements.txt", "Pipfile.lock", "poetry.lock"]
+          },
+          "rust": {
+            "exampleTools": ["cargo-audit", "cargo-deny"],
+            "exampleConfigFiles": ["Cargo.lock", "deny.toml"],
+            "notes": "Use cargo-audit for vulnerability scanning or cargo-deny for comprehensive dependency checking (licenses, advisories, bans). Cargo.lock locks versions.",
+            "verification": "Cargo.lock is present; run 'cargo audit' or 'cargo deny check' to verify security scanning.",
+            "optionalFiles": ["deny.toml"],
+            "anyOfFiles": ["Cargo.lock"],
+            "pinningNotes": "Required for binaries/services; optional for libraries (add to .gitignore for libs). See https://doc.rust-lang.org/cargo/faq.html#why-have-cargolock-in-version-control"
+          },
+          "go": {
+            "exampleTools": ["govulncheck", "nancy"],
+            "exampleConfigFiles": ["go.sum"],
+            "notes": "Use govulncheck (official Go tool) for vulnerability scanning. go.sum locks dependency checksums for reproducible builds.",
+            "verification": "go.sum is present; run 'govulncheck ./...' to verify security scanning.",
+            "requiredFiles": ["go.sum"]
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "runtime-version",
+        "label": "Runtime Version Specification",
+        "description": "Specify required runtime/engine versions in package manifests to ensure environment stability and prevent version-related issues across development teams.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": [],
+            "exampleConfigFiles": ["package.json"],
+            "notes": "Specify the 'engines' field in package.json to define the required Node.js version (e.g., \"engines\": { \"node\": \">=18.0.0\" }). This helps prevent environment-related bugs and ensures all developers use compatible Node.js versions.",
+            "verification": "package.json must contain an 'engines' field specifying the required Node.js version.",
+            "requiredFiles": ["package.json"]
+          },
+          "csharp-dotnet": {
+            "exampleTools": [],
+            "exampleConfigFiles": ["*.csproj", "global.json"],
+            "notes": "Specify TargetFramework in .csproj files (e.g., <TargetFramework>net8.0</TargetFramework>) and optionally use global.json to pin the SDK version (e.g., { \"sdk\": { \"version\": \"8.0.100\" } }) for consistent builds across the team.",
+            "verification": ".csproj files must specify TargetFramework; global.json is recommended to pin SDK version.",
+            "optionalFiles": ["global.json"]
+          },
+          "python": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              "pyproject.toml",
+              "setup.py",
+              ".python-version"
+            ],
+            "notes": "Specify python_requires in pyproject.toml (e.g., requires-python = \">=3.9\") or setup.py (e.g., python_requires='>=3.9'). Consider adding .python-version for pyenv users to automatically switch to the correct Python version.",
+            "verification": "pyproject.toml or setup.py must specify python_requires; .python-version is recommended for local development.",
+            "requiredFiles": ["pyproject.toml"],
+            "optionalFiles": [".python-version"]
+          },
+          "rust": {
+            "exampleTools": [],
+            "exampleConfigFiles": ["rust-toolchain.toml", "rust-toolchain"],
+            "notes": "Use rust-toolchain.toml to pin the Rust version (e.g., channel = 'stable' or specific version '1.75.0'). This ensures consistent builds across the team via rustup.",
+            "verification": "rust-toolchain.toml or rust-toolchain file specifies the required Rust version.",
+            "optionalFiles": ["rust-toolchain.toml", "rust-toolchain"]
+          },
+          "go": {
+            "exampleTools": [],
+            "exampleConfigFiles": ["go.mod", ".go-version"],
+            "notes": "Specify 'go' directive in go.mod (e.g., go 1.21) to set minimum Go version. Consider .go-version for goenv users.",
+            "verification": "go.mod must contain 'go' directive specifying minimum version; .go-version is optional for local development.",
+            "requiredFiles": ["go.mod"],
+            "optionalFiles": [".go-version"]
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "documentation",
+        "label": "Documentation Standards",
+        "description": "Maintain a comprehensive README and, where applicable, auto-generated API docs to support onboarding and maintainability.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "docs"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["JSDoc", "TypeDoc"],
+            "exampleConfigFiles": ["README.md", "docs/"],
+            "notes": "README should describe setup, scripts, and architecture; generate API docs from TypeScript types and JSDoc where helpful.",
+            "verification": "README.md is present in the repository root; docs/ directory or documentation tooling configuration exists if applicable.",
+            "requiredFiles": ["README.md"],
+            "optionalFiles": ["docs/", "typedoc.json"]
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["DocFX"],
+            "exampleConfigFiles": ["README.md", "docfx.json"],
+            "notes": "Keep README and API docs in sync with the solution structure and public surface area.",
+            "verification": "README.md is present in the repository root; docs/ directory or DocFX configuration exists if applicable.",
+            "requiredFiles": ["README.md"],
+            "optionalFiles": ["docs/", "docfx.json"]
+          },
+          "python": {
+            "exampleTools": ["Sphinx", "MkDocs"],
+            "exampleConfigFiles": ["README.md", "docs/"],
+            "notes": "Ensure README explains environment setup and core commands, and generate API docs from docstrings where appropriate.",
+            "verification": "README.md is present in the repository root; docs/ directory or documentation tooling configuration exists if applicable.",
+            "requiredFiles": ["README.md"],
+            "optionalFiles": ["docs/", "mkdocs.yml"]
+          },
+          "rust": {
+            "exampleTools": ["rustdoc", "mdBook"],
+            "exampleConfigFiles": ["README.md", "docs/"],
+            "notes": "Use rustdoc (via 'cargo doc') for API documentation from doc comments. Consider mdBook for user guides and tutorials.",
+            "verification": "README.md is present; run 'cargo doc' to generate API docs.",
+            "requiredFiles": ["README.md"],
+            "optionalFiles": ["docs/", "book.toml"]
+          },
+          "go": {
+            "exampleTools": ["godoc", "pkgsite"],
+            "exampleConfigFiles": ["README.md", "docs/"],
+            "notes": "Use godoc or pkgsite for API documentation from code comments. Follow Go documentation conventions.",
+            "verification": "README.md is present; documentation comments exist in exported functions/types.",
+            "requiredFiles": ["README.md"],
+            "optionalFiles": ["docs/"]
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      },
+      {
+        "id": "repository-governance",
+        "label": "Repository Governance",
+        "description": "Include standard governance files (LICENSE, CODE_OF_CONDUCT.md, CONTRIBUTING.md), branch protection rules, and review standards to define legal, ethical, and workflow expectations.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "governance"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              "LICENSE",
+              "CODE_OF_CONDUCT.md",
+              "CONTRIBUTING.md"
+            ],
+            "notes": "Use an SPDX license identifier in package.json and describe review expectations, tests, and docs requirements in CONTRIBUTING.md.",
+            "verification": "LICENSE file is present in the repository root; CODE_OF_CONDUCT.md and CONTRIBUTING.md are present for contribution guidance.",
+            "requiredFiles": ["LICENSE"],
+            "optionalFiles": ["CODE_OF_CONDUCT.md", "CONTRIBUTING.md"]
+          },
+          "csharp-dotnet": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              "LICENSE",
+              "CODE_OF_CONDUCT.md",
+              "CONTRIBUTING.md"
+            ],
+            "notes": "Document contribution expectations and ensure legal and code-of-conduct policies are easy to find.",
+            "verification": "LICENSE file is present in the repository root; CODE_OF_CONDUCT.md and CONTRIBUTING.md are present for contribution guidance.",
+            "requiredFiles": ["LICENSE"],
+            "optionalFiles": ["CODE_OF_CONDUCT.md", "CONTRIBUTING.md"]
+          },
+          "python": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              "LICENSE",
+              "CODE_OF_CONDUCT.md",
+              "CONTRIBUTING.md"
+            ],
+            "notes": "Spell out contributor responsibilities for tests, documentation, and review so expectations are clear for Python-focused teams.",
+            "verification": "LICENSE file is present in the repository root; CODE_OF_CONDUCT.md and CONTRIBUTING.md are present for contribution guidance.",
+            "requiredFiles": ["LICENSE"],
+            "optionalFiles": ["CODE_OF_CONDUCT.md", "CONTRIBUTING.md"]
+          },
+          "rust": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              "LICENSE",
+              "CODE_OF_CONDUCT.md",
+              "CONTRIBUTING.md"
+            ],
+            "notes": "Include license in Cargo.toml metadata. Document cargo workspace conventions and testing requirements in CONTRIBUTING.md.",
+            "verification": "LICENSE file is present; CODE_OF_CONDUCT.md and CONTRIBUTING.md provide contribution guidance.",
+            "requiredFiles": ["LICENSE"],
+            "optionalFiles": ["CODE_OF_CONDUCT.md", "CONTRIBUTING.md"]
+          },
+          "go": {
+            "exampleTools": [],
+            "exampleConfigFiles": [
+              "LICENSE",
+              "CODE_OF_CONDUCT.md",
+              "CONTRIBUTING.md"
+            ],
+            "notes": "Include license identifier in go.mod comments if needed. Document Go module conventions and testing requirements in CONTRIBUTING.md.",
+            "verification": "LICENSE file is present; CODE_OF_CONDUCT.md and CONTRIBUTING.md provide contribution guidance.",
+            "requiredFiles": ["LICENSE"],
+            "optionalFiles": ["CODE_OF_CONDUCT.md", "CONTRIBUTING.md"]
+          }
+        },
+        "enforcement": "required",
+        "severity": "error"
+      }
+    ],
+    "recommended": [
+      {
+        "id": "dependency-update-automation",
+        "label": "Dependency Update Automation",
+        "description": "Automate dependency updates using Renovate or Dependabot to keep dependencies current and reduce security exposure window.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality",
+            "notes": "CI hints are suggested mappings; adjust to your pipeline topology."
+          },
+          "github-actions": {
+            "job": "ci",
+            "notes": "CI hints are suggested mappings; adjust to your workflow structure."
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["renovate", "dependabot"],
+            "exampleConfigFiles": ["renovate.json", ".github/dependabot.yml"],
+            "notes": "Renovate supports GHA + AzDO (self-hosted or Mend Renovate App). Dependabot is GitHub-native only. For AzDO: use Renovate via self-hosted runner, Docker container job, or Mend's hosted service.",
+            "verification": "Check for renovate.json (or .renovaterc.json) OR .github/dependabot.yml. Verify dependency update PRs are being created.",
+            "anyOfFiles": [
+              "renovate.json",
+              ".renovaterc.json",
+              "renovate.json5",
+              ".renovaterc.json5",
+              ".github/dependabot.yml"
+            ],
+            "pinningNotes": "Pin Renovate Docker image version in AzDO pipelines for determinism."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["renovate", "dependabot"],
+            "exampleConfigFiles": ["renovate.json", ".github/dependabot.yml"],
+            "notes": "Both support NuGet packages. Renovate has better Central Package Management (Directory.Packages.props) support. For AzDO: use self-hosted Renovate runner.",
+            "verification": "Check for renovate.json OR .github/dependabot.yml. Verify NuGet update PRs.",
+            "anyOfFiles": [
+              "renovate.json",
+              ".renovaterc.json",
+              ".github/dependabot.yml"
+            ],
+            "pinningNotes": "Pin Renovate version in pipeline definition."
+          },
+          "python": {
+            "exampleTools": ["renovate", "dependabot"],
+            "exampleConfigFiles": ["renovate.json", ".github/dependabot.yml"],
+            "notes": "Renovate supports pyproject.toml, requirements.txt, Pipfile, poetry.lock. For AzDO: self-hosted Renovate or schedule-triggered pipeline.",
+            "verification": "Check for renovate.json OR .github/dependabot.yml. Verify Python dependency PRs.",
+            "anyOfFiles": [
+              "renovate.json",
+              ".renovaterc.json",
+              ".github/dependabot.yml"
+            ],
+            "pinningNotes": "Use requirements.txt with pinned versions or poetry.lock for deterministic installs."
+          },
+          "rust": {
+            "exampleTools": ["renovate", "dependabot"],
+            "exampleConfigFiles": ["renovate.json", ".github/dependabot.yml"],
+            "notes": "Both support Cargo.toml/Cargo.lock. Works with cargo workspaces. Security scanning is covered by dependency-security (cargo-audit/cargo-deny).",
+            "verification": "Check for renovate.json OR .github/dependabot.yml. Verify Cargo dependency PRs.",
+            "anyOfFiles": [
+              "renovate.json",
+              ".renovaterc.json",
+              ".github/dependabot.yml"
+            ]
+          },
+          "go": {
+            "exampleTools": ["renovate", "dependabot"],
+            "exampleConfigFiles": ["renovate.json", ".github/dependabot.yml"],
+            "notes": "Both support go.mod/go.sum. Renovate handles replace directives better. Security scanning is covered by dependency-security (govulncheck).",
+            "verification": "Check for renovate.json OR .github/dependabot.yml. Verify Go module PRs.",
+            "anyOfFiles": [
+              "renovate.json",
+              ".renovaterc.json",
+              ".github/dependabot.yml"
+            ]
+          }
+        },
+        "enforcement": "recommended",
+        "severity": "warn"
+      },
+      {
+        "id": "dependency-architecture-rules",
+        "label": "Dependency Architecture Rules",
+        "description": "Enforce module boundaries and import constraints to prevent architectural drift and unwanted coupling.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality",
+            "notes": "CI hints are suggested mappings; adjust to your pipeline topology."
+          },
+          "github-actions": {
+            "job": "ci",
+            "notes": "CI hints are suggested mappings; adjust to your workflow structure."
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["dependency-cruiser"],
+            "exampleConfigFiles": [
+              ".dependency-cruiser.cjs",
+              ".dependency-cruiser.js",
+              "dependency-cruiser.config.cjs"
+            ],
+            "notes": "Define forbidden imports, layer rules, and circular dependency bans. Run in CI as blocking check.",
+            "verification": "Run 'npx depcruise --validate' or equivalent. Verify architectural rules are documented and enforced.",
+            "anyOfFiles": [
+              ".dependency-cruiser.cjs",
+              ".dependency-cruiser.js",
+              "dependency-cruiser.config.cjs",
+              ".dependency-cruiser.mjs"
+            ],
+            "pinningNotes": "Pin dependency-cruiser version in package.json devDependencies."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["NsDepCop", "ArchUnitNET"],
+            "exampleConfigFiles": [
+              "NsDepCop.config.nsdepcop",
+              "ArchitectureTests.cs"
+            ],
+            "notes": "NsDepCop enforces namespace dependency rules via config file. ArchUnitNET uses test code for architectural assertions.",
+            "verification": "Build fails on namespace violations, or architecture tests run as part of test suite.",
+            "optionalFiles": ["NsDepCop.config.nsdepcop"]
+          },
+          "python": {
+            "exampleTools": ["import-linter", "pydeps"],
+            "exampleConfigFiles": ["pyproject.toml", ".importlinter"],
+            "notes": "Configure [tool.importlinter] in pyproject.toml OR use standalone .importlinter file. pydeps is visualization-only.",
+            "verification": "Run 'lint-imports' successfully. Config must exist in pyproject.toml [tool.importlinter] section OR .importlinter file.",
+            "optionalFiles": ["pyproject.toml", ".importlinter"]
+          },
+          "rust": {
+            "exampleTools": ["cargo-deny"],
+            "exampleConfigFiles": ["deny.toml"],
+            "notes": "cargo-deny's [bans] section enforces dependency graph rules (deny specific crates, wildcards). Extend existing config if using for security scanning.",
+            "verification": "Run 'cargo deny check bans' to verify dependency constraints.",
+            "optionalFiles": ["deny.toml"]
+          },
+          "go": {
+            "exampleTools": ["depaware", "go-mod-check"],
+            "exampleConfigFiles": [],
+            "notes": "Go's module system is simpler. Use internal/ packages for visibility. depaware provides transitive dep analysis. Standard practice: 'go mod tidy && git diff --exit-code go.mod go.sum'.",
+            "verification": "Run 'go mod verify' and 'go mod tidy' with diff check in CI."
+          }
+        },
+        "enforcement": "recommended",
+        "severity": "warn"
+      },
+      {
+        "id": "integration-testing",
+        "label": "Integration Testing",
+        "description": "Test how components interact with each other and external systems, running after unit tests with more relaxed coverage thresholds.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "test"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["Jest", "Supertest", "Playwright"],
+            "exampleConfigFiles": ["jest.config.*", "playwright.config.*"],
+            "notes": "Use Supertest for HTTP APIs and Playwright or similar tools for end-to-end flows; keep integration suites slower but reliable.",
+            "verification": "Confirm there is a separate integration or end-to-end test command or configuration and run it to verify that cross-component flows behave as expected."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["xUnit", "NUnit", "MSTest"],
+            "exampleConfigFiles": ["*.IntegrationTests.csproj"],
+            "notes": "Create dedicated integration test projects that exercise real infrastructure or service boundaries where appropriate.",
+            "verification": "Confirm there is a test project or configuration dedicated to integration or API tests and run it to verify external or cross-service interactions behave as expected."
+          },
+          "python": {
+            "exampleTools": ["pytest"],
+            "exampleConfigFiles": ["tests/integration/"],
+            "notes": "Separate integration tests from unit tests, using fixtures to handle databases, services, or other external systems.",
+            "verification": "Confirm there is a separate integration or API test suite (for example, a dedicated tests/integration directory) and run it to verify interactions with databases, services, or external systems."
+          },
+          "rust": {
+            "exampleTools": ["cargo test"],
+            "exampleConfigFiles": ["tests/"],
+            "notes": "Use the tests/ directory for integration tests. Use #[ignore] attribute for slow tests and run with 'cargo test -- --ignored'.",
+            "verification": "Confirm tests/ directory contains integration tests and run 'cargo test' to verify cross-component flows."
+          },
+          "go": {
+            "exampleTools": ["go test"],
+            "exampleConfigFiles": ["*_test.go"],
+            "notes": "Use build tags (//go:build integration) or separate test directories for integration tests. Run with 'go test -tags=integration ./...'.",
+            "verification": "Confirm integration tests exist and run 'go test -tags=integration ./...' to verify."
+          }
+        },
+        "enforcement": "recommended",
+        "severity": "warn"
+      },
+      {
+        "id": "performance-baselining",
+        "label": "Performance Baselines",
+        "description": "Establish performance baselines and monitor for regressions using lightweight benchmarks or audits in CI.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "performance"
+          },
+          "github-actions": {
+            "job": "performance"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["Lighthouse CI", "custom Node.js benchmarks"],
+            "exampleConfigFiles": ["lighthouserc.json"],
+            "notes": "Run Lighthouse CI for web apps and basic Node benchmarks on critical endpoints; schedule runs or limit to key branches to keep CI fast.",
+            "verification": "Identify and run the configured performance or Lighthouse-style checks and verify that key metrics are captured and compared to documented baselines."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["BenchmarkDotNet"],
+            "exampleConfigFiles": ["*.csproj"],
+            "notes": "Use BenchmarkDotNet or similar to track performance of critical methods or endpoints over time.",
+            "verification": "Identify and run the configured performance or benchmarking suite (for example, BenchmarkDotNet) and review the output to ensure it is tracked against historical or target values."
+          },
+          "python": {
+            "exampleTools": ["pytest-benchmark", "cProfile"],
+            "exampleConfigFiles": ["pytest.ini", "pyproject.toml"],
+            "notes": "Use simple benchmarks or profiling runs to characterize bottlenecks and watch for regressions in critical workflows.",
+            "verification": "Identify and run the configured performance checks or benchmarks (for example, pytest-benchmark or cProfile-based scripts) and confirm that their results are recorded and compared over time."
+          },
+          "rust": {
+            "exampleTools": ["criterion", "cargo bench"],
+            "exampleConfigFiles": ["benches/"],
+            "notes": "Use criterion for statistical benchmarking. Create benches/ directory for benchmark files. Track results over time in CI.",
+            "verification": "Run 'cargo bench' and verify benchmark results are captured and compared against baselines."
+          },
+          "go": {
+            "exampleTools": ["go test -bench", "benchstat"],
+            "exampleConfigFiles": ["*_test.go"],
+            "notes": "Use 'go test -bench=. ./...' for benchmarks. Use benchstat to compare results across runs.",
+            "verification": "Run 'go test -bench=. ./...' and verify benchmark results are tracked over time."
+          }
+        },
+        "enforcement": "recommended",
+        "severity": "warn"
+      },
+      {
+        "id": "complexity-analysis",
+        "label": "Complexity Analysis",
+        "description": "Measure cyclomatic complexity or similar metrics to keep code maintainable, starting as a warning-only check.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["ESLint complexity rules", "SonarQube"],
+            "exampleConfigFiles": [".eslintrc.*", "sonar-project.properties"],
+            "notes": "Warn on overly complex functions and methods; fail CI only when new or modified code exceeds thresholds.",
+            "verification": "Run the configured complexity tooling or rules (for example, ESLint complexity rules or Sonar analysis) and review any hot spots, ensuring new code does not exceed agreed thresholds."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["SonarQube", "Visual Studio code metrics"],
+            "exampleConfigFiles": ["sonar-project.properties"],
+            "notes": "Use code metrics or Sonar analysis to flag overly complex methods and refactor them over time.",
+            "verification": "Run the configured code metrics or Sonar analysis and review complexity reports for key modules, ensuring that new or changed code stays within acceptable limits."
+          },
+          "python": {
+            "exampleTools": ["radon"],
+            "exampleConfigFiles": ["radon.cfg"],
+            "notes": "Use radon or similar tools to track complexity of Python functions and keep new code within acceptable limits.",
+            "verification": "Run the configured complexity tool (for example, radon) on the codebase and review the report to ensure new or heavily changed functions are not excessively complex."
+          },
+          "rust": {
+            "exampleTools": ["clippy", "cargo-geiger"],
+            "exampleConfigFiles": ["clippy.toml"],
+            "notes": "Clippy includes cognitive complexity warnings. Use cargo-geiger for unsafe code metrics. Configure thresholds in clippy.toml.",
+            "verification": "Run 'cargo clippy' and review complexity-related warnings. Ensure new code stays within acceptable limits."
+          },
+          "go": {
+            "exampleTools": ["gocyclo", "golangci-lint"],
+            "exampleConfigFiles": [".golangci.yml"],
+            "notes": "Use gocyclo or golangci-lint's gocyclo linter to measure cyclomatic complexity. Configure threshold in .golangci.yml.",
+            "verification": "Run 'gocyclo' or 'golangci-lint run' and review complexity reports, ensuring new code doesn't exceed thresholds."
+          }
+        },
+        "enforcement": "recommended",
+        "severity": "warn"
+      },
+      {
+        "id": "accessibility-auditing",
+        "label": "Accessibility Auditing",
+        "description": "Run accessibility checks on web-facing components to detect critical issues and improve inclusive UX.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "quality"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["axe-core", "Lighthouse accessibility audits"],
+            "exampleConfigFiles": [],
+            "notes": "Run accessibility checks against key pages or components in CI; fail on critical violations while treating minor issues as warnings initially.",
+            "verification": "For web-facing apps, run the configured accessibility tooling (for example, axe, pa11y, or Lighthouse accessibility audits) against key pages and confirm that critical issues are resolved."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["axe-core", "Accessibility Insights"],
+            "exampleConfigFiles": [],
+            "notes": "Apply accessibility tooling to ASP.NET or Blazor front-ends and review issues alongside functional testing.",
+            "verification": "For web-facing apps, run the configured accessibility checks or tools against your main UI endpoints and confirm that blocking accessibility issues are addressed."
+          },
+          "python": {
+            "exampleTools": ["pa11y"],
+            "exampleConfigFiles": [],
+            "notes": "Use headless browser-based tools to scan Python-backed web UIs for accessibility issues on high-traffic routes.",
+            "verification": "For Python-backed web UIs, run the configured accessibility tooling (for example, pa11y or axe via a headless browser) against key routes and verify that critical issues are fixed or tracked."
+          },
+          "rust": {
+            "exampleTools": ["axe-core", "pa11y"],
+            "exampleConfigFiles": [],
+            "notes": "For Rust web frameworks (Actix, Axum, Rocket), use headless browser-based accessibility tools to audit rendered HTML.",
+            "verification": "For web-facing Rust apps, run accessibility audits against key routes using axe or pa11y."
+          },
+          "go": {
+            "exampleTools": ["axe-core", "pa11y"],
+            "exampleConfigFiles": [],
+            "notes": "For Go web apps, use headless browser-based accessibility tools to audit rendered HTML from templates.",
+            "verification": "For web-facing Go apps, run accessibility audits against key routes using axe or pa11y."
+          }
+        },
+        "enforcement": "recommended",
+        "severity": "warn"
+      }
+    ],
+    "optionalEnhancements": [
+      {
+        "id": "observability",
+        "label": "Observability (Logging & Error Handling)",
+        "description": "Standardize error handling and structured logging to make debugging and production monitoring easier.",
+        "appliesTo": {
+          "stacks": ["typescript-js", "csharp-dotnet", "python", "rust", "go"]
+        },
+        "ciHints": {
+          "azure-devops": {
+            "stage": "observability"
+          },
+          "github-actions": {
+            "job": "ci"
+          }
+        },
+        "stackHints": {
+          "typescript-js": {
+            "exampleTools": ["Winston", "Pino"],
+            "exampleConfigFiles": [],
+            "notes": "Adopt structured JSON logging with correlation IDs and send logs to a centralized sink in production.",
+            "verification": "Confirm that a structured logging library (such as Winston or Pino) is configured to emit JSON or key-value logs and that error handling routes important failures through this logger."
+          },
+          "csharp-dotnet": {
+            "exampleTools": ["Serilog", "NLog"],
+            "exampleConfigFiles": ["appsettings.json"],
+            "notes": "Configure structured logging for your .NET services and ensure exceptions and key events are logged with useful context.",
+            "verification": "Confirm that a structured logging library (such as Serilog or NLog) is configured with an agreed sink and format, and that the application logs meaningful context for errors and key events."
+          },
+          "python": {
+            "exampleTools": ["structlog", "loguru"],
+            "exampleConfigFiles": [
+              "logging configuration files",
+              "pyproject.toml"
+            ],
+            "notes": "Use structured logging for Python services and ensure critical paths record enough context to debug issues after the fact.",
+            "verification": "Confirm that a structured logging setup (such as structlog or configured logging with JSON formatting) is in place and that critical paths log enough information to debug failures in production."
+          },
+          "rust": {
+            "exampleTools": ["tracing", "log"],
+            "exampleConfigFiles": [],
+            "notes": "Use the tracing crate for structured logging with spans and events. Configure tracing-subscriber for output formatting.",
+            "verification": "Confirm that tracing or log crate is configured with appropriate subscriber/logger and emits structured output."
+          },
+          "go": {
+            "exampleTools": ["slog", "zap", "zerolog"],
+            "exampleConfigFiles": [],
+            "notes": "Use slog (stdlib) or zap/zerolog for structured logging. Configure JSON output for production and text for development.",
+            "verification": "Confirm that a structured logging library is configured with appropriate output format and log levels."
+          }
+        },
+        "enforcement": "optional",
+        "severity": "info"
+      }
+    ]
+  }
+}

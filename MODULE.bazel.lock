@@ -1,6 +1,6 @@
 {
   "lockFileVersion": 6,
-  "moduleFileHash": "638d44137ab3e99f500765f0a6944f080d81d1984503f8529a4276e406d455a6",
+  "moduleFileHash": "c84e1581395ca3ebe4292abfacb20e6b5368a18aee7626ef7a850b42bf33ad18",
   "flags": {
     "cmdRegistries": [
       "https://bcr.bazel.build/"
@@ -101,7 +101,8 @@
             "com_github_redis_go_redis_v9": "com_github_redis_go_redis_v9",
             "com_github_lib_pq": "com_github_lib_pq",
             "org_mongodb_go_mongo_driver": "org_mongodb_go_mongo_driver",
-            "com_github_rabbitmq_amqp091_go": "com_github_rabbitmq_amqp091_go"
+            "com_github_rabbitmq_amqp091_go": "com_github_rabbitmq_amqp091_go",
+            "com_github_xeipuuv_gojsonschema": "com_github_xeipuuv_gojsonschema"
           },
           "devImports": [],
           "tags": [

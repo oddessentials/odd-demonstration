@@ -1,0 +1,16 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "validator",
+    srcs = ["validator.go"],
+    embedsrcs = glob(["schemas/*.json"]),
+    importpath = "github.com/distributed-task-observatory/metrics-engine/validator",
+    visibility = ["//src/services/metrics-engine:__subpackages__"],
+    deps = ["@com_github_xeipuuv_gojsonschema//:gojsonschema"],
+)
+
+go_test(
+    name = "validator_test",
+    srcs = ["validator_test.go"],
+    embed = [":validator"],
+)

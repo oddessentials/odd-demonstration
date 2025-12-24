@@ -1,0 +1,71 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://odd-demonstration.local/schemas/event-envelope.json",
+    "$version": "1.0.0",
+    "title": "EventEnvelope",
+    "description": "Canonical envelope for all messages on the event spine.",
+    "type": "object",
+    "required": [
+        "contractVersion",
+        "eventType",
+        "eventId",
+        "occurredAt",
+        "producer",
+        "correlationId",
+        "idempotencyKey",
+        "payload"
+    ],
+    "properties": {
+        "contractVersion": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "eventType": {
+            "type": "string",
+            "enum": [
+                "job.created",
+                "job.validated",
+                "job.executed",
+                "job.failed",
+                "job.completed"
+            ]
+        },
+        "eventId": {
+            "type": "string",
+            "format": "uuid"
+        },
+        "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "producer": {
+            "type": "object",
+            "required": [
+                "service",
+                "instanceId",
+                "version"
+            ],
+            "properties": {
+                "service": {
+                    "type": "string"
+                },
+                "instanceId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "correlationId": {
+            "type": "string",
+            "format": "uuid"
+        },
+        "idempotencyKey": {
+            "type": "string"
+        },
+        "payload": {
+            "type": "object"
+        }
+    }
+}

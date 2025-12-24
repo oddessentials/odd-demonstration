@@ -6,7 +6,7 @@ import os
 import re
 import uuid
 import prometheus_client as prom
-from jsonschema import validate
+from schema_validator import validate_message
 
 
 # Read VERSION file with fail-fast on missing/invalid
@@ -25,32 +25,56 @@ RABBITMQ_URL = os.environ.get('RABBITMQ_URL', 'amqp://guest:guest@rabbitmq:5672'
 POSTGRES_URL = os.environ.get('POSTGRES_URL', 'postgresql://admin:password123@postgres:5432/task_db')
 QUEUE_NAME = 'jobs.created'
 OUT_QUEUE = 'jobs.completed'
+DLQ_NAME = 'jobs.failed.validation'  # Dead-letter queue for validation failures
 
 # Metrics setup
 JOBS_PROCESSED = prom.Counter('processor_jobs_processed_total', 'Total jobs processed')
 JOBS_COMPLETED = prom.Counter('processor_jobs_completed_total', 'Total jobs successfully completed')
 JOBS_FAILED = prom.Counter('processor_jobs_failed_total', 'Total jobs failed')
+JOBS_VALIDATION_FAILED = prom.Counter('processor_jobs_validation_failed_total', 'Jobs rejected due to validation failure')
 PROCESSING_TIME = prom.Histogram('processor_job_processing_seconds', 'Time spent processing job')
 
 
-# Load schema
-CONTRACTS_PATH = os.environ.get('CONTRACTS_PATH', '/app/contracts')
-schema_file = os.path.join(CONTRACTS_PATH, 'schemas/event-envelope.json')
-
-with open(schema_file, 'r') as f:
-    event_schema = json.load(f)
+def get_correlation_id(event: dict) -> str:
+    """Extract correlation ID from event for logging."""
+    return event.get('correlationId', 'unknown')
 
 
 def process_job(ch, method, properties, body):
     JOBS_PROCESSED.inc()
     start_time = time.time()
+    correlation_id = 'unknown'
+    
     try:
-
         event = json.loads(body)
-        print(f"Received event: {event['eventId']}")
+        correlation_id = get_correlation_id(event)
+        print(f"[{correlation_id}] Received event: {event.get('eventId', 'unknown')}")
         
-        # Validate event
-        validate(instance=event, schema=event_schema)
+        # Validate message against schemas
+        is_valid, validation_error = validate_message(event)
+        if not is_valid:
+            JOBS_VALIDATION_FAILED.inc()
+            print(f"[{correlation_id}] VALIDATION FAILED: {validation_error}")
+            
+            # Publish to DLQ with error details
+            dlq_message = {
+                'original_event': event,
+                'validation_error': validation_error,
+                'rejected_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+                'correlation_id': correlation_id,
+                'service': 'processor',
+                'service_version': SERVICE_VERSION
+            }
+            ch.basic_publish(
+                exchange='',
+                routing_key=DLQ_NAME,
+                body=json.dumps(dlq_message),
+                properties=pika.BasicProperties(delivery_mode=2)  # Persistent
+            )
+            
+            # Reject without requeue (already sent to DLQ)
+            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+            return
         
         job_data = event['payload']
         job_id = job_data['id']
@@ -69,7 +93,7 @@ def process_job(ch, method, properties, body):
         conn.commit()
         
         # Simulate work
-        print(f"Processing job {job_id}...")
+        print(f"[{correlation_id}] Processing job {job_id}...")
         time.sleep(2)
         
         # Update to completed
@@ -89,14 +113,20 @@ def process_job(ch, method, properties, body):
         ch.basic_ack(delivery_tag=method.delivery_tag)
         JOBS_COMPLETED.inc()
         PROCESSING_TIME.observe(time.time() - start_time)
-        print(f"Job {job_id} completed.")
+        print(f"[{correlation_id}] Job {job_id} completed.")
+        
+    except json.JSONDecodeError as e:
+        JOBS_VALIDATION_FAILED.inc()
+        print(f"[{correlation_id}] JSON PARSE ERROR: {e}")
+        # Can't extract correlation ID from invalid JSON
+        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
         
     except Exception as e:
         JOBS_FAILED.inc()
-        print(f"Error processing job: {e}")
+        print(f"[{correlation_id}] ERROR processing job: {e}")
+        # Requeue for retry on processing errors (not validation errors)
+        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 
-        # In a real system, we'd handle retries/DLQ here
-        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
 def main():
     print(f"Processor service starting... version: {SERVICE_VERSION}")
@@ -104,7 +134,6 @@ def main():
     prom.start_http_server(8000)
     
     # Initialize DB table if needed (in a real app we'd use migrations)
-
     while True:
         try:
             conn = psycopg2.connect(POSTGRES_URL)
@@ -131,14 +160,19 @@ def main():
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     
+    # Declare queues
     channel.queue_declare(queue=QUEUE_NAME, durable=True)
     channel.queue_declare(queue=OUT_QUEUE, durable=True)
+    channel.queue_declare(queue=DLQ_NAME, durable=True)  # Dead-letter queue
     
     channel.basic_qos(prefetch_count=1)
     channel.basic_consume(queue=QUEUE_NAME, on_message_callback=process_job)
     
-    print('Waiting for jobs. To exit press CTRL+C')
+    print(f'Waiting for jobs. DLQ enabled: {DLQ_NAME}')
+    print('To exit press CTRL+C')
     channel.start_consuming()
+
 
 if __name__ == '__main__':
     main()
+

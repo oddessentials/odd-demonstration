@@ -270,3 +270,56 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+// Unit tests - deterministic, no network/UI dependencies
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stats_default() {
+        let stats = Stats::default();
+        assert_eq!(stats.total_jobs, 0);
+        assert_eq!(stats.completed_jobs, 0);
+        assert_eq!(stats.failed_jobs, 0);
+        assert!(stats.last_event_time.is_empty());
+    }
+
+    #[test]
+    fn test_app_new() {
+        let app = App::new("http://localhost:8080".to_string(), "http://localhost:3000".to_string());
+        assert_eq!(app.api_url, "http://localhost:8080");
+        assert_eq!(app.gateway_url, "http://localhost:3000");
+        assert!(app.jobs.is_empty());
+        assert!(app.alerts.is_empty());
+        assert!(app.alerts_error.is_none());
+        assert_eq!(app.alert_retry_count, 0);
+    }
+
+    #[test]
+    fn test_max_alert_retries_constant() {
+        // Verify the retry limit is reasonable
+        assert!(MAX_ALERT_RETRIES >= 1);
+        assert!(MAX_ALERT_RETRIES <= 10);
+    }
+
+    #[test]
+    fn test_job_deserialization() {
+        let json = r#"{"id": "abc123", "type": "PROCESS", "status": "COMPLETED", "createdAt": "2024-01-01T00:00:00Z"}"#;
+        let job: Job = serde_json::from_str(json).expect("Failed to deserialize Job");
+        assert_eq!(job.id, "abc123");
+        assert_eq!(job.job_type, "PROCESS");
+        assert_eq!(job.status, "COMPLETED");
+        assert_eq!(job.created_at, "2024-01-01T00:00:00Z");
+    }
+
+    #[test]
+    fn test_stats_deserialization() {
+        let json = r#"{"totalJobs": 100, "completedJobs": 90, "failedJobs": 10, "lastEventTime": "2024-01-01T12:00:00Z"}"#;
+        let stats: Stats = serde_json::from_str(json).expect("Failed to deserialize Stats");
+        assert_eq!(stats.total_jobs, 100);
+        assert_eq!(stats.completed_jobs, 90);
+        assert_eq!(stats.failed_jobs, 10);
+        assert_eq!(stats.last_event_time, "2024-01-01T12:00:00Z");
+    }
+}

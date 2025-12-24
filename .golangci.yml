@@ -1,0 +1,63 @@
+# golangci-lint configuration for Go services
+# See: https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  # Only lint changed files in CI (use --new-from-rev=origin/main)
+  # Uncomment for local development to lint all:
+  # skip-dirs-use-default: true
+
+linters:
+  enable:
+    # Default linters
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # Additional recommended linters
+    - gofmt
+    - goimports
+    - revive
+    - misspell
+    - unconvert
+    - unparam
+    - gocritic
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/distributed-task-observatory
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+      - name: var-naming
+        severity: warning
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+
+issues:
+  # Show all issues from a linter
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  
+  # Exclude some linters from running on tests
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - unparam
+
+severity:
+  default-severity: warning
+  rules:
+    - linters:
+        - govet
+        - staticcheck
+      severity: error

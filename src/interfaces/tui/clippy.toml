@@ -1,0 +1,8 @@
+# Clippy configuration for TUI
+# See: https://doc.rust-lang.org/clippy/configuration.html
+
+# Complexity threshold (warn on high complexity)
+cognitive-complexity-threshold = 25
+
+# Allow certain patterns in this codebase
+allow-unwrap-in-tests = true

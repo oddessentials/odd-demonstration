@@ -26,5 +26,6 @@ go_binary(
 go_test(
     name = "read-model_test",
     srcs = ["read_model_test.go"],
+    embed = [":read-model_lib"],
     data = ["VERSION"],
 )
