@@ -33,6 +33,35 @@ jobs:
         with:
           node-version: '20'
       
+      - name: Validate release workflow structure
+        run: |
+          echo "=== Validating release configuration ==="
+          
+          # Check that .releaserc.json exists and is valid
+          if ! node -e "JSON.parse(require('fs').readFileSync('.releaserc.json'))"; then
+            echo "::error::.releaserc.json is invalid JSON"
+            exit 1
+          fi
+          
+          echo "✓ Release configuration validated"
+      
+      - name: Semantic Release (dry-run validation)
+        id: dryrun
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          dry_run: true
+          extra_plugins: |
+            @semantic-release/exec
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      
+      - name: Verify dry-run succeeded
+        run: |
+          echo "=== Dry-run validation complete ==="
+          echo "Would release: ${{ steps.dryrun.outputs.new_release_published }}"
+          echo "Version: ${{ steps.dryrun.outputs.new_release_version }}"
+      
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v4
@@ -41,7 +70,7 @@ jobs:
             @semantic-release/exec
             @semantic-release/git
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       
       - name: Debug release outputs
         run: |
