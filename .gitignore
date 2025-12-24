@@ -14,7 +14,7 @@ ENV/
 
 # Rust
 target/
-Cargo.lock
+# Note: Cargo.lock is tracked for binaries (odd-dashboard) for reproducible builds
 
 # Go
 *.exe
