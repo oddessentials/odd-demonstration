@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: read-model
-        image: read-model:0.1.0
+        image: read-model:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8080

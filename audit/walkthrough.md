@@ -1,185 +1,239 @@
-# Walkthrough - Phase 0 & 1: Foundation and Infrastructure
+# Walkthrough - Distributed Task Observatory
 
-I have successfully completed Phase 0 and Phase 1 of the Distributed Task Observatory. The environment is now ready for microservice implementation.
+## Overview
 
-## 🛠️ Environment Setup
-- **Tools Installed**: `kind` and `bazelisk` (via `winget`).
-- **Cluster**: Created a `kind` cluster named `task-observatory` with Ingress support (80/443 mapping).
-- **Bazel**: Initialized `WORKSPACE`, `MODULE.bazel`, and `.bazelversion` (pinning to 7.1.0).
+The Distributed Task Observatory is a complete, production-grade distributed task processing system demonstrating modern microservice architecture, event-driven design, and observability. This walkthrough documents the implementation across all 12 phases.
 
-## 📜 Contract Authority
-Defined canonical JSON Schemas for the system:
-- [event-envelope.json](file:///e:/projects/odd-demonstration/contracts/schemas/event-envelope.json): Defines the message structure for the event spine.
-- [job.json](file:///e:/projects/odd-demonstration/contracts/schemas/job.json): Defines the canonical Job domain object.
+---
 
-**Proof of Validation**:
-Ran `scripts/test-contracts.py` to validate `contracts/examples/event-example.json`.
-> [!NOTE]
-> `Validation successful for .\contracts\examples\event-example.json against .\contracts\schemas\event-envelope.json`
+## 🛠️ Environment & Foundation (Phases 0-1)
 
-## 🚀 Core Service Implementation (Phase 2)
-Successfully implemented and deployed the primary business logic microservices using a hybrid Docker/Bazel approach.
+### Tools & Cluster
+- **Kubernetes:** kind cluster named `task-observatory` with Ingress support
+- **Build System:** Docker-native with Bazel support for Go/Rust
+- **Contract Authority:** JSON Schemas in `contracts/schemas/`
 
-- **Node.js Gateway**: Handles job validation and publishing to RabbitMQ.
-- **Python Processor**: Consumes jobs, updates PostgreSQL state, and simulates execution.
+### Infrastructure Components
+| Component | Purpose | Port |
+|-----------|---------|------|
+| RabbitMQ | Message bus (event spine) | 5672, 15672 |
+| PostgreSQL | Authoritative relational state | 5432 |
+| Redis | Fast-access aggregated metrics | 6379 |
+| MongoDB | Event sourcing audit trail | 27017 |
 
-### 🐳 Container Imaging
-Built and loaded images into `kind`:
-- `gateway:latest`
-- `processor:latest`
+---
 
-### 🧪 Integration Verification
-Performed a full cycle smoke test:
-1.  **Submission**: Sent a new job to the Gateway via `curl` (port-forwarded).
-2.  **Orchestration**: Message moved through RabbitMQ `jobs.created` queue.
-3.  **Persistence**: Python Processor picked up the job, updated status to `EXECUTING`, simulated work, and finalized as `COMPLETED`.
+## 🚀 Core Services (Phase 2)
 
-**Verification Result**:
-```bash
-$ kubectl exec postgres-0 -- psql -U admin -d task_db -c "SELECT * FROM jobs;"
-                  id                  |      type      |  status   |                     payload                     |     created_at      |         updated_at
---------------------------------------+----------------+-----------+-------------------------------------------------+---------------------+----------------------------
- 252518a8-6d42-411f-9c50-d930cd32ac00 | simulated-work | COMPLETED | {"task": "verify-integration", "iterations": 5} | 2025-12-22 15:36:21 | 2025-12-22 15:36:23.244174
-```
+### Node.js Gateway
+- Handles job validation and submission
+- Publishes to RabbitMQ `jobs.created` queue
+- Exposes `/jobs`, `/healthz`, `/metrics` endpoints
 
-> [!TIP]
-> The system now has a living "Heartbeat"—jobs are flowing end-to-end.
+### Python Processor
+- Consumes jobs from RabbitMQ
+- Validates against JSON schema
+- Updates PostgreSQL state
+- Publishes to `jobs.completed` queue
+- Dead-letter queue for invalid messages
+
+---
 
 ## 📊 Observability Stack (Phase 3)
-Successfully deployed the full observability infrastructure and instrumented services.
 
-### Components Deployed
-| Service | Port | Host |
-|---------|------|------|
-| Prometheus | 9090 | prometheus.local |
-| Grafana | 3000 | grafana.local |
-| Alertmanager | 9093 | alertmanager.local |
-
-### Service Instrumentation
-**Node.js Gateway Metrics**:
+### Prometheus Metrics
+**Gateway:**
 - `gateway_jobs_submitted_total{type}` - Jobs submitted by type
-- `gateway_jobs_accepted_total` - Jobs accepted and published
+- `gateway_jobs_accepted_total` - Jobs published to queue
 
-**Python Processor Metrics**:
+**Processor:**
 - `processor_jobs_processed_total` - Total jobs received
-- `processor_jobs_completed_total` - Successfully completed jobs
+- `processor_jobs_completed_total` - Successfully completed
 - `processor_jobs_failed_total` - Failed jobs
 - `processor_job_processing_seconds` - Processing time histogram
 
-### Verification Result
-```bash
-$ curl http://localhost:3001/metrics | grep gateway_
-gateway_jobs_submitted_total 0
-gateway_jobs_accepted_total 0
+### Grafana Dashboard
+Six panels showing job throughput, latency percentiles, and failure rates.
 
-$ curl http://localhost:8001/metrics | grep processor_
-processor_jobs_processed_total 0.0
-processor_jobs_completed_total 0.0
-processor_jobs_failed_total 0.0
+---
+
+## 🔄 Aggregation Layer (Phase 4)
+
+### Go Metrics Engine
+- Consumes `jobs.completed` from RabbitMQ
+- Updates Redis counters
+- Persists raw events to MongoDB
+
+### Go Read Model API
+- Single source of truth for UIs
+- Endpoints: `/health`, `/stats`, `/jobs/recent`, `/events`
+- CORS support for browser-based UIs
+
+---
+
+## 🖥️ Interface Layer (Phases 5, 12)
+
+### Rust TUI (`src/interfaces/tui`)
+
+The TUI now includes multiple operational modes:
+
+#### Launcher Mode
+Detects if the Kind cluster is running:
+- Shows ASCII logo with "Cluster not detected"
+- **Press `L`** to launch cluster automatically
+- Runs `scripts/start-all.ps1` with progress tracking
+
+#### Loading Splash
+Animated loading screen while fetching data:
+- Braille spinner animation (10 frames)
+- Cycling status messages
+- oddessentials.com branding
+
+#### Dashboard Mode
+Real-time monitoring view:
+- ASCII logo on left, stats on right
+- Alerts panel with graceful degradation
+- Jobs table with color-coded status
+- **Keyboard shortcuts:**
+  - `Q` - Quit
+  - `R` - Refresh
+  - `N` - New Task (placeholder modal)
+
+#### Unit Tests
+Deterministic tests for:
+- Logo integrity and line count
+- Spinner frame validation (Braille characters)
+- Message cycling logic
+- Setup progress state
+
+### Web Dashboard (`src/interfaces/web`)
+
+Modern glassmorphic UI with feature parity:
+
+#### Loading Splash
+- Animated ASCII logo
+- Spinner and cycling messages
+- Auto-hides after first successful fetch
+
+#### Main Dashboard
+- Stats cards (Total, Completed, Failed, Alerts)
+- Recent jobs table
+- Active alerts panel
+- Raw events table (MongoDB)
+
+#### New Task Modal
+- Placeholder for future task creation
+- Click "➕ New Task" button in header
+
+#### Launcher Page (`launcher.html`)
+- Opens directly from filesystem (file://)
+- Detects cluster status via API polling
+- Shows manual startup instructions
+- Auto-redirects when cluster is ready
+
+---
+
+## ⚙️ Startup Automation (Phase 10)
+
+### One-Click Script (`scripts/start-all.ps1`)
+
+Comprehensive automation that:
+1. Verifies prerequisites (Docker, kind, kubectl)
+2. Creates/verifies Kind cluster
+3. Builds all Docker images in parallel
+4. Loads images into Kind
+5. Applies Kubernetes manifests
+6. Waits for pod readiness
+7. Starts background port-forwards
+8. Verifies connectivity
+9. Prints access URLs
+
+**Usage:**
+```powershell
+# Standard run
+.\scripts\start-all.ps1
+
+# For TUI integration (JSON output)
+.\scripts\start-all.ps1 -OutputJson
+
+# Skip image builds
+.\scripts\start-all.ps1 -SkipBuild
 ```
 
-> [!NOTE]
-> All pods are running: Prometheus, Grafana, Alertmanager, Gateway, Processor.
+### TUI-Integrated Launch
+The TUI can launch the cluster automatically:
+1. Run `cargo run --release` in `src/interfaces/tui`
+2. If cluster not detected, launcher mode appears
+3. Press `L` to start setup
+4. Watch progress with animated status
+5. Dashboard loads when ready
 
-## 🔄 Aggregation & Read Model (Phase 4)
-Successfully deployed Go-based aggregation services.
+---
 
-### Components Deployed
-| Service | Description |
-|---------|-------------|
-| **metrics-engine** | Consumes `jobs.completed` from RabbitMQ, updates Redis counters |
-| **read-model** | HTTP API returning aggregated stats and recent jobs |
+## ✅ Verification (Phase 6-7)
 
-### Read Model API Endpoints
-- `GET /health` - Health check
-- `GET /stats` - Aggregated metrics from Redis
-- `GET /jobs/recent` - Last 10 jobs from PostgreSQL
+### Integration Gate v2
+Deterministic end-to-end tests:
+- Pre-flight checks (context, pod readiness)
+- Health checks with retry
+- Job submission and processing
+- MongoDB event persistence
+- Stats aggregation
+- Metrics exposure
 
-### Verification Result
-```bash
-$ curl http://localhost:8080/stats
-{"totalJobs":1,"completedJobs":1,"failedJobs":0,"lastEventTime":"2025-12-22T16:42:34Z"}
+**Run:** `.\scripts\integration-gate.ps1`
 
-$ curl http://localhost:8080/jobs/recent
-[{"id":"252518a8-...","type":"simulated-work","status":"COMPLETED","createdAt":"2025-12-22T15:36:21Z"}]
-```
+### Unit Tests per Service
+| Service | Framework | Command |
+|---------|-----------|---------|
+| Gateway | Vitest | `cd src/services/gateway && npx vitest run` |
+| Processor | pytest | `cd src/services/processor && pytest tests/ -v` |
+| Metrics-Engine | Go test | `cd src/services/metrics-engine && go test -v` |
+| Read-Model | Go test | `cd src/services/read-model && go test -v` |
+| TUI | Rust test | `cd src/interfaces/tui && cargo test` |
 
-> [!TIP]
-> The system now has a unified read layer for UIs.
+---
 
-## 🖥️ Interface Layer (Phase 5)
-Successfully deployed user interfaces for real-time monitoring.
+## 📦 Version Governance (Phase 11)
 
-### Components Deployed
-| Service | Description | Access |
-|---------|-------------|--------|
-| **Rust TUI** | Terminal dashboard (local) | `cargo run` in `src/interfaces/tui` |
-| **Web UI** | Glassmorphic web dashboard | http://observatory.local or port-forward 8081 |
-
-### Web Dashboard Features
-- Real-time stats (Total, Completed, Failed jobs)
-- Recent jobs table with status badges
-- Auto-refresh every 3 seconds
-- Modern glassmorphism design
+### Service Versions
+Each microservice has a `VERSION` file containing SemVer string.
 
 ### Verification
-```bash
-$ curl http://localhost:8081 | head -5
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>📡 Distributed Task Observatory</title>
+```powershell
+python scripts/check-service-versions.py
 ```
+Ensures K8s manifests match service VERSION files.
 
-> [!NOTE]
-> 12 pods running: All infrastructure, services, and UIs operational.
-
-## ✅ Hardening & Verification (Phase 6)
-Executed the integration gate and completed final documentation.
-
-### Integration Gate Results
+### Schema Compatibility
+```powershell
+python scripts/check-schema-compat.py
 ```
-============================================================
-  DISTRIBUTED TASK OBSERVATORY - INTEGRATION GATE
-============================================================
+Validates schema `$id` and `$version` fields.
 
->> Test 1 - Gateway Health Check
-[PASS] Gateway Health
->> Test 2 - Read Model Health Check
-[PASS] Read Model Health
->> Test 3 - Submit 5 Jobs
-[PASS] Job Submission (5 jobs)
->> Test 4 - Wait for Processing (10s)
->> Test 5 - Verify Jobs in Read Model
-[PASS] Jobs Processed
->> Test 6 - Verify Aggregated Stats
-[PASS] Stats Aggregation
->> Test 7 - Gateway Metrics Exposed
-[PASS] Gateway Metrics
+---
 
-============================================================
-  INTEGRATION GATE RESULTS
-============================================================
-  Passed - 6
-  Failed - 0
+## 🔒 Consumer Validation (Phase 12)
 
-  [OK] ALL TESTS PASSED - SYSTEM VERIFIED
-```
+### Schema Validation
+Python processor validates incoming jobs against JSON schema:
+- Rejects malformed messages
+- Publishes to dead-letter queue on failure
+
+### Dead-Letter Queue
+Invalid messages routed to `jobs.dead-letter` for debugging.
 
 ---
 
 ## 🎉 Project Complete
 
-The **Distributed Task Observatory** is now fully operational with:
-
-| Component | Count |
-|-----------|-------|
-| Kubernetes Pods | 12 |
-| Microservices | 4 (Gateway, Processor, Metrics Engine, Read Model) |
-| Infrastructure | 4 (RabbitMQ, PostgreSQL, Redis, Nginx Ingress) |
-| Observability | 3 (Prometheus, Grafana, Alertmanager) |
-| UIs | 2 (Web Dashboard, pgAdmin) |
+The Distributed Task Observatory demonstrates:
+- **Polyglot microservices** (Node.js, Python, Go, Rust)
+- **Event-driven architecture** with RabbitMQ
+- **Multi-database strategy** (PostgreSQL, Redis, MongoDB)
+- **Production observability** (Prometheus, Grafana, Alertmanager)
+- **One-click deployment** via TUI launcher
+- **Comprehensive testing** at unit, contract, and integration levels
 
 > [!IMPORTANT]
-> All phases complete. The system is production-ready for demonstration purposes.
-
+> All 12 phases complete. The system is production-ready for demonstration purposes.

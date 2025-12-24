@@ -58,7 +58,7 @@ try {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ajv = new Ajv.default() as any;
+const ajv = new Ajv.default({ strict: false }) as any;
 addFormats.default(ajv);
 
 // Load schemas (paths relative to Bazel runfiles or project root)

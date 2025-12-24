@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Launch Distributed Task Observatory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.2;
+            color: #00d4ff;
+            white-space: pre;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .branding {
+            font-size: 0.85rem;
+            color: #00d4ff;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .status.checking {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .status.offline {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+        }
+
+        .status.online {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .status-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .status-text {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .status-detail {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .command-section {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .command-section h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .command {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .command code {
+            color: #00ff88;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00d4ff;
+            color: #0f0c29;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #00ff88;
+        }
+
+        .copy-btn.copied {
+            background: #00ff88;
+        }
+
+        .steps {
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .steps li {
+            margin-bottom: 8px;
+            padding-left: 10px;
+            border-left: 2px solid #00d4ff;
+        }
+
+        .redirect-btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 15px;
+        }
+
+        .redirect-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .checking .status-icon {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">
+            .....
+            .#########.
+            .##### ##
+            ####+###+ ##+
+            ###### +###+ ###
+            #### -######+######+
+            +###. +####. +###+
+            .. -###+########.
+            .###+ .####.
+            -+ +###.
+            -###-
+            -#-
+        </div>
+
+        <h1>📡 Distributed Task Observatory</h1>
+        <p class="branding">oddessentials.com</p>
+
+        <div class="status checking" id="status">
+            <div class="status-icon">🔍</div>
+            <div class="status-text">Checking cluster status...</div>
+            <div class="status-detail">Attempting to connect to services</div>
+        </div>
+
+        <div id="offlineInstructions" style="display: none;">
+            <div class="command-section">
+                <h3>🚀 Quick Start</h3>
+                <p style="font-size: 0.9rem; margin-bottom: 15px; opacity: 0.8;">
+                    The easiest way is to use the TUI launcher:
+                </p>
+                <div class="command">
+                    <code>cd src/interfaces/tui && cargo run --release</code>
+                    <button class="copy-btn"
+                        onclick="copyCommand(this, 'cd src/interfaces/tui && cargo run --release')">Copy</button>
+                </div>
+                <p style="font-size: 0.85rem; color: #ffd700; margin-bottom: 20px;">
+                    Press <strong>L</strong> in the TUI to launch the cluster.
+                </p>
+            </div>
+
+            <div class="command-section">
+                <h3>📋 Alternative: Manual Steps</h3>
+                <ol class="steps">
+                    <li>Ensure Docker Desktop is running</li>
+                    <li>Run the startup script:</li>
+                </ol>
+                <div class="command">
+                    <code>.\scripts\start-all.ps1</code>
+                    <button class="copy-btn" onclick="copyCommand(this, '.\\scripts\\start-all.ps1')">Copy</button>
+                </div>
+            </div>
+
+            <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 20px;">
+                This page will automatically redirect when services are available.
+            </p>
+        </div>
+
+        <div id="onlineRedirect" style="display: none;">
+            <p style="margin-bottom: 15px;">The cluster is running and ready!</p>
+            <a href="http://localhost:8081" class="redirect-btn">Open Dashboard →</a>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080';
+        const DASHBOARD_URL = 'http://localhost:8081';
+        let checkInterval;
+
+        function copyCommand(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        async function checkStatus() {
+            const statusEl = document.getElementById('status');
+            const offlineEl = document.getElementById('offlineInstructions');
+            const onlineEl = document.getElementById('onlineRedirect');
+
+            try {
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+
+                if (response.ok) {
+                    // Cluster is online!
+                    statusEl.className = 'status online';
+                    statusEl.innerHTML = `
+                        <div class="status-icon">✅</div>
+                        <div class="status-text">Cluster is running!</div>
+                        <div class="status-detail">Redirecting to dashboard...</div>
+                    `;
+                    offlineEl.style.display = 'none';
+                    onlineEl.style.display = 'block';
+
+                    // Clear interval and redirect
+                    if (checkInterval) {
+                        clearInterval(checkInterval);
+                    }
+
+                    // Auto-redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = DASHBOARD_URL;
+                    }, 2000);
+
+                    return true;
+                }
+            } catch (error) {
+                // Cluster is offline
+                statusEl.className = 'status offline';
+                statusEl.innerHTML = `
+                    <div class="status-icon">🔴</div>
+                    <div class="status-text">Cluster not detected</div>
+                    <div class="status-detail">Follow the instructions below to start</div>
+                `;
+                offlineEl.style.display = 'block';
+                onlineEl.style.display = 'none';
+            }
+
+            return false;
+        }
+
+        // Initial check
+        checkStatus();
+
+        // Check every 5 seconds
+        checkInterval = setInterval(checkStatus, 5000);
+    </script>
+</body>
+
+</html>
