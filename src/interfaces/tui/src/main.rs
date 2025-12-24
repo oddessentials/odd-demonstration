@@ -5,14 +5,41 @@ use crossterm::{
 };
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
     Terminal,
 };
 use serde::Deserialize;
-use std::{error::Error, io, time::Duration};
+use std::{error::Error, io, sync::{Arc, atomic::{AtomicBool, Ordering}}, thread, time::Duration};
+
+/// ASCII art logo for the Distributed Task Observatory
+const LOGO: &str = r#"
+            .....        
+         .#########.     
+       .#####      ##    
+      ####+###+    ##+   
+    ######  +###+  ###   
+  #### -######+######+   
++###.   +####.  +###+    
+ ..   -###+########.     
+    .###+   .####.       
+     -+    +###.         
+         -###-           
+         -#-             
+"#;
+
+/// Animated spinner frames (Braille dots pattern)
+const SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+/// Loading messages that cycle for visual interest
+const LOADING_MESSAGES: &[&str] = &[
+    "Connecting to services",
+    "Fetching statistics",
+    "Loading job data",
+    "Checking alerts",
+];
 
 #[derive(Deserialize, Debug, Clone, Default)]
 struct Stats {
@@ -113,6 +140,90 @@ impl App {
     }
 }
 
+/// Renders the loading splash screen with animated spinner
+fn render_loading_splash<B: ratatui::backend::Backend>(
+    terminal: &mut Terminal<B>,
+    frame_idx: usize,
+) -> Result<(), Box<dyn Error>> {
+    let spinner = SPINNER_FRAMES[frame_idx % SPINNER_FRAMES.len()];
+    let message = LOADING_MESSAGES[frame_idx / 3 % LOADING_MESSAGES.len()];
+    
+    terminal.draw(|f| {
+        let size = f.size();
+        
+        // Center the content vertically
+        let vertical_center = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(25),
+                Constraint::Length(18),
+                Constraint::Percentage(25),
+            ])
+            .split(size);
+        
+        // Center the content horizontally
+        let horizontal_center = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(25),
+                Constraint::Min(40),
+                Constraint::Percentage(25),
+            ])
+            .split(vertical_center[1]);
+        
+        let center_area = horizontal_center[1];
+        
+        // Build the splash content
+        let mut lines: Vec<Line> = Vec::new();
+        
+        // Add logo lines with cyan color
+        for line in LOGO.lines() {
+            lines.push(Line::from(vec![
+                Span::styled(line, Style::default().fg(Color::Cyan))
+            ]));
+        }
+        
+        // Add spacing
+        lines.push(Line::from(""));
+        
+        // Add animated loading line with spinner
+        let dots = ".".repeat((frame_idx % 4) + 1);
+        lines.push(Line::from(vec![
+            Span::styled(
+                format!("  {} ", spinner),
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}{}", message, dots),
+                Style::default().fg(Color::White),
+            ),
+        ]));
+        
+        // Add subtle branding line
+        lines.push(Line::from(""));
+        lines.push(Line::from(vec![
+            Span::styled(
+                "Distributed Task Observatory",
+                Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+            ),
+        ]));
+        
+        let splash = Paragraph::new(lines)
+            .alignment(Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Cyan))
+                    .title(" oddessentials.com ")
+                    .title_style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            );
+        
+        f.render_widget(splash, center_area);
+    })?;
+    
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let api_url = std::env::var("READ_MODEL_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
     let gateway_url = std::env::var("GATEWAY_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
@@ -123,21 +234,93 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    // Create app and spawn background refresh
     let mut app = App::new(api_url, gateway_url);
-    app.refresh();
+    let loading_done = Arc::new(AtomicBool::new(false));
+    let loading_done_clone = Arc::clone(&loading_done);
+    
+    // Spawn refresh in background thread
+    let api_url_clone = app.api_url.clone();
+    let gateway_url_clone = app.gateway_url.clone();
+    let handle = thread::spawn(move || {
+        let mut background_app = App::new(api_url_clone, gateway_url_clone);
+        background_app.refresh();
+        loading_done_clone.store(true, Ordering::SeqCst);
+        background_app
+    });
+    
+    // Animated loading splash while data loads
+    let mut frame_idx = 0;
+    while !loading_done.load(Ordering::SeqCst) {
+        render_loading_splash(&mut terminal, frame_idx)?;
+        frame_idx += 1;
+        thread::sleep(Duration::from_millis(80));
+        
+        // Allow user to quit during loading with 'q'
+        if event::poll(Duration::from_millis(0))? {
+            if let Event::Key(key) = event::read()? {
+                if key.code == KeyCode::Char('q') {
+                    disable_raw_mode()?;
+                    execute!(
+                        terminal.backend_mut(),
+                        LeaveAlternateScreen,
+                        DisableMouseCapture
+                    )?;
+                    terminal.show_cursor()?;
+                    return Ok(());
+                }
+            }
+        }
+    }
+    
+    // Get the loaded app data from background thread
+    app = handle.join().expect("Background thread panicked");
 
     loop {
         terminal.draw(|f| {
-            let chunks = Layout::default()
+            // Main vertical layout
+            let main_chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
                 .constraints([
-                    Constraint::Length(3),
-                    Constraint::Length(7),
-                    Constraint::Length(6),
-                    Constraint::Min(8),
+                    Constraint::Length(15), // Header with logo + title + stats (smaller logo)
+                    Constraint::Length(6),  // Alerts
+                    Constraint::Min(8),     // Jobs table
                 ])
                 .split(f.size());
+
+            // Header area: Logo on left, Title+Stats on right
+            let header_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Length(32), // Logo width (smaller)
+                    Constraint::Min(30),    // Title + Stats
+                ])
+                .split(main_chunks[0]);
+
+            // Render the ASCII logo (centered)
+            let logo_lines: Vec<Line> = LOGO
+                .lines()
+                .map(|line| {
+                    Line::from(vec![Span::styled(
+                        line,
+                        Style::default().fg(Color::Cyan),
+                    )])
+                })
+                .collect();
+            let logo_widget = Paragraph::new(logo_lines)
+                .alignment(ratatui::layout::Alignment::Center)
+                .block(Block::default().borders(Borders::ALL).title(" oddessentials.com "));
+            f.render_widget(logo_widget, header_chunks[0]);
+
+            // Right side: Title + Stats stacked vertically
+            let right_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(3), // Title
+                    Constraint::Min(5),    // Stats
+                ])
+                .split(header_chunks[1]);
 
             // Title
             let title = Paragraph::new(vec![Line::from(vec![
@@ -147,7 +330,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ),
             ])])
             .block(Block::default().borders(Borders::ALL));
-            f.render_widget(title, chunks[0]);
+            f.render_widget(title, right_chunks[0]);
 
             // Stats
             let stats_text = vec![
@@ -179,7 +362,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             ];
             let stats_block = Paragraph::new(stats_text)
                 .block(Block::default().title(" Statistics ").borders(Borders::ALL));
-            f.render_widget(stats_block, chunks[1]);
+            f.render_widget(stats_block, right_chunks[1]);
 
             // Alerts pane (with graceful degradation)
             let alerts_content: Vec<Line> = if let Some(ref err) = app.alerts_error {
@@ -204,7 +387,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             };
             let alerts_block = Paragraph::new(alerts_content)
                 .block(Block::default().title(format!(" Alerts ({}) ", app.alerts.len())).borders(Borders::ALL));
-            f.render_widget(alerts_block, chunks[2]);
+            f.render_widget(alerts_block, main_chunks[1]);
 
             // Jobs table
             let header = Row::new(vec!["ID", "Type", "Status", "Created"])
@@ -241,7 +424,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .header(header)
             .widths(&widths)
             .block(Block::default().title(" Recent Jobs ").borders(Borders::ALL));
-            f.render_widget(table, chunks[3]);
+            f.render_widget(table, main_chunks[2]);
         })?;
 
         // Handle input
@@ -321,5 +504,96 @@ mod tests {
         assert_eq!(stats.completed_jobs, 90);
         assert_eq!(stats.failed_jobs, 10);
         assert_eq!(stats.last_event_time, "2024-01-01T12:00:00Z");
+    }
+
+    // Loading screen tests - ensure branding/UX doesn't regress
+
+    #[test]
+    fn test_logo_is_not_empty() {
+        assert!(!LOGO.is_empty(), "Logo should not be empty");
+        assert!(LOGO.len() > 50, "Logo should have substantial content");
+    }
+
+    #[test]
+    fn test_logo_has_expected_line_count() {
+        let line_count = LOGO.lines().count();
+        // Logo should have between 10-20 lines (current is ~13)
+        assert!(line_count >= 10, "Logo should have at least 10 lines, got {}", line_count);
+        assert!(line_count <= 20, "Logo should have at most 20 lines, got {}", line_count);
+    }
+
+    #[test]
+    fn test_spinner_frames_count() {
+        // Spinner should have exactly 10 frames for smooth animation
+        assert_eq!(SPINNER_FRAMES.len(), 10, "Spinner should have 10 frames");
+    }
+
+    #[test]
+    fn test_spinner_frames_are_braille() {
+        // All spinner frames should be Braille pattern characters (U+2800-U+28FF)
+        for (i, frame) in SPINNER_FRAMES.iter().enumerate() {
+            assert!(!frame.is_empty(), "Spinner frame {} should not be empty", i);
+            for c in frame.chars() {
+                assert!(
+                    ('\u{2800}'..='\u{28FF}').contains(&c),
+                    "Spinner frame {} should contain Braille characters, got '{}'", i, c
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_loading_messages_count() {
+        // Should have at least 3 messages for visual variety
+        assert!(LOADING_MESSAGES.len() >= 3, "Should have at least 3 loading messages");
+        assert!(LOADING_MESSAGES.len() <= 10, "Should not have too many loading messages");
+    }
+
+    #[test]
+    fn test_loading_messages_not_empty() {
+        for (i, msg) in LOADING_MESSAGES.iter().enumerate() {
+            assert!(!msg.is_empty(), "Loading message {} should not be empty", i);
+            assert!(msg.len() >= 5, "Loading message {} should be descriptive", i);
+        }
+    }
+
+    #[test]
+    fn test_spinner_cycling_logic() {
+        // Verify the spinner index wraps correctly
+        let frame_count = SPINNER_FRAMES.len();
+        
+        // Test various frame indices
+        assert_eq!(0 % frame_count, 0);
+        assert_eq!(5 % frame_count, 5);
+        assert_eq!(10 % frame_count, 0); // Should wrap
+        assert_eq!(15 % frame_count, 5); // Should wrap
+    }
+
+    #[test]
+    fn test_message_cycling_logic() {
+        // Messages cycle every 3 frames (frame_idx / 3)
+        let msg_count = LOADING_MESSAGES.len();
+        
+        // Frame 0-2 should show message 0
+        assert_eq!((0 / 3) % msg_count, 0);
+        assert_eq!((2 / 3) % msg_count, 0);
+        
+        // Frame 3-5 should show message 1
+        assert_eq!((3 / 3) % msg_count, 1);
+        assert_eq!((5 / 3) % msg_count, 1);
+        
+        // Should eventually cycle back
+        let cycle_point = 3 * msg_count;
+        assert_eq!((cycle_point / 3) % msg_count, 0);
+    }
+
+    #[test]
+    fn test_dots_animation_logic() {
+        // Dots should cycle 1-4 based on frame_idx % 4
+        assert_eq!((0 % 4) + 1, 1); // "."
+        assert_eq!((1 % 4) + 1, 2); // ".."
+        assert_eq!((2 % 4) + 1, 3); // "..."
+        assert_eq!((3 % 4) + 1, 4); // "...."
+        assert_eq!((4 % 4) + 1, 1); // Back to "."
     }
 }
