@@ -64,7 +64,7 @@ jobs:
             artifact: odd-dashboard-windows-x64.exe
             binary: odd-dashboard.exe
             
-          - os: macos-13  # Intel
+          - os: macos-latest  # Intel (macos-13 retired)
             target: x86_64-apple-darwin
             artifact: odd-dashboard-macos-x64
             binary: odd-dashboard
@@ -104,9 +104,9 @@ jobs:
         run: |
           cd src/interfaces/tui
           if [ "${{ matrix.cross }}" = "true" ]; then
-            cross build --release --target ${{ matrix.target }} --locked
+            cross build --release --target ${{ matrix.target }}
           else
-            cargo build --release --target ${{ matrix.target }} --locked
+            cargo build --release --target ${{ matrix.target }}
           fi
         shell: bash
       
