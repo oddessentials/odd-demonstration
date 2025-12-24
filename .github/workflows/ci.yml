@@ -271,6 +271,34 @@ jobs:
           cargo test --locked
 
   # ============================================================
+  # Release Dry-Run - Catches semantic-release config issues before merge
+  # ============================================================
+  release-dry-run:
+    name: Release Dry-Run
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Semantic Release (dry-run)
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          dry_run: true
+          extra_plugins: |
+            @semantic-release/exec
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================
   # Container Image Builds (Future extensibility)
   # ============================================================
   # docker:
