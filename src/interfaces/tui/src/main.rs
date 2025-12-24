@@ -1644,7 +1644,8 @@ mod tests {
     fn test_get_remediation_steps_port_conflict() {
         let steps = get_remediation_steps("Port 8080 in use");
         assert!(!steps.is_empty(), "Should provide remediation steps");
-        assert!(steps.iter().any(|s| s.contains("netstat") || s.contains("port")), 
+        // On Windows: netstat, on Linux/macOS: lsof
+        assert!(steps.iter().any(|s| s.contains("netstat") || s.contains("lsof") || s.contains("port")), 
             "Steps should help diagnose port conflict");
     }
 
