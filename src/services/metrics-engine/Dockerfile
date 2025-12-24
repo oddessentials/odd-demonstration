@@ -17,6 +17,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /metrics-engine
 
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=builder /metrics-engine /metrics-engine
+WORKDIR /app
+COPY --from=builder /metrics-engine /app/metrics-engine
+COPY VERSION /app/VERSION
 
-CMD ["/metrics-engine"]
+CMD ["/app/metrics-engine"]

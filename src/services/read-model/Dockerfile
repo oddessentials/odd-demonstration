@@ -16,8 +16,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /read-model
 
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=builder /read-model /read-model
+WORKDIR /app
+COPY --from=builder /read-model /app/read-model
+COPY VERSION /app/VERSION
 
 EXPOSE 8080
 
-CMD ["/read-model"]
+CMD ["/app/read-model"]
