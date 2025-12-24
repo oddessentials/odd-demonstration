@@ -18,6 +18,9 @@ FROM gcr.io/distroless/static-debian12
 
 COPY --from=builder /read-model /read-model
 
+# Copy VERSION file for runtime version reporting
+COPY VERSION /VERSION
+
 EXPOSE 8080
 
 CMD ["/read-model"]

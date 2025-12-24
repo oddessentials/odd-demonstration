@@ -165,31 +165,45 @@ nodes:
 function Build-DockerImages {
     Write-Progress-Step -Step "images" -Status "starting" -Message "Building Docker images..."
     
+    # Define images with their VERSION file paths
     $images = @(
-        @{ Name = "gateway"; Dockerfile = "src/services/gateway/Dockerfile"; Context = "." }
-        @{ Name = "processor"; Dockerfile = "src/services/processor/Dockerfile"; Context = "." }
-        @{ Name = "metrics-engine"; Dockerfile = "src/services/metrics-engine/Dockerfile"; Context = "src/services/metrics-engine" }
-        @{ Name = "read-model"; Dockerfile = "src/services/read-model/Dockerfile"; Context = "src/services/read-model" }
-        @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web" }
+        @{ Name = "gateway"; Dockerfile = "src/services/gateway/Dockerfile"; Context = "."; VersionFile = "src/services/gateway/VERSION" }
+        @{ Name = "processor"; Dockerfile = "src/services/processor/Dockerfile"; Context = "."; VersionFile = "src/services/processor/VERSION" }
+        @{ Name = "metrics-engine"; Dockerfile = "src/services/metrics-engine/Dockerfile"; Context = "src/services/metrics-engine"; VersionFile = "src/services/metrics-engine/VERSION" }
+        @{ Name = "read-model"; Dockerfile = "src/services/read-model/Dockerfile"; Context = "src/services/read-model"; VersionFile = "src/services/read-model/VERSION" }
+        @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web"; VersionFile = $null }
     )
     
     $failedImages = @()
+    $script:ImageVersions = @{}  # Store name:version for later use
     
     foreach ($img in $images) {
         $dockerfilePath = Join-Path $ProjectRoot $img.Dockerfile
         $contextPath = Join-Path $ProjectRoot $img.Context
         
-        Write-Progress-Step -Step "images" -Status "starting" -Message "Building $($img.Name)..."
+        # Read version from VERSION file, default to "latest" if not found
+        $version = "latest"
+        if ($img.VersionFile) {
+            $versionFilePath = Join-Path $ProjectRoot $img.VersionFile
+            if (Test-Path $versionFilePath) {
+                $version = (Get-Content $versionFilePath -Raw).Trim()
+            }
+        }
+        
+        $imageTag = "$($img.Name):$version"
+        $script:ImageVersions[$img.Name] = $version
+        
+        Write-Progress-Step -Step "images" -Status "starting" -Message "Building $imageTag..."
         
         # Build sequentially for more reliable error handling
         $ErrorActionPreference = "Continue"
-        docker build -t "$($img.Name):latest" -f $dockerfilePath $contextPath 2>&1 | Out-Null
+        docker build -t $imageTag -f $dockerfilePath $contextPath 2>&1 | Out-Null
         $exitCode = $LASTEXITCODE
         $ErrorActionPreference = "Stop"
         
         if ($exitCode -ne 0) {
             $failedImages += $img.Name
-            Write-Progress-Step -Step "images" -Status "error" -Message "Failed to build $($img.Name)"
+            Write-Progress-Step -Step "images" -Status "error" -Message "Failed to build $imageTag"
         }
     }
     
@@ -211,17 +225,21 @@ function Import-ImagesToKind {
     Write-Progress-Step -Step "load" -Status "starting" -Message "Loading images into Kind cluster..."
     
     foreach ($img in $images) {
-        Write-Progress-Step -Step "load" -Status "starting" -Message "Loading $img..."
+        # Get version from the build step, default to "latest"
+        $version = if ($script:ImageVersions -and $script:ImageVersions[$img]) { $script:ImageVersions[$img] } else { "latest" }
+        $imageTag = "${img}:${version}"
+        
+        Write-Progress-Step -Step "load" -Status "starting" -Message "Loading $imageTag..."
         
         # kind load outputs progress to stderr, so use same pattern as cluster creation
         $ErrorActionPreference = "Continue"
-        $output = & $KindPath load docker-image "${img}:latest" --name $clusterName 2>&1
+        $output = & $KindPath load docker-image $imageTag --name $clusterName 2>&1
         $exitCode = $LASTEXITCODE
         $ErrorActionPreference = "Stop"
         
         if ($exitCode -ne 0) {
             $errorMsg = ($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] }) -join "; "
-            Write-Progress-Step -Step "load" -Status "error" -Message "Failed to load $img`: $errorMsg"
+            Write-Progress-Step -Step "load" -Status "error" -Message "Failed to load $imageTag`: $errorMsg"
             return $false
         }
     }

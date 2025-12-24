@@ -19,4 +19,7 @@ FROM gcr.io/distroless/static-debian12
 
 COPY --from=builder /metrics-engine /metrics-engine
 
+# Copy VERSION file for runtime version reporting
+COPY VERSION /VERSION
+
 CMD ["/metrics-engine"]
