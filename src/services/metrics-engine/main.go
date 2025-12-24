@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/distributed-task-observatory/metrics-engine/validator"
@@ -13,6 +15,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+// ServiceVersion is read from VERSION file at startup
+var ServiceVersion string
+
+// readVersion reads and validates the VERSION file
+func readVersion() string {
+	data, err := os.ReadFile("VERSION")
+	if err != nil {
+		log.Fatalf("FATAL: Failed to read VERSION file: %v", err)
+	}
+	version := strings.TrimSpace(string(data))
+
+	// Validate SemVer format
+	semverRegex := regexp.MustCompile(`^\d+\.\d+\.\d+$`)
+	if !semverRegex.MatchString(version) {
+		log.Fatalf("FATAL: Invalid SemVer format in VERSION file: %s", version)
+	}
+
+	return version
+}
 
 type EventEnvelope struct {
 	ContractVersion string                 `json:"contractVersion"`
@@ -44,7 +66,9 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
-	log.Println("Metrics Engine starting...")
+	// Read and validate version at startup
+	ServiceVersion = readVersion()
+	log.Printf("Metrics Engine version %s starting...", ServiceVersion)
 
 	rabbitURL := getEnv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672")
 	redisURL := getEnv("REDIS_URL", "redis:6379")
