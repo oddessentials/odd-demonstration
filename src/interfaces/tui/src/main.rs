@@ -64,6 +64,7 @@ enum AppMode {
 #[derive(Debug, Clone, PartialEq)]
 enum ClusterStatus {
     Ready,
+    NoPods,  // Cluster exists but no application pods deployed
     NotFound,
     Error(String),
 }
@@ -199,7 +200,8 @@ fn check_cluster_status() -> ClusterStatus {
             if result.status.success() {
                 let stdout = String::from_utf8_lossy(&result.stdout);
                 if stdout.contains("node/") {
-                    ClusterStatus::Ready
+                    // Cluster exists, now check if pods are deployed
+                    check_pods_status()
                 } else {
                     ClusterStatus::NotFound
                 }
@@ -208,6 +210,34 @@ fn check_cluster_status() -> ClusterStatus {
             }
         }
         Err(e) => ClusterStatus::Error(format!("kubectl not found: {}", e)),
+    }
+}
+
+/// Check if application pods are deployed in the cluster
+fn check_pods_status() -> ClusterStatus {
+    let output = Command::new("kubectl")
+        .args(["get", "pods", "--context", "kind-task-observatory", "-o", "name"])
+        .output();
+
+    match output {
+        Ok(result) => {
+            if result.status.success() {
+                let stdout = String::from_utf8_lossy(&result.stdout);
+                // Check if there are any pods (not empty output)
+                if stdout.trim().is_empty() {
+                    ClusterStatus::NoPods
+                } else {
+                    ClusterStatus::Ready
+                }
+            } else {
+                // kubectl failed but cluster exists, treat as NoPods
+                ClusterStatus::NoPods
+            }
+        }
+        Err(_) => {
+            // kubectl error after nodes check passed - unusual, treat as NoPods
+            ClusterStatus::NoPods
+        }
     }
 }
 
@@ -1098,8 +1128,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             app = handle.join().expect("Background thread panicked");
             app.mode = AppMode::Dashboard;
         }
-        ClusterStatus::NotFound | ClusterStatus::Error(_) => {
-            // Show launcher view
+        ClusterStatus::NoPods | ClusterStatus::NotFound | ClusterStatus::Error(_) => {
+            // Show launcher view - will trigger deployment and port-forwards
             app.mode = AppMode::Launcher;
         }
     }
@@ -1558,12 +1588,18 @@ mod tests {
     #[test]
     fn test_cluster_status_variants() {
         let ready = ClusterStatus::Ready;
+        let no_pods = ClusterStatus::NoPods;
         let not_found = ClusterStatus::NotFound;
         let error = ClusterStatus::Error("test error".to_string());
         
         assert_eq!(ready, ClusterStatus::Ready);
+        assert_eq!(no_pods, ClusterStatus::NoPods);
         assert_eq!(not_found, ClusterStatus::NotFound);
         assert!(matches!(error, ClusterStatus::Error(_)));
+        
+        // NoPods is distinct from Ready and NotFound
+        assert_ne!(no_pods, ready);
+        assert_ne!(no_pods, not_found);
     }
 
     #[test]
