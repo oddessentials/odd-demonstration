@@ -10,6 +10,39 @@
 | Linux | x86_64 | glibc 2.31+ | `odd-dashboard-linux-x64` | Ubuntu 20.04+, Debian 11+ |
 | Linux | aarch64 (ARM64) | glibc 2.31+ | `odd-dashboard-linux-arm64` | Raspberry Pi 4+, AWS Graviton |
 
+## Hardware Requirements
+
+### Full Cluster (Recommended)
+
+For running the complete Distributed Task Observatory cluster with all services:
+
+| Resource | Minimum | Recommended | Notes |
+|----------|---------|-------------|-------|
+| **RAM** | 8 GB | 16 GB | Docker Desktop + kind + 13+ containers |
+| **CPU** | 4 cores | 8 cores | Parallel builds, responsive TUI |
+| **Disk** | 15 GB free | 30 GB free | Docker images (~8GB) + cluster state |
+| **Storage** | HDD | SSD | SSD significantly improves startup time |
+
+### Docker Desktop Allocation
+
+Configure Docker Desktop resources (Settings → Resources):
+
+| Setting | Minimum | Recommended |
+|---------|---------|-------------|
+| Memory | 4 GB | 6-8 GB |
+| CPUs | 2 | 4+ |
+| Disk image size | 20 GB | 40 GB |
+
+### odd-dashboard Binary Only
+
+If running just the `odd-dashboard` binary without the cluster:
+
+| Resource | Requirement |
+|----------|-------------|
+| RAM | ~50 MB |
+| Disk | ~10 MB |
+
+
 ## Prerequisites
 
 All platforms require:

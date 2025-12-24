@@ -91,6 +91,9 @@ odd-dashboard doctor
 | Linux | x64 | `odd-dashboard-linux-x64` |
 | Linux | ARM64 | `odd-dashboard-linux-arm64` |
 
+**System Requirements:** 8GB RAM minimum (16GB recommended), 4+ CPU cores, 15GB disk.
+See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.
+
 ## 🏗️ Architecture
 
 ![Architecture diagram](./mermaid-diagram.svg)
