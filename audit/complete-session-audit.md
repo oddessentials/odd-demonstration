@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-12-24
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-13
+**Phases Completed:** 0-14
 
 ---
 
@@ -16,6 +16,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 - **4 infrastructure components** (RabbitMQ, PostgreSQL, Redis, MongoDB)
 - **3 observability tools** (Prometheus, Grafana, Alertmanager)
 - **2 user interfaces** (Web Dashboard, Rust TUI with launcher)
+- **Multi-platform distribution** (install scripts, npm shim, release workflow)
 
 ---
 
@@ -37,6 +38,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 11 | Version Governance | ✅ Complete |
 | Phase 12 | Consumer Validation & TUI Enhancements | ✅ Complete |
 | Phase 13 | Add Task/UI Launcher & Hardening | ✅ Complete |
+| Phase 14 | Distribution Strategy | ✅ Complete |
 
 ---
 
@@ -76,6 +78,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 - **UI Launcher (U)** - Arrow navigation, 9 UIs from centralized registry
 - **Graceful Alert Degradation** - Bounded retries, no UI freeze
 - **Environment-Aware Errors** - SSH/headless detection for browser launch
+- **Doctor Command** - Checks Docker, PowerShell, kubectl, kind
 
 ### Web Dashboard
 - **Glassmorphic Design** - Modern, premium aesthetic
@@ -109,6 +112,17 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | `src/interfaces/web/launcher.html` | Offline bootstrap page |
 | `src/interfaces/tui/src/main.rs` | Rust TUI with launcher mode |
 
+### Distribution (Phase 14)
+| Path | Description |
+|------|-------------|
+| `src/interfaces/tui/VERSION` | Single source of truth for version |
+| `src/interfaces/tui/build.rs` | Build metadata injection |
+| `install.sh` | POSIX install script with checksum verification |
+| `install.ps1` | Windows install script with checksum verification |
+| `packages/npm-shim/*` | npm package with postinstall binary download |
+| `.github/workflows/release.yml` | Multi-platform release workflow |
+| `docker-compose.demo.yml` | Docker-only demo mode |
+
 ### Scripts
 | Path | Description |
 |------|-------------|
@@ -116,6 +130,10 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | `scripts/setup-cluster.ps1` | Kind cluster creation |
 | `scripts/integration-gate.ps1` | End-to-end test suite v2 |
 | `scripts/run-all-tests.ps1` | Canonical test entrypoint |
+| `scripts/audit-naming-consistency.ps1` | Verify no old binary names |
+| `scripts/verify-version-sync.ps1` | Verify version consistency |
+| `scripts/verify-artifact-names.ps1` | Verify canonical artifact names |
+| `scripts/audit-workflows.ps1` | Verify workflow secret isolation |
 
 ### Contracts
 | Path | Description |
@@ -138,7 +156,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Prometheus | http://localhost:9090 | - |
 | Gateway API | http://localhost:3000 | - |
 | Read Model API | http://localhost:8080 | - |
-| TUI | `cargo run --release` in `src/interfaces/tui` | - |
+| TUI | `odd-dashboard` or `cargo run --release` | - |
 
 ---
 
@@ -146,6 +164,10 @@ The Distributed Task Observatory is a production-grade distributed task processi
 
 ### Using TUI Launcher (Recommended)
 ```powershell
+# If installed via install scripts or npm:
+odd-dashboard
+
+# From source:
 cd src/interfaces/tui
 cargo run --release
 # Press 'L' to launch cluster
@@ -227,18 +249,67 @@ cargo run --release
 - Graceful degradation (fallback registry on load failure)
 - Cross-surface invariant tests
 
-### Test Results
-| Service | Tests |
-|---------|-------|
-| TUI (Rust) | 52 pass |
-| Gateway (Node.js) | 7 pass |
-| Web Smoke (Vitest) | 19 pass |
-| Processor (Python) | 5 pass |
-| Read Model (Go) | 1 suite pass |
-| Metrics Engine (Go) | 2 suites pass |
+---
+
+## Phase 14: Distribution Strategy (2025-12-24)
+
+### Binary Rename
+- **Before:** `observatory-tui`
+- **After:** `odd-dashboard`
+- Build metadata injection (commit, timestamp, rustc version)
+
+### CLI Features
+- `--version` / `-V`: Shows version with build metadata
+- `--help` / `-h`: Usage information
+- `doctor`: Checks prerequisites (Docker, PowerShell, kubectl, kind)
+- Support matrix enforcement (fails fast on unsupported platforms)
+
+### Install Scripts
+| Script | Platform | Features |
+|--------|----------|----------|
+| `install.sh` | Linux/macOS | Platform detection, checksum verification |
+| `install.ps1` | Windows | Version resolution, checksum verification |
+
+### npm Shim (`@oddessentials/odd-dashboard`)
+- Postinstall binary download with checksum verification
+- Strict failure semantics (exits non-zero if binary missing)
+- Sentinel file for differentiated error messages
+
+### Demo Mode (`docker-compose.demo.yml`)
+- All ports in 13000+ range to avoid conflicts
+- Isolated naming (odto-demo-* containers/volumes/network)
+- Internal services (postgres, mongo, redis, amqp) not exposed
+
+### Release Workflow (`.github/workflows/release.yml`)
+- Triggered on `v*.*.*` tags
+- 5-platform matrix (Windows x64, macOS x64/arm64, Linux x64/arm64)
+- VERSION file validation
+- SHA256SUMS generation
+- Artifact completeness gate
+
+### CI Integration
+- Distribution audit job with 4 PowerShell checks
+- Platform detection unit tests
+
+### Commits (feature/distribution-strategy)
+1. `d6f983f` - Version infrastructure and audit scripts
+2. `91ce8b6` - Binary rename with build metadata
+3. `f49662b` - CLI features, doctor command, support matrix
+4. `56c4efa` - docker-compose.demo.yml
+5. `9d06fe8` - Install scripts
+6. `5dab3d3` - npm shim with strict failure semantics
+7. `9784cc2` - Release workflow
+8. `0a73d52` - CI integration for distribution audits
+
+### Test Results (Phase 14)
+| Component | Tests |
+|-----------|-------|
+| TUI (Rust) | 56 pass (4 new platform tests) |
+| Audit Scripts | All passing |
+| Naming Consistency | No old references |
 
 ---
 
 ## Session Complete ✓
 
-All 13 implementation phases completed successfully.
+All 14 implementation phases completed successfully.
