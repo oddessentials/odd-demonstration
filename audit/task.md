@@ -8,7 +8,7 @@
 ## Phase 1: Infrastructure & Platform [x]
 - [x] Deploy RabbitMQ with Management UI
 - [x] Deploy PostgreSQL with pgAdmin
-- [x] Deploy NoSQL (Redis/Mongo) with Management UI
+- [x] Deploy NoSQL (Redis/MongoDB) with Management UI
 - [x] Configure Kubernetes Ingress and Service routing
 
 ## Phase 2: Core Service Implementation [x]
@@ -23,7 +23,7 @@
 - [x] Configure standard alerts (Service down, Failure rate)
 
 ## Phase 4: Aggregation & Read Model [x]
-- [x] Implement Go Metrics Engine (RabbitMQ consumer, NoSQL persistence)
+- [x] Implement Go Metrics Engine (RabbitMQ consumer, Redis/MongoDB persistence)
 - [x] Implement Read Model API (Single source for UIs)
 - [x] Verify metrics aggregation and read model consistency
 
@@ -36,3 +36,43 @@
 - [x] Execute Integration Gate (End-to-end proof)
 - [x] Validate contract enforcement in CI
 - [x] Final documentation and walkthrough
+
+## Phase 7: Testing & Determinism [x]
+- [x] Add unit tests to all services
+- [x] Implement schema-compliant mock data
+- [x] Enforce deterministic test fixtures
+- [x] Add Bazel build rules for Go services
+
+## Phase 8: Production-Grade Observability [x]
+- [x] Add MongoDB for event sourcing audit trail
+- [x] Create Grafana dashboard with 6 panels
+- [x] Configure Prometheus scrape targets
+- [x] Add CORS support to Read Model API
+
+## Phase 9: Message Filtering & Event Sourcing [x]
+- [x] Implement job type filtering
+- [x] Add MongoDB event persistence
+- [x] Update Read Model to query MongoDB
+- [x] Add /events endpoint to Read Model API
+
+## Phase 10: Startup Automation [x]
+- [x] Create `scripts/start-all.ps1` one-click startup
+- [x] Add TUI cluster launcher mode
+- [x] Add cluster status detection
+- [x] Implement setup progress view in TUI
+- [x] Create Web launcher.html for offline bootstrap
+
+## Phase 11: Version Governance [x  ]
+- [x] Add VERSION files to all services
+- [x] Create check-service-versions.py script
+- [x] Implement schema compatibility checking
+- [x] Document versioning governance in README
+
+## Phase 12: Consumer Validation & TUI Enhancements [x]
+- [x] Implement schema validator for Python processor
+- [x] Add dead-letter queue for invalid messages
+- [x] Add TUI loading splash with animation
+- [x] Add TUI alerts panel
+- [x] Add TUI task creation placeholder
+- [x] Update Web Mirror for feature parity
+- [x] Add unit tests for TUI components

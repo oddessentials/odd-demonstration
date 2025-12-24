@@ -1,68 +1,90 @@
 # Distributed Task Observatory - Complete Session Audit
 
-**Session Date:** 2025-12-22
-**Duration:** ~3 hours
-**Conversation ID:** c305f5d6-89a1-4d5b-a311-e081142f51ae
+**Last Updated:** 2025-12-23
+**Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
+**Phases Completed:** 0-12
 
 ---
 
 ## Executive Summary
 
-This session implemented a complete, production-grade distributed task processing system from scratch. The system demonstrates microservice architecture, event-driven design, observability, and polyglot development using Kubernetes.
+The Distributed Task Observatory is a production-grade distributed task processing system demonstrating modern microservice architecture, event-driven design, observability, and polyglot development on Kubernetes.
 
 ### Final System State
-- **12 Kubernetes pods** running and healthy
+- **15+ Kubernetes pods** running and healthy
 - **4 microservices** (Node.js, Python, Go x2)
-- **3 infrastructure components** (RabbitMQ, PostgreSQL, Redis)
+- **4 infrastructure components** (RabbitMQ, PostgreSQL, Redis, MongoDB)
 - **3 observability tools** (Prometheus, Grafana, Alertmanager)
-- **2 user interfaces** (Web Dashboard, Rust TUI)
+- **2 user interfaces** (Web Dashboard, Rust TUI with launcher)
 
 ---
 
-## Session Timeline
+## Phase Summary
 
-### Phase 0-1: Foundation & Infrastructure (~30 min)
-- Created kind cluster configuration with ingress support
-- Set up Bazel build system (later pivoted to Docker due to Windows issues)
-- Established JSON contract schemas for events and jobs
-- Deployed infrastructure: RabbitMQ, PostgreSQL, Redis, pgAdmin
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase 0 | Foundation & Contracts | ✅ Complete |
+| Phase 1 | Infrastructure & Platform | ✅ Complete |
+| Phase 2 | Core Service Implementation | ✅ Complete |
+| Phase 3 | Observability Stack | ✅ Complete |
+| Phase 4 | Aggregation & Read Model | ✅ Complete |
+| Phase 5 | Interface Layer | ✅ Complete |
+| Phase 6 | Hardening & Verification | ✅ Complete |
+| Phase 7 | Testing & Determinism | ✅ Complete |
+| Phase 8 | Production-Grade Observability | ✅ Complete |
+| Phase 9 | Message Filtering & Event Sourcing | ✅ Complete |
+| Phase 10 | Startup Automation | ✅ Complete |
+| Phase 11 | Version Governance | ✅ Complete |
+| Phase 12 | Consumer Validation & TUI Enhancements | ✅ Complete |
 
-### Phase 2: Core Service Implementation (~30 min)
-- **Gateway (Node.js)**: Express-based API for job submission
-- **Processor (Python)**: RabbitMQ consumer, PostgreSQL writer
-- Created Docker builds and Kubernetes deployments
-- Verified end-to-end job flow
+---
 
-### Phase 3: Observability Stack (~20 min)
-- Deployed Prometheus, Grafana, Alertmanager
-- Instrumented Gateway with prom-client metrics
-- Instrumented Processor with prometheus_client metrics
-- Configured scrape targets
+## Technology Stack
 
-### Phase 4: Aggregation & Read Model (~25 min)
-- **Metrics Engine (Go)**: RabbitMQ consumer, Redis writer
-- **Read Model API (Go)**: Unified API for UIs
-- Connected Redis for fast reads, PostgreSQL for authoritative data
+### Languages & Frameworks
+| Service | Language | Framework |
+|---------|----------|-----------|
+| Gateway | Node.js | Express |
+| Processor | Python | pika, psycopg2 |
+| Metrics Engine | Go | amqp091-go, go-redis, mongo-driver |
+| Read Model | Go | net/http, go-redis, lib/pq, mongo-go-driver |
+| Web UI | HTML/JS | Vanilla (Glassmorphic) |
+| TUI | Rust | ratatui 0.24, crossterm, reqwest |
 
-### Phase 5: Interface Layer (~25 min)
-- **Web UI**: Glassmorphic HTML/CSS/JS dashboard
-- **Rust TUI**: Terminal dashboard using ratatui
-- Deployed to cluster with nginx ingress
+### Infrastructure
+- **Message Bus:** RabbitMQ 3.12
+- **Relational DB:** PostgreSQL 15
+- **Cache:** Redis 7
+- **Document Store:** MongoDB
+- **Ingress:** nginx-ingress
 
-### Phase 6: Hardening & Verification (~15 min)
-- Created integration gate script
-- Ran end-to-end tests (all passed)
-- Created comprehensive README
+### Observability
+- **Metrics:** Prometheus
+- **Dashboards:** Grafana
+- **Alerting:** Alertmanager
 
-### Post-Phase Refinements (~45 min)
-- Added .gitignore and .dockerignore
-- Fixed Grafana datasource configuration
-- Created Grafana dashboard with 6 panels
-- Fixed Prometheus scrape targets with static config
-- Added CORS support to Read Model API
-- Fixed Rust TUI compilation errors
-- Updated dashboard datasource UID
-- Created beginner-friendly README
+---
+
+## Key Features
+
+### TUI (Terminal User Interface)
+- **Cluster Launcher Mode** - Detects if cluster is running, offers one-key launch
+- **Animated Loading Splash** - Braille spinner with cycling messages
+- **Dashboard Mode** - Real-time stats, alerts, and job table
+- **Task Creation Placeholder** - Press 'N' for future task creation
+- **Graceful Alert Degradation** - Bounded retries, no UI freeze
+
+### Web Dashboard
+- **Glassmorphic Design** - Modern, premium aesthetic
+- **Loading Animation** - Animated splash matching TUI
+- **Feature Parity** - Alerts, stats, jobs, events tables
+- **New Task Modal** - Placeholder for future API integration
+
+### Startup Automation
+- **One-Click Script** - `scripts/start-all.ps1`
+- **TUI Integration** - Press 'L' in launcher mode
+- **JSON Progress Output** - For programmatic tracking
+- **Parallel Builds** - Docker images built concurrently
 
 ---
 
@@ -71,146 +93,32 @@ This session implemented a complete, production-grade distributed task processin
 ### Core Services
 | Path | Description |
 |------|-------------|
-| `src/services/gateway/index.js` | Node.js Express API with job submission and metrics |
-| `src/services/gateway/Dockerfile` | Multi-stage Docker build |
-| `src/services/processor/main.py` | Python RabbitMQ consumer with metrics |
-| `src/services/processor/Dockerfile` | Python Docker build |
-| `src/services/metrics-engine/main.go` | Go event aggregator |
-| `src/services/metrics-engine/Dockerfile` | Go Docker build |
+| `src/services/gateway/index.js` | Node.js Express API with metrics |
+| `src/services/processor/main.py` | Python RabbitMQ consumer with validation |
+| `src/services/metrics-engine/main.go` | Go event aggregator with MongoDB |
 | `src/services/read-model/main.go` | Go Read Model API with CORS |
-| `src/services/read-model/Dockerfile` | Go Docker build |
 
 ### User Interfaces
 | Path | Description |
 |------|-------------|
-| `src/interfaces/web/index.html` | Glassmorphic web dashboard |
-| `src/interfaces/web/nginx.conf` | Nginx API proxy config |
-| `src/interfaces/web/Dockerfile` | Nginx Docker build |
-| `src/interfaces/tui/src/main.rs` | Rust TUI with ratatui |
-| `src/interfaces/tui/Cargo.toml` | Rust dependencies |
-| `src/interfaces/tui/Dockerfile` | Rust Docker build |
+| `src/interfaces/web/index.html` | Web dashboard with loading splash |
+| `src/interfaces/web/launcher.html` | Offline bootstrap page |
+| `src/interfaces/tui/src/main.rs` | Rust TUI with launcher mode |
 
-### Kubernetes Manifests
+### Scripts
 | Path | Description |
 |------|-------------|
-| `infra/k8s/rabbitmq.yaml` | RabbitMQ deployment and service |
-| `infra/k8s/postgres.yaml` | PostgreSQL StatefulSet |
-| `infra/k8s/redis.yaml` | Redis deployment |
-| `infra/k8s/pgadmin.yaml` | pgAdmin deployment |
-| `infra/k8s/prometheus.yaml` | Prometheus with static targets and RBAC |
-| `infra/k8s/grafana.yaml` | Grafana with provisioning |
-| `infra/k8s/grafana-datasource.yaml` | Prometheus datasource |
-| `infra/k8s/grafana-dashboards.yaml` | Dashboard ConfigMap |
-| `infra/k8s/alertmanager.yaml` | Alertmanager deployment |
-| `infra/k8s/gateway.yaml` | Gateway deployment and service |
-| `infra/k8s/processor.yaml` | Processor deployment and service |
-| `infra/k8s/metrics-engine.yaml` | Metrics Engine deployment |
-| `infra/k8s/read-model.yaml` | Read Model deployment and service |
-| `infra/k8s/web-ui.yaml` | Web UI deployment and service |
-| `infra/k8s/infra-ingress.yaml` | Ingress rules for all UIs |
+| `scripts/start-all.ps1` | One-click cluster startup |
+| `scripts/setup-cluster.ps1` | Kind cluster creation |
+| `scripts/integration-gate.ps1` | End-to-end test suite v2 |
+| `scripts/run-all-tests.ps1` | Canonical test entrypoint |
 
 ### Contracts
 | Path | Description |
 |------|-------------|
 | `contracts/schemas/event-envelope.json` | Event message schema |
 | `contracts/schemas/job.json` | Job domain object schema |
-| `contracts/examples/event-example.json` | Example event |
-
-### Scripts
-| Path | Description |
-|------|-------------|
-| `scripts/setup-cluster.ps1` | Kind cluster creation |
-| `scripts/integration-gate.ps1` | End-to-end test suite |
-| `scripts/test-contracts.py` | Contract validation |
-
-### Documentation
-| Path | Description |
-|------|-------------|
-| `README.md` | Comprehensive project documentation |
-| `README_beginner.md` | Step-by-step guide (48 steps) |
-| `.gitignore` | Git ignore rules |
-| `.dockerignore` | Docker build exclusions |
-
----
-
-## Key Technical Decisions
-
-### 1. Bazel → Docker Pivot
-**Issue:** Bazel rules_nodejs and rules_python had compatibility issues on Windows.
-**Solution:** Adopted Docker for all service builds while retaining Bazel files for future use.
-
-### 2. CORS for Cross-Origin Requests
-**Issue:** Web Dashboard at localhost:8081 couldn't fetch from Read Model API at localhost:8080.
-**Solution:** Added CORS middleware to Go Read Model API.
-
-### 3. Static Prometheus Targets
-**Issue:** Kubernetes service discovery required complex RBAC.
-**Solution:** Used static scrape targets for Gateway and Processor.
-
-### 4. Grafana Datasource UID
-**Issue:** Dashboard referenced `uid: "prometheus"` but Grafana auto-generated `PBFA97CFB590B2093`.
-**Solution:** Updated dashboard ConfigMap with correct UID.
-
-### 5. ratatui API Compatibility
-**Issue:** TUI code used `f.area()` and `Table::new(rows, widths)` which are 0.25+ APIs.
-**Solution:** Changed to `f.size()` and `Table::new(rows).widths(&widths)` for 0.24.
-
----
-
-## Integration Gate Results
-
-```
-============================================================
-  DISTRIBUTED TASK OBSERVATORY - INTEGRATION GATE
-============================================================
-
->> Test 1 - Gateway Health Check
-[PASS] Gateway Health
->> Test 2 - Read Model Health Check
-[PASS] Read Model Health
->> Test 3 - Submit 5 Jobs
-[PASS] Job Submission (5 jobs)
->> Test 4 - Wait for Processing (10s)
->> Test 5 - Verify Jobs in Read Model
-[PASS] Jobs Processed
->> Test 6 - Verify Aggregated Stats
-[PASS] Stats Aggregation
->> Test 7 - Gateway Metrics Exposed
-[PASS] Gateway Metrics
-
-============================================================
-  INTEGRATION GATE RESULTS
-============================================================
-  Passed - 6
-  Failed - 0
-
-  [OK] ALL TESTS PASSED - SYSTEM VERIFIED
-```
-
----
-
-## Metrics Exposed
-
-### Gateway (Node.js)
-- `gateway_jobs_submitted_total{type}` - Counter of submitted jobs
-- `gateway_jobs_accepted_total` - Counter of published jobs
-
-### Processor (Python)
-- `processor_jobs_processed_total` - Total jobs consumed
-- `processor_jobs_completed_total` - Successfully completed
-- `processor_jobs_failed_total` - Failed jobs
-- `processor_job_processing_seconds` - Processing time histogram
-
----
-
-## Grafana Dashboard Panels
-
-1. **Jobs Submitted** (Stat) - `gateway_jobs_submitted_total`
-2. **Jobs Accepted** (Stat) - `gateway_jobs_accepted_total`
-3. **Jobs Completed** (Stat) - `processor_jobs_completed_total`
-4. **Jobs Failed** (Stat) - `processor_jobs_failed_total`
-5. **Job Throughput** (Time Series) - Rate of submitted/completed
-6. **Job Processing Latency** (Time Series) - p50, p95, p99
+| `contracts/VERSIONS.md` | Schema versioning documentation |
 
 ---
 
@@ -224,7 +132,68 @@ This session implemented a complete, production-grade distributed task processin
 | Prometheus | http://localhost:9090 | - |
 | Gateway API | http://localhost:3000 | - |
 | Read Model API | http://localhost:8080 | - |
-| TUI | Local terminal | - |
+| TUI | `cargo run --release` in `src/interfaces/tui` | - |
+
+---
+
+## Quick Start
+
+### Using TUI Launcher (Recommended)
+```powershell
+cd src/interfaces/tui
+cargo run --release
+# Press 'L' to launch cluster
+```
+
+### Using Script Directly
+```powershell
+.\scripts\start-all.ps1
+```
+
+### Manual Steps
+1. Clone repository
+2. Install prerequisites (Docker Desktop, kubectl, kind)
+3. Run `.\\scripts\\setup-cluster.ps1`
+4. Build and load Docker images
+5. Apply Kubernetes manifests
+6. Start port-forwards
+7. Verify with `.\\scripts\\integration-gate.ps1`
+
+---
+
+## Integration Gate Results (v2)
+
+```
+============================================================
+  INTEGRATION GATE v2 - Deterministic Tests
+============================================================
+
+>> Pre-flight: Execution Assumptions
+[PASS] Kubectl Context
+[PASS] Pods Ready
+>> Test 1 - Gateway Health (with retry)
+[PASS] Gateway Health
+>> Test 2 - Read Model Health (with retry)
+[PASS] Read Model Health
+>> Test 3 - Submit 3 Jobs
+[PASS] Job Submission
+>> Test 4 - Wait for Processing (30s max)
+[PASS] Jobs Processed
+>> Test 5 - MongoDB Event Persistence
+[PASS] MongoDB Events
+>> Test 6 - Stats Aggregation
+[PASS] Stats Aggregation
+>> Test 7 - Gateway Metrics
+[PASS] Gateway Metrics
+
+============================================================
+  INTEGRATION GATE RESULTS
+============================================================
+  Passed: 9
+  Failed: 0
+
+  [OK] ALL TESTS PASSED
+```
 
 ---
 
@@ -232,37 +201,13 @@ This session implemented a complete, production-grade distributed task processin
 
 | File | Description |
 |------|-------------|
-| `session-summary.md` | Initial session summary (Phases 0-6) |
-| `session-continuation.md` | Post-audit fixes and additions |
 | `complete-session-audit.md` | This file - comprehensive audit |
-| `task.md` | Phase checklist |
+| `task.md` | Phase-by-phase task checklist |
 | `walkthrough.md` | Implementation walkthrough |
-| `implementation_plan.md` | Final implementation plan |
-
----
-
-## Lessons Learned
-
-1. **Port-forwards are pod-specific** - Must restart after deployments
-2. **Grafana datasource UIDs are auto-generated** - Use API to discover
-3. **CORS is essential for browser-based UIs** - Add early in development
-4. **Test dependencies on each platform** - Bazel issues were Windows-specific
-5. **Static configs are simpler** - Kubernetes SD adds complexity
-
----
-
-## Reproduction Steps
-
-1. Clone repository
-2. Run `.\scripts\setup-cluster.ps1`
-3. Build all Docker images
-4. Load images with `kind load docker-image`
-5. Deploy with `kubectl apply -f .\infra\k8s\`
-6. Start port-forwards for each service
-7. Verify with `.\scripts\integration-gate.ps1`
+| `session-summary.md` | High-level summary |
 
 ---
 
 ## Session Complete ✓
 
-All 6 implementation phases plus refinements completed successfully.
+All 12 implementation phases completed successfully.

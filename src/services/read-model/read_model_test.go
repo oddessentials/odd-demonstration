@@ -31,22 +31,16 @@ func IsValidSemVer(version string) bool {
 	return pattern.MatchString(version)
 }
 
-// HealthResponse represents the health endpoint response.
-type HealthResponse struct {
-	Status  string `json:"status"`
-	Version string `json:"version"`
-}
-
-// BuildHealthResponse creates a health response with version.
-func BuildHealthResponse(version string) HealthResponse {
+// buildTestHealthResponse creates a health response for testing.
+func buildTestHealthResponse(version string) HealthResponse {
 	return HealthResponse{
 		Status:  "ok",
 		Version: version,
 	}
 }
 
-// MetricLabels includes version in metric labels.
-func MetricLabels(service, version string) map[string]string {
+// testMetricLabels creates metric labels for testing.
+func testMetricLabels(service, version string) map[string]string {
 	return map[string]string{
 		"service": service,
 		"version": version,
@@ -83,7 +77,7 @@ func TestReadVersion(t *testing.T) {
 // TestHealthResponseIncludesVersion tests health response contains version.
 func TestHealthResponseIncludesVersion(t *testing.T) {
 	version := "0.1.0"
-	response := BuildHealthResponse(version)
+	response := buildTestHealthResponse(version)
 
 	if response.Status != "ok" {
 		t.Errorf("Expected status 'ok', got '%s'", response.Status)
@@ -96,7 +90,7 @@ func TestHealthResponseIncludesVersion(t *testing.T) {
 
 // TestMetricLabelsIncludeVersion tests metric labels contain version.
 func TestMetricLabelsIncludeVersion(t *testing.T) {
-	labels := MetricLabels("read-model", "0.1.0")
+	labels := testMetricLabels("read-model", "0.1.0")
 
 	if labels["service"] != "read-model" {
 		t.Errorf("Expected service 'read-model', got '%s'", labels["service"])

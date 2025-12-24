@@ -3,29 +3,34 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and tsconfig
 COPY src/services/gateway/package.json ./
-# We need to create a dummy lock file if it doesn't exist to satisfy COPY or just skip it
-# Since we didn't commit a lock file to the specific service dir yet, I'll just skip it for now.
-# Actually, npm install will generate it.
+COPY src/services/gateway/tsconfig.json ./
 
-# Install dependencies
+# Install dependencies (including dev deps for ts compilation)
 RUN npm install
 
 # Copy source code
-COPY src/services/gateway/index.js ./index.js
+COPY src/services/gateway/index.ts ./index.ts
+
+# Copy VERSION file
+COPY src/services/gateway/VERSION ./VERSION
 
 # Copy contracts
 COPY contracts ./contracts
 
+# Compile TypeScript to JavaScript (outputs to ./dist per tsconfig)
+RUN npx tsc
+
+# Copy VERSION to dist directory as well (where the app looks for it)
+RUN cp VERSION dist/VERSION
+
 # Environment defaults
 ENV CONTRACTS_PATH=/app/contracts
-
-
-# Environment defaults
 ENV PORT=3000
 ENV RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
 
 EXPOSE 3000
 
-CMD ["node", "index.js"]
+# Run from dist directory where tsc outputs
+CMD ["node", "dist/index.js"]

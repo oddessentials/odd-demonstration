@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git log:*)",
+      "Bash(git describe:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)"
+    ]
+  }
+}
