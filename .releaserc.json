@@ -8,7 +8,7 @@
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "echo ${nextRelease.version} > src/interfaces/tui/VERSION && sed -i 's/^version = \"[^\"]*\"/version = \"${nextRelease.version}\"/' src/interfaces/tui/Cargo.toml && sed -i 's/^version = \"[^\"]*\"/version = \"${nextRelease.version}\"/' src/interfaces/tui/Cargo.lock && cd packages/npm-shim && npm version ${nextRelease.version} --no-git-tag-version --allow-same-version"
+                "prepareCmd": "echo ${nextRelease.version} > src/interfaces/tui/VERSION && sed -i 's/^version = \"[^\"]*\"/version = \"${nextRelease.version}\"/' src/interfaces/tui/Cargo.toml && cd src/interfaces/tui && cargo update --workspace && cd ../../../packages/npm-shim && npm version ${nextRelease.version} --no-git-tag-version --allow-same-version"
             }
         ],
         [
