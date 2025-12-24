@@ -159,6 +159,92 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// OpenAPI specification handler
+func openApiHandler(w http.ResponseWriter, r *http.Request) {
+	openApiSpec := map[string]interface{}{
+		"openapi": "3.0.3",
+		"info": map[string]interface{}{
+			"title":       "Read Model API",
+			"description": "Distributed Task Observatory Read Model Service - provides aggregated statistics and query endpoints",
+			"version":     ServiceVersion,
+			"contact": map[string]string{
+				"name": "Odd Essentials",
+				"url":  "https://oddessentials.com",
+			},
+		},
+		"servers": []map[string]string{
+			{"url": "http://localhost:8080", "description": "Local development"},
+		},
+		"paths": map[string]interface{}{
+			"/health": map[string]interface{}{
+				"get": map[string]interface{}{
+					"summary": "Health check",
+					"responses": map[string]interface{}{
+						"200": map[string]string{"description": "Service healthy"},
+					},
+				},
+			},
+			"/stats": map[string]interface{}{
+				"get": map[string]interface{}{
+					"summary":     "Get job statistics",
+					"description": "Returns aggregated job statistics from Redis cache",
+					"responses": map[string]interface{}{
+						"200": map[string]string{"description": "Statistics object with totalJobs, completedJobs, failedJobs, lastEventTime"},
+					},
+				},
+			},
+			"/jobs/recent": map[string]interface{}{
+				"get": map[string]interface{}{
+					"summary":     "Get recent jobs",
+					"description": "Returns the 10 most recent jobs from PostgreSQL",
+					"responses": map[string]interface{}{
+						"200": map[string]string{"description": "Array of job objects"},
+					},
+				},
+			},
+			"/events": map[string]interface{}{
+				"get": map[string]interface{}{
+					"summary":     "Get job events",
+					"description": "Returns events from MongoDB, optionally filtered by jobId query parameter",
+					"parameters": []map[string]interface{}{
+						{"name": "jobId", "in": "query", "required": false, "schema": map[string]string{"type": "string"}},
+					},
+					"responses": map[string]interface{}{
+						"200": map[string]string{"description": "Array of event objects"},
+					},
+				},
+			},
+		},
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(openApiSpec)
+}
+
+// HTML documentation page handler
+func docsHandler(w http.ResponseWriter, r *http.Request) {
+	htmlContent := `<!DOCTYPE html>
+<html>
+<head>
+    <title>Read Model API Documentation</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+        SwaggerUIBundle({
+            url: '/openapi.json',
+            dom_id: '#swagger-ui',
+            presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+            layout: 'BaseLayout'
+        });
+    </script>
+</body>
+</html>`
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(htmlContent))
+}
+
 func main() {
 	// Read and validate version at startup
 	ServiceVersion = readVersion()
@@ -216,6 +302,8 @@ func main() {
 	http.HandleFunc("/stats", corsMiddleware(statsHandler))
 	http.HandleFunc("/jobs/recent", corsMiddleware(recentJobsHandler))
 	http.HandleFunc("/events", corsMiddleware(eventsHandler))
+	http.HandleFunc("/openapi.json", corsMiddleware(openApiHandler))
+	http.HandleFunc("/docs", corsMiddleware(docsHandler))
 
 	port := getEnv("PORT", "8080")
 	log.Printf("Listening on :%s", port)

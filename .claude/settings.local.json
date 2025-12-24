@@ -4,7 +4,10 @@
       "Bash(git log:*)",
       "Bash(git describe:*)",
       "Bash(git push:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:blog.orhun.dev)"
     ]
   }
 }

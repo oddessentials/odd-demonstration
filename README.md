@@ -84,14 +84,19 @@ See [README_beginner.md](./README_beginner.md) for step-by-step instructions (Wi
 
 After startup, access services via port-forwards:
 
-| Service            | URL                         | Credentials   |
-| ------------------ | --------------------------- | ------------- |
-| **Web Dashboard**  | http://localhost:8081       | -             |
-| **Gateway API**    | http://localhost:3000       | -             |
-| **Read Model API** | http://localhost:8080/stats | -             |
-| **RabbitMQ**       | http://localhost:15672      | guest / guest |
-| **Grafana**        | http://localhost:3002       | admin / admin |
-| **Prometheus**     | http://localhost:9090       | -             |
+| Service             | URL                                | Credentials               |
+| ------------------- | ---------------------------------- | ------------------------- |
+| **Web Dashboard**   | http://localhost:8081              | -                         |
+| **Gateway API**     | http://localhost:3000              | -                         |
+| ↳ API Docs          | http://localhost:3000/docs         | -                         |
+| **Read Model API**  | http://localhost:8080/stats        | -                         |
+| ↳ API Docs          | http://localhost:8080/docs         | -                         |
+| **RabbitMQ**        | http://localhost:15672             | guest / guest             |
+| **Grafana**         | http://localhost:3002              | admin / admin             |
+| **Prometheus**      | http://localhost:9090              | -                         |
+| **pgAdmin**         | http://localhost:5050              | admin@example.com / admin |
+| **Mongo Express**   | http://localhost:8082              | admin / password123       |
+| **RedisInsight**    | http://localhost:8001              | -                         |
 
 ---
 

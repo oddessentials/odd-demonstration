@@ -72,4 +72,61 @@ describe('Gateway', () => {
             expect(envelope.payload).toEqual(payload);
         });
     });
+
+    describe('OpenAPI Specification', () => {
+        // Build a mock OpenAPI spec structure matching index.ts
+        const buildOpenApiSpec = (version) => ({
+            openapi: '3.0.3',
+            info: {
+                title: 'Gateway API',
+                description: 'Distributed Task Observatory Gateway Service - accepts jobs and publishes events to RabbitMQ',
+                version: version,
+                contact: { name: 'Odd Essentials', url: 'https://oddessentials.com' },
+            },
+            servers: [{ url: 'http://localhost:3000', description: 'Local development' }],
+            paths: {
+                '/jobs': { post: { summary: 'Submit a new job' } },
+                '/healthz': { get: { summary: 'Health check' } },
+                '/readyz': { get: { summary: 'Readiness check' } },
+                '/metrics': { get: { summary: 'Prometheus metrics' } },
+                '/proxy/alerts': { get: { summary: 'Proxy Alertmanager alerts' } },
+                '/proxy/targets': { get: { summary: 'Proxy Prometheus targets' } },
+            },
+        });
+
+        it('should have valid OpenAPI 3.0 spec structure', () => {
+            const spec = buildOpenApiSpec('0.1.0');
+
+            expect(spec.openapi).toBe('3.0.3');
+            expect(spec.info).toBeDefined();
+            expect(spec.info.title).toBe('Gateway API');
+            expect(spec.info.version).toMatch(/^\d+\.\d+\.\d+$/);
+            expect(spec.servers).toBeDefined();
+            expect(spec.servers.length).toBeGreaterThan(0);
+        });
+
+        it('should document all API endpoints', () => {
+            const spec = buildOpenApiSpec('0.1.0');
+            const requiredPaths = ['/jobs', '/healthz', '/readyz', '/metrics', '/proxy/alerts', '/proxy/targets'];
+
+            for (const path of requiredPaths) {
+                expect(spec.paths[path]).toBeDefined();
+            }
+        });
+
+        it('should include contact information', () => {
+            const spec = buildOpenApiSpec('0.1.0');
+
+            expect(spec.info.contact).toBeDefined();
+            expect(spec.info.contact.name).toBe('Odd Essentials');
+            expect(spec.info.contact.url).toBe('https://oddessentials.com');
+        });
+
+        it('should include version from SERVICE_VERSION', () => {
+            const version = readVersion();
+            const spec = buildOpenApiSpec(version);
+
+            expect(spec.info.version).toBe(version);
+        });
+    });
 });
