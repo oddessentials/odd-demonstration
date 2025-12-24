@@ -1,6 +1,6 @@
 [package]
 name = "odd-dashboard"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 description = "Terminal dashboard for Distributed Task Observatory"
 repository = "https://github.com/oddessentials/odd-demonstration"
