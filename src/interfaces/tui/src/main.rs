@@ -36,7 +36,7 @@ use odd_dashboard::{
     check_platform_support, print_version, print_help, run_doctor,
     check_all_prerequisites, has_missing_prerequisites,
     check_cluster_status, run_setup_script, load_ui_registry, open_browser, submit_job,
-    get_install_command, copy_to_clipboard, execute_install, InstallResult,
+    get_install_command, copy_to_clipboard, execute_install_with_output,
 };
 
 // ============================================================================
@@ -495,6 +495,30 @@ fn render_prerequisite_setup<B: ratatui::backend::Backend>(
             lines.push(Line::from(vec![
                 Span::styled(format!("  {}", msg), Style::default().fg(msg_color)),
             ]));
+        }
+        
+        // Show captured output lines if any
+        if !app.prereq_state.output_lines.is_empty() {
+            lines.push(Line::from(""));
+            lines.push(Line::from(vec![
+                Span::styled("  ─── Output ───", Style::default().fg(Color::DarkGray)),
+            ]));
+            for line in app.prereq_state.output_lines.iter().take(8) {
+                let (color, text) = if line.starts_with("ERR:") {
+                    (Color::Red, line.as_str())
+                } else {
+                    (Color::DarkGray, line.as_str())
+                };
+                // Truncate long lines
+                let display_text = if text.len() > 60 {
+                    format!("{}...", &text[..57])
+                } else {
+                    text.to_string()
+                };
+                lines.push(Line::from(vec![
+                    Span::styled(format!("  {}", display_text), Style::default().fg(color)),
+                ]));
+            }
         }
         
         let prereq_view = Paragraph::new(lines)
@@ -985,29 +1009,28 @@ fn main() -> Result<(), Box<dyn Error>> {
                                     }
                                 }
                                 KeyCode::Enter => {
-                                    // Execute install command
+                                    // Execute install command and capture output
                                     if let Some(prereq) = missing.get(app.prereq_state.selected_index) {
                                         app.prereq_state.message = Some(format!(
                                             "Installing {}...", prereq.name
                                         ));
+                                        app.prereq_state.output_lines.clear();
+                                        app.prereq_state.is_installing = true;
                                         
-                                        // Actually execute the install
-                                        match execute_install(&prereq.name) {
-                                            InstallResult::Success => {
-                                                app.prereq_state.message = Some(format!(
-                                                    "✓ {} installed successfully! Re-checking...", prereq.name
-                                                ));
-                                            }
-                                            InstallResult::Failed(e) => {
-                                                app.prereq_state.message = Some(format!(
-                                                    "✗ Install failed: {}. Try copying and running manually.", e
-                                                ));
-                                            }
-                                            InstallResult::Skipped => {
-                                                app.prereq_state.message = Some(
-                                                    "Install skipped".to_string()
-                                                );
-                                            }
+                                        // Execute and capture output
+                                        let output = execute_install_with_output(&prereq.name);
+                                        app.prereq_state.output_lines = output.lines;
+                                        app.prereq_state.is_installing = false;
+                                        
+                                        if output.success {
+                                            app.prereq_state.message = Some(format!(
+                                                "✓ {} installed successfully!", prereq.name
+                                            ));
+                                        } else {
+                                            let err_msg = output.error_message.unwrap_or_else(|| "Unknown error".to_string());
+                                            app.prereq_state.message = Some(format!(
+                                                "✗ Install failed: {}", err_msg
+                                            ));
                                         }
                                     }
                                 }

@@ -401,14 +401,17 @@ jobs:
           go test -coverprofile=coverage.out ./...
           go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//' | xargs -I{} bash -c 'if (( $(echo "{} < 3" | bc -l) )); then echo "Coverage {}% below 3% threshold"; exit 1; fi'
 
-      # Rust TUI - cargo test (coverage via tarpaulin optional)
+      # Rust TUI - cargo test with tarpaulin coverage - HARD FAIL below threshold
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Rust TUI tests - HARD FAIL
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Rust TUI tests with coverage - HARD FAIL below 14%
         run: |
           cd src/interfaces/tui
-          cargo test
+          cargo tarpaulin --out Xml --skip-clean --timeout 120 --fail-under 14
 
   # ============================================================
   # Lint & Format (polyglot)
