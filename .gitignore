@@ -22,6 +22,9 @@ target/
 *.dll
 *.so
 *.dylib
+coverage.out
+**/coverage.out
+**/coverage
 
 # Bazel
 bazel-*
