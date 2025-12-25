@@ -29,9 +29,14 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | V5 | Gateway coverage ≥ 80% | `vitest --coverage` | ✅ CI |
 | I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
 | I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
+| I3 | Integration harness self-contained | Docker Compose only | ✅ CI |
+| I4 | Integration runtime <90s | `integration-harness.ps1` timeout | ✅ CI |
+| I5 | Artifact capture every run | Guarded `finally` block | ✅ CI |
+| I6 | Victory gate: 3 green + nightly | — | 📝 Governance-Only |
 | A1 | Hermetic Bazel builds | Bazel `--lockfile_mode=error` | ✅ CI |
 | A2 | No manual intervention | — | 📝 Documented-Only |
 | A3 | Single test entrypoint | `run-all-tests.ps1` | ✅ CI |
+
 
 ---
 
@@ -85,13 +90,34 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 
 ---
 
-## Integration Gate Invariants
+## Integration Invariants
 
-| Invariant | Enforcement |
-|-----------|-------------|
-| Integration gate runs when `contracts/` changes | `dorny/paths-filter` + conditional job |
-| Integration gate runs when `src/services/` changes | `dorny/paths-filter` + conditional job |
-| Integration gate verifies full job lifecycle | `scripts/integration-gate.ps1` |
+| ID | Invariant | Enforcement |
+|----|-----------|-------------|
+| I1 | Integration gate runs on `contracts/` changes | `dorny/paths-filter` + `compat_critical` |
+| I2 | Integration gate runs on `src/services/` changes | `dorny/paths-filter` + `compat_critical` |
+| I3 | Integration harness is self-contained | Docker Compose only (no K8s) |
+| I4 | Integration runtime <90s (wall-clock) | `integration-harness.ps1` exits 1 on breach |
+| I5 | Artifact capture on every run | Guarded capture in `finally` block |
+| I6 | Victory gate: 3 green PRs + 1 nightly | 📝 Governance-only |
+
+> [!NOTE]
+> **I6 is intentionally governance-only**: The victory gate requires human judgment for flake detection
+> and confidence building. Automated enforcement may be added once baseline stability is proven over
+> multiple release cycles.
+
+### Integration Harness Details
+
+The integration harness (`scripts/integration-harness.ps1`) validates 4 canonical proof paths:
+
+| Path | Assertion | Schema |
+|------|-----------|--------|
+| P1 | Gateway accepts job (201) | `job.json` |
+| P2 | Events contain jobId | `event-envelope.json` |
+| P3 | Jobs reflect COMPLETED | `job.json` |
+| P4 | Metrics counter exposed | Regex |
+
+See [`tests/DETERMINISM.md`](../tests/DETERMINISM.md) and [`docs/TESTING.md`](./TESTING.md) for more details.
 
 ---
 

@@ -244,28 +244,54 @@ jobs:
           # Clean up (isolated workspace, no need to restore)
 
   # ============================================================
-  # Integration Gate Trigger (required only for compat-critical changes)
+  # Integration Phase (Docker Compose harness)
+  # Invariants: I3 (self-contained), I4 (<90s), I5 (artifacts)
   # ============================================================
-  integration-gate-check:
-    name: Integration Gate Required
+  integration-phase:
+    name: Integration Phase
     runs-on: ubuntu-latest
     needs: [paths-filter, tests]
     # Fail-closed: run if filter fails OR compat-critical changes detected
-    # Does NOT trigger for governance-only changes (scripts, workflows)
     if: |
       always() &&
+      needs.tests.result == 'success' &&
       (needs.paths-filter.result != 'success' ||
        needs.paths-filter.outputs.compat_critical == 'true')
+    env:
+      COMPAT_CRITICAL: ${{ needs.paths-filter.outputs.compat_critical }}
+      FILTER_FAILED: ${{ needs.paths-filter.result != 'success' }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (for schema validation)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install schema validator dependencies
+        run: npm install ajv ajv-formats
+
       - name: Log gate decision
         run: |
-          if [ "${{ needs.paths-filter.result }}" != "success" ]; then
-            echo "::error::Paths-filter FAILED - running integration gate (fail-closed)"
-          fi
-          echo "Integration gate triggered: filter_ok=${{ needs.paths-filter.result == 'success' }} schemas=${{ needs.paths-filter.outputs.schemas }} services=${{ needs.paths-filter.outputs.services }} compat_critical=${{ needs.paths-filter.outputs.compat_critical }}"
-          echo "::notice::Integration gate would be required for this change."
-          echo "NOTE: Full integration tests require a running K8s cluster."
-          echo "Run locally with: ./scripts/integration-gate.ps1"
+          echo "Integration trigger: compat_critical=$COMPAT_CRITICAL | filter_failed=$FILTER_FAILED"
+
+      - name: Run integration harness
+        shell: pwsh
+        run: ./scripts/integration-harness.ps1
+        timeout-minutes: 3
+
+      - name: Echo gate decision
+        if: always()
+        run: cat integration-artifacts/gate-decision.json || echo "No decision file"
+
+      - name: Upload integration artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-artifacts
+          path: integration-artifacts/
+          retention-days: 7
 
   # ============================================================
   # Distribution Audit (naming, version, artifact consistency)

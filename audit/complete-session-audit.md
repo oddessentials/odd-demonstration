@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-12-25
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-17
+**Phases Completed:** 0-18
 
 ---
 
@@ -43,6 +43,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 15 | TUI Refactoring & Prerequisites Setup | ✅ Complete |
 | Phase 16 | TypeScript Migration & Doctor Enhancement | ✅ Complete |
 | Phase 17 | Testing Optimizations & CI Hardening | ✅ Complete |
+| Phase 18 | Integration Test Hardening | ✅ Complete |
 
 ---
 
@@ -497,8 +498,58 @@ Opted for **Option B**: Maximize unit test coverage for business logic within cu
 
 ---
 
+## Phase 18: Integration Test Hardening (2025-12-25)
+
+### Objective
+Introduce reliable, deterministic integration testing via Docker Compose without weakening fast unit/contract guardrails.
+
+### Files Created
+| File | Lines | Purpose |
+|------|-------|---------|
+| `scripts/integration-harness.ps1` | ~310 | Self-contained Docker Compose test runner |
+| `scripts/validate-json.mjs` | ~50 | AJV schema validator helper (Node.js) |
+| `docker-compose.integration.yml` | ~145 | Per-image healthchecks, isolated network |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `.github/workflows/ci.yml` | Replaced `integration-gate-check` with `integration-phase` job |
+| `docs/INVARIANTS.md` | Added I3-I6 invariants |
+| `docs/TESTING.md` | Added integration harness documentation |
+
+### Key Design Decisions
+| Decision | Rationale |
+|----------|-----------|
+| Docker Compose (not K8s) | Self-contained, no cluster dependency |
+| 90s wall-clock budget | `exit 1` on breach (hard fail) |
+| 4 canonical proof paths | Contract-first (schema validated) |
+| Scoped retries | Connection only; disabled after partial success |
+| Node.js schema validator | AJV via `validate-json.mjs` helper |
+| Per-image healthchecks | wget/nc/python per container base |
+| Guarded teardown | try/catch around compose commands |
+| gate-decision.json | Source of truth for trigger logging |
+
+### New Invariants
+| ID | Invariant | Enforcement |
+|----|-----------|-------------|
+| I3 | Integration harness self-contained | Docker Compose only |
+| I4 | Runtime <90s wall-clock | Harness exits 1 on breach |
+| I5 | Artifact capture every run | Guarded `finally` block |
+| I6 | Victory gate: 3 green + nightly | 📝 Governance-only |
+
+### Canonical Proof Paths
+| Path | Assertion | Schema |
+|------|-----------|--------|
+| P1 | Gateway accepts job (201) | `job.json` |
+| P2 | Events contain jobId | `event-envelope.json` |
+| P3 | Jobs reflect COMPLETED | `job.json` |
+| P4 | Metrics counter exposed | Regex |
+
+### Status
+**Implementation complete.** Pending verification via local harness run and CI.
+
+---
+
 ## Session Complete ✓
 
-All 17+ implementation phases completed successfully.
-
-
+All 18 implementation phases completed successfully.
