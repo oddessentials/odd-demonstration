@@ -11,12 +11,14 @@
         "metrics-engine": {
             "min": 10,
             "warn": 15,
-            "tool": "go-cover"
+            "tool": "go-cover",
+            "note": "Infrastructure-heavy main package. Business logic is in validator subpackage (80%+)."
         },
         "read-model": {
-            "min": 3,
-            "warn": 5,
-            "tool": "go-cover"
+            "min": 18,
+            "warn": 25,
+            "tool": "go-cover",
+            "note": "Infrastructure-heavy main package. HTTP handlers and middleware are tested."
         },
         "tui": {
             "min": 14,
