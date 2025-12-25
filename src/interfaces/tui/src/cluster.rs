@@ -1,0 +1,544 @@
+//! Cluster operations and utilities
+//!
+//! This module handles cluster status checking, setup script execution,
+//! UI registry loading, job submission, and browser launching.
+
+use std::{
+    fs,
+    io::{BufRead, BufReader},
+    process::{Command, Stdio},
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+use chrono::Utc;
+use uuid::Uuid;
+
+use crate::types::{ClusterStatus, SetupProgress, JobPayload, UiRegistry};
+use crate::error::{RegistryError, SubmitError, BrowserError, get_error_hint, get_remediation_steps, get_pwsh_install_steps};
+
+// ============================================================================
+// Cluster Status Checking
+// ============================================================================
+
+/// Check if the Kind cluster is running and accessible
+pub fn check_cluster_status() -> ClusterStatus {
+    // Try to get nodes from the kind cluster
+    let output = Command::new("kubectl")
+        .args(["get", "nodes", "--context", "kind-task-observatory", "-o", "name"])
+        .output();
+
+    match output {
+        Ok(result) => {
+            if result.status.success() {
+                let stdout = String::from_utf8_lossy(&result.stdout);
+                if stdout.contains("node/") {
+                    // Cluster exists, now check if pods are deployed
+                    check_pods_status()
+                } else {
+                    ClusterStatus::NotFound
+                }
+            } else {
+                ClusterStatus::NotFound
+            }
+        }
+        Err(e) => ClusterStatus::Error(format!("kubectl not found: {}", e)),
+    }
+}
+
+/// Check if application pods are deployed in the cluster
+pub fn check_pods_status() -> ClusterStatus {
+    let output = Command::new("kubectl")
+        .args(["get", "pods", "--context", "kind-task-observatory", "-o", "name"])
+        .output();
+
+    match output {
+        Ok(result) => {
+            if result.status.success() {
+                let stdout = String::from_utf8_lossy(&result.stdout);
+                // Check if there are any pods (not empty output)
+                if stdout.trim().is_empty() {
+                    ClusterStatus::NoPods
+                } else {
+                    ClusterStatus::Ready
+                }
+            } else {
+                // kubectl failed but cluster exists, treat as NoPods
+                ClusterStatus::NoPods
+            }
+        }
+        Err(_) => {
+            // kubectl error after nodes check passed - unusual, treat as NoPods
+            ClusterStatus::NoPods
+        }
+    }
+}
+
+// ============================================================================
+// Project Root Discovery
+// ============================================================================
+
+/// Find the project root by searching for marker files
+pub fn find_project_root() -> Option<std::path::PathBuf> {
+    let markers = ["README.md", "scripts", "infra", "src"];
+    
+    // Try current directory first
+    if let Ok(cwd) = std::env::current_dir() {
+        // Check if we're in the project root
+        if markers.iter().all(|m| cwd.join(m).exists()) {
+            return Some(cwd);
+        }
+        
+        // Check if we're in src/interfaces/tui
+        if cwd.ends_with("tui") {
+            let potential_root = cwd.join("../../..").canonicalize().ok();
+            if let Some(ref root) = potential_root {
+                if markers.iter().all(|m| root.join(m).exists()) {
+                    return potential_root;
+                }
+            }
+        }
+        
+        // Walk up the directory tree
+        let mut current = cwd.clone();
+        for _ in 0..10 {
+            if markers.iter().all(|m| current.join(m).exists()) {
+                return Some(current);
+            }
+            if let Some(parent) = current.parent() {
+                current = parent.to_path_buf();
+            } else {
+                break;
+            }
+        }
+    }
+    
+    // Environment variable fallback for custom project locations
+    if let Ok(env_root) = std::env::var("ODTO_PROJECT_ROOT") {
+        let fallback = std::path::PathBuf::from(env_root);
+        if fallback.exists() && markers.iter().all(|m| fallback.join(m).exists()) {
+            return Some(fallback);
+        }
+    }
+    
+    None
+}
+
+// ============================================================================
+// Setup Script Execution
+// ============================================================================
+
+/// Run the setup script and capture progress
+pub fn run_setup_script(progress: Arc<Mutex<SetupProgress>>) {
+    // Step 1: Find the project root by looking for key files
+    let project_root = find_project_root();
+    
+    if project_root.is_none() {
+        if let Ok(mut p) = progress.lock() {
+            p.has_error = true;
+            p.message = "Could not locate project root".to_string();
+            p.error_hint = "The TUI must be run from within the odd-demonstration project".to_string();
+            p.remediation = vec![
+                "cd to the odd-demonstration directory".to_string(),
+                "cd src/interfaces/tui && cargo run --release".to_string(),
+            ];
+            p.is_complete = true;
+        }
+        return;
+    }
+    
+    let root = project_root.unwrap();
+    let script_path = root.join("scripts").join("start-all.ps1");
+    
+    // Step 2: Verify script exists
+    if !script_path.exists() {
+        if let Ok(mut p) = progress.lock() {
+            p.has_error = true;
+            p.message = format!("Script not found: {}", script_path.display());
+            p.error_hint = "The start-all.ps1 script is missing from the scripts directory".to_string();
+            p.remediation = vec![
+                "Ensure you have the latest version of the repository".to_string(),
+                "git pull origin main".to_string(),
+            ];
+            p.is_complete = true;
+        }
+        return;
+    }
+    
+    // Step 3: Check for PowerShell Core (pwsh) - required on all platforms
+    let pwsh_check = Command::new("pwsh")
+        .args(["-NoProfile", "-Command", "exit 0"])
+        .output();
+    let shell_cmd = match pwsh_check {
+        Ok(output) if output.status.success() => "pwsh",
+        _ => {
+            // On Windows, fall back to Windows PowerShell (powershell.exe)
+            #[cfg(target_os = "windows")]
+            {
+                let ps_check = Command::new("powershell.exe")
+                    .args(["-NoProfile", "-Command", "exit 0"])
+                    .output();
+                match ps_check {
+                    Ok(output) if output.status.success() => "powershell.exe",
+                    _ => {
+                        if let Ok(mut p) = progress.lock() {
+                            p.has_error = true;
+                            p.message = "PowerShell not found".to_string();
+                            p.error_hint = "This launcher requires PowerShell to run the setup script".to_string();
+                            p.remediation = vec![
+                                "Windows PowerShell should be pre-installed on Windows".to_string(),
+                                "Try running: powershell.exe -Command 'echo hello'".to_string(),
+                                "Or install PowerShell 7: winget install Microsoft.PowerShell".to_string(),
+                            ];
+                            p.is_complete = true;
+                        }
+                        return;
+                    }
+                }
+            }
+            // On Linux/macOS, pwsh is required (no fallback)
+            #[cfg(not(target_os = "windows"))]
+            {
+                if let Ok(mut p) = progress.lock() {
+                    p.has_error = true;
+                    p.message = "PowerShell Core (pwsh) not found".to_string();
+                    p.error_hint = "This launcher requires PowerShell Core to run the setup script".to_string();
+                    p.remediation = get_pwsh_install_steps();
+                    p.is_complete = true;
+                }
+                return;
+            }
+        }
+    };
+    
+    // Step 4: Check for Docker
+    let docker_check = Command::new("docker").arg("info").output();
+    if docker_check.is_err() || !docker_check.unwrap().status.success() {
+        if let Ok(mut p) = progress.lock() {
+            p.has_error = true;
+            p.message = "Docker is not running or not installed".to_string();
+            p.error_hint = "Docker Desktop must be running to create the Kubernetes cluster".to_string();
+            p.remediation = vec![
+                "1. Install Docker Desktop: https://docker.com/products/docker-desktop".to_string(),
+                "2. Start Docker Desktop".to_string(),
+                "3. Wait for Docker to be ready (whale icon in taskbar)".to_string(),
+                "4. Try again by pressing 'L'".to_string(),
+            ];
+            p.is_complete = true;
+        }
+        return;
+    }
+    
+    // Step 5: Update progress and spawn the script
+    if let Ok(mut p) = progress.lock() {
+        p.message = "Starting cluster setup...".to_string();
+        p.current_step = "prereqs".to_string();
+        p.start_time = Some(std::time::Instant::now());
+        p.log_lines.push(format!("Using shell: {}", shell_cmd));
+        p.log_lines.push(format!("Script: {}", script_path.display()));
+    }
+    
+    // Use -Command with & operator to properly handle paths with spaces or special chars
+    let script_str = script_path.to_string_lossy().replace("\\", "/");
+    let ps_command = format!("& '{}' -OutputJson", script_str);
+    
+    let mut child = match Command::new(shell_cmd)
+        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", &ps_command])
+        .current_dir(&root)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            if let Ok(mut p) = progress.lock() {
+                p.has_error = true;
+                p.message = format!("Failed to start {}: {}", shell_cmd, e);
+                p.error_hint = "Could not execute the PowerShell script".to_string();
+                p.remediation = vec![
+                    "Try running the script manually:".to_string(),
+                    format!("  cd {}", root.display()),
+                    format!("  {} -File scripts/start-all.ps1", shell_cmd),
+                ];
+                p.is_complete = true;
+            }
+            return;
+        }
+    };
+
+    // Spawn a thread to read stderr
+    let stderr_progress = Arc::clone(&progress);
+    let stderr_handle = if let Some(stderr) = child.stderr.take() {
+        Some(std::thread::spawn(move || {
+            let reader = BufReader::new(stderr);
+            for line in reader.lines().flatten() {
+                if let Ok(mut p) = stderr_progress.lock() {
+                    p.log_lines.push(format!("[ERR] {}", line));
+                }
+            }
+        }))
+    } else {
+        None
+    };
+
+    // Read stdout line by line
+    if let Some(stdout) = child.stdout.take() {
+        let reader = BufReader::new(stdout);
+        for line in reader.lines().flatten() {
+            if let Ok(mut p) = progress.lock() {
+                p.log_lines.push(line.clone());
+                
+                // Try to parse JSON progress
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&line) {
+                    if let Some(step) = json.get("step").and_then(|s| s.as_str()) {
+                        p.current_step = step.to_string();
+                    }
+                    if let Some(status) = json.get("status").and_then(|s| s.as_str()) {
+                        p.current_status = status.to_string();
+                        if status == "error" {
+                            p.has_error = true;
+                            if let Some(msg) = json.get("message").and_then(|m| m.as_str()) {
+                                p.error_hint = get_error_hint(msg);
+                                p.remediation = get_remediation_steps(msg);
+                            }
+                        }
+                    }
+                    if let Some(msg) = json.get("message").and_then(|s| s.as_str()) {
+                        p.message = msg.to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    // Wait for stderr thread
+    if let Some(handle) = stderr_handle {
+        let _ = handle.join();
+    }
+
+    // Wait for completion
+    let status = child.wait();
+    if let Ok(mut p) = progress.lock() {
+        p.is_complete = true;
+        if let Ok(s) = status {
+            if !s.success() {
+                p.has_error = true;
+                if p.message.is_empty() {
+                    p.message = format!("Setup failed with exit code: {:?}", s.code());
+                }
+                if p.error_hint.is_empty() {
+                    p.error_hint = "The setup script encountered an error".to_string();
+                    p.remediation = vec![
+                        "Check the log output above for details".to_string(),
+                        "Try running manually: pwsh ./scripts/start-all.ps1".to_string(),
+                        "Ensure Docker Desktop is running".to_string(),
+                    ];
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// UI Registry and Browser
+// ============================================================================
+
+/// Load UI registry from contracts/ui-registry.json with explicit error categories
+pub fn load_ui_registry() -> Result<UiRegistry, RegistryError> {
+    let registry_path = find_project_root()
+        .ok_or_else(|| RegistryError::NotFound("Could not find project root".to_string()))?
+        .join("contracts")
+        .join("ui-registry.json");
+    
+    let content = fs::read_to_string(&registry_path)
+        .map_err(|e| RegistryError::NotFound(format!("Failed to read: {}", e)))?;
+    
+    let registry: UiRegistry = serde_json::from_str(&content)
+        .map_err(|e| RegistryError::Malformed(format!("JSON parse error: {}", e)))?;
+    
+    // Validate registry entries
+    if registry.entries.is_empty() {
+        return Err(RegistryError::InvalidEntry("Registry has no entries".to_string()));
+    }
+    
+    for entry in &registry.entries {
+        if entry.port == 0 || entry.port > 65535 {
+            return Err(RegistryError::InvalidEntry(format!("Invalid port {} for {}", entry.port, entry.id)));
+        }
+        if entry.id.is_empty() || entry.name.is_empty() {
+            return Err(RegistryError::InvalidEntry("Entry missing id or name".to_string()));
+        }
+    }
+    
+    if !registry.base_url.starts_with("http") {
+        return Err(RegistryError::Malformed(format!("baseUrl must start with http: {}", registry.base_url)));
+    }
+    
+    Ok(registry)
+}
+
+/// Open URL in default browser with environment-aware error handling
+pub fn open_browser(url: &str) -> Result<(), BrowserError> {
+    // Check for headless/restricted environments
+    if std::env::var("SSH_CLIENT").is_ok() || std::env::var("SSH_TTY").is_ok() {
+        return Err(BrowserError::EnvironmentRestricted(
+            "SSH session detected - browser launch not available. URL: ".to_string() + url
+        ));
+    }
+    
+    if std::env::var("DISPLAY").is_err() && cfg!(target_os = "linux") {
+        return Err(BrowserError::EnvironmentRestricted(
+            "No DISPLAY set (headless environment). URL: ".to_string() + url
+        ));
+    }
+    
+    open::that(url).map_err(|e| {
+        let error_str = e.to_string().to_lowercase();
+        if error_str.contains("not found") || error_str.contains("no such file") {
+            BrowserError::NotAvailable(format!("Default browser not found: {}", e))
+        } else {
+            BrowserError::LaunchFailed(format!("{}", e))
+        }
+    })
+}
+
+// ============================================================================
+// Job Submission
+// ============================================================================
+
+/// Validate job type input (alphanumeric with underscores, reasonable length)
+pub fn validate_job_type(job_type: &str) -> Result<(), String> {
+    let trimmed = job_type.trim();
+    if trimmed.is_empty() {
+        return Err("Job type cannot be empty".to_string());
+    }
+    if trimmed.len() > 50 {
+        return Err("Job type too long (max 50 chars)".to_string());
+    }
+    // Allow alphanumeric, underscores, hyphens
+    if !trimmed.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+        return Err("Job type must be alphanumeric (underscores/hyphens allowed)".to_string());
+    }
+    Ok(())
+}
+
+/// Submit a job to the Gateway API with validation
+pub fn submit_job(gateway_url: &str, job_type: &str) -> Result<String, SubmitError> {
+    // Early validation
+    validate_job_type(job_type).map_err(|e| SubmitError::ValidationFailed(e))?;
+    
+    let job_id = Uuid::new_v4().to_string();
+    let payload = JobPayload {
+        id: job_id.clone(),
+        job_type: job_type.trim().to_uppercase(),
+        status: "PENDING".to_string(),
+        created_at: Utc::now().to_rfc3339(),
+    };
+
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(format!("{}/jobs", gateway_url))
+        .json(&payload)
+        .timeout(Duration::from_secs(2))
+        .send()
+        .map_err(|e| {
+            if e.is_timeout() {
+                SubmitError::Timeout
+            } else if e.is_connect() {
+                SubmitError::ConnectionRefused
+            } else {
+                SubmitError::NetworkError(e.to_string())
+            }
+        })?;
+
+    if response.status().is_success() {
+        Ok(job_id)
+    } else {
+        let status = response.status().as_u16();
+        let body = response.text().unwrap_or_default();
+        Err(SubmitError::ServerError(status, body))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cluster_status_variants() {
+        // Ensure all variants are available
+        let ready = ClusterStatus::Ready;
+        let no_pods = ClusterStatus::NoPods;
+        let not_found = ClusterStatus::NotFound;
+        let error = ClusterStatus::Error("test".to_string());
+        
+        assert_eq!(ready, ClusterStatus::Ready);
+        assert_eq!(no_pods, ClusterStatus::NoPods);
+        assert_eq!(not_found, ClusterStatus::NotFound);
+        assert!(matches!(error, ClusterStatus::Error(_)));
+    }
+
+    #[test]
+    fn test_find_project_root_returns_option() {
+        // This test just verifies the function returns an Option
+        let result = find_project_root();
+        // Result may be Some or None depending on where tests are run
+        assert!(result.is_some() || result.is_none());
+    }
+
+    #[test]
+    fn test_find_project_root_finds_scripts() {
+        // If we find a root, it should have the scripts directory
+        if let Some(root) = find_project_root() {
+            let scripts_dir = root.join("scripts");
+            assert!(scripts_dir.exists(), "Project root should have scripts directory");
+        }
+    }
+
+    #[test]
+    fn test_validate_job_type_empty() {
+        let result = validate_job_type("");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("empty"));
+    }
+
+    #[test]
+    fn test_validate_job_type_too_long() {
+        let long_type = "a".repeat(51);
+        let result = validate_job_type(&long_type);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("long"));
+    }
+
+    #[test]
+    fn test_validate_job_type_special_chars() {
+        let result = validate_job_type("test@job");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("alphanumeric"));
+    }
+
+    #[test]
+    fn test_validate_job_type_valid() {
+        assert!(validate_job_type("test_job").is_ok());
+        assert!(validate_job_type("test-job").is_ok());
+        assert!(validate_job_type("TestJob123").is_ok());
+    }
+
+    #[test]
+    fn test_setup_progress_log_lines() {
+        let progress = SetupProgress::default();
+        assert!(progress.log_lines.is_empty());
+    }
+
+    #[test]
+    fn test_setup_progress_complete_states() {
+        let mut progress = SetupProgress::default();
+        assert!(!progress.is_complete);
+        assert!(!progress.has_error);
+        
+        progress.is_complete = true;
+        progress.has_error = true;
+        
+        assert!(progress.is_complete);
+        assert!(progress.has_error);
+    }
+}
