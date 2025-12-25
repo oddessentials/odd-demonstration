@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# Note: Root package-lock.json is committed; service-level ones tracked for npm ci
 
 # Python
 __pycache__/
