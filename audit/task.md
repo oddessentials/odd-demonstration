@@ -103,3 +103,10 @@
 - [x] Add @semantic-release/changelog for CHANGELOG.md generation
 - [x] Update BUILD.bazel for TypeScript tests
 
+## Phase 17: Testing Optimizations & CI Hardening [x]
+- [x] Create `docs/INVARIANTS.md` with cross-platform and contract guarantees
+- [x] Add unified coverage enforcement via `coverage-config.json` and `check-coverage.py`
+- [x] Parallelize Go tests with pwsh < 7 fallback
+- [x] Add `dorny/paths-filter` for reliable change detection
+- [x] Add integration gate trigger invariant for contract/service changes
+- [x] Remove duplicate contracts CI job

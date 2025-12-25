@@ -154,25 +154,98 @@ if (Test-Path (Join-Path $processorPath "tests")) {
 }
 
 # Go Services (metrics-engine, read-model)
-@("metrics-engine", "read-model") | ForEach-Object {
-    Write-Host "`n--- $_ (go test) ---"
-    $servicePath = Join-Path $PSScriptRoot "..\src\services\$_"
-    if (Test-Path (Join-Path $servicePath "go.mod")) {
+# Use parallel execution on pwsh 7+ with fallback to sequential
+$goServices = @("metrics-engine", "read-model")
+
+function Test-GoService {
+    param([string]$ServiceName, [string]$ScriptRoot)
+    
+    $servicePath = Join-Path $ScriptRoot "..\src\services\$ServiceName"
+    $result = @{ Name = $ServiceName; Passed = $false; Output = @(); Skipped = $false }
+    
+    if (-not (Test-Path (Join-Path $servicePath "go.mod"))) {
+        $result.Skipped = $true
+        $result.SkipReason = "go.mod not found"
+        return $result
+    }
+    
+    Push-Location $servicePath
+    try {
+        $output = go test -v ./... 2>&1
+        $result.Output = $output
+        $result.Passed = ($LASTEXITCODE -eq 0)
+    } catch {
+        $result.Output = @("Error: $_")
+        $result.Passed = $false
+    } finally {
+        Pop-Location
+    }
+    
+    return $result
+}
+
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+    Write-Host "`n--- Go Services (parallel, pwsh 7+) ---"
+    
+    # Parallel execution with explicit result collection
+    $goResults = $goServices | ForEach-Object -Parallel {
+        # Re-define function in parallel scope
+        $servicePath = Join-Path $using:PSScriptRoot "..\src\services\$_"
+        $result = @{ Name = $_; Passed = $false; Output = @(); Skipped = $false }
+        
+        if (-not (Test-Path (Join-Path $servicePath "go.mod"))) {
+            $result.Skipped = $true
+            $result.SkipReason = "go.mod not found"
+            return $result
+        }
+        
         Push-Location $servicePath
         try {
-            go test -v ./... 2>&1 | ForEach-Object { Write-Host $_ }
-            if ($LASTEXITCODE -eq 0) {
-                Write-Pass "$_ unit tests"
-            } else {
-                Write-Fail "$_ unit tests"
-            }
+            $output = go test -v ./... 2>&1
+            $result.Output = $output
+            $result.Passed = ($LASTEXITCODE -eq 0)
         } catch {
-            Write-Fail "$_ test error: $_"
+            $result.Output = @("Error: $_")
+            $result.Passed = $false
         } finally {
             Pop-Location
         }
-    } else {
-        Write-Skip $_ "go.mod not found"
+        
+        return $result
+    } -ThrottleLimit 2
+    
+    # Process results and register failures
+    foreach ($r in $goResults) {
+        Write-Host "`n--- $($r.Name) (go test) ---"
+        if ($r.Skipped) {
+            Write-Skip $r.Name $r.SkipReason
+        } else {
+            $r.Output | ForEach-Object { Write-Host $_ }
+            if ($r.Passed) {
+                Write-Pass "$($r.Name) unit tests"
+            } else {
+                Write-Fail "$($r.Name) unit tests"
+            }
+        }
+    }
+} else {
+    Write-Host "`n[WARN] pwsh < 7, running Go tests sequentially" -ForegroundColor Yellow
+    
+    # Sequential fallback with same result collection pattern
+    foreach ($svc in $goServices) {
+        Write-Host "`n--- $svc (go test) ---"
+        $result = Test-GoService -ServiceName $svc -ScriptRoot $PSScriptRoot
+        
+        if ($result.Skipped) {
+            Write-Skip $svc $result.SkipReason
+        } else {
+            $result.Output | ForEach-Object { Write-Host $_ }
+            if ($result.Passed) {
+                Write-Pass "$svc unit tests"
+            } else {
+                Write-Fail "$svc unit tests"
+            }
+        }
     }
 }
 
