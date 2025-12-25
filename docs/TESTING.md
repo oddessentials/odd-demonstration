@@ -85,3 +85,36 @@ The integration gate checks for event correlation and deduplication but **does N
 
 - Strict chronological ordering across concurrent job submissions
 - Exactly-once delivery (idempotency is application-level)
+
+---
+
+## Integration Harness (Phase 18)
+
+> [!NOTE]
+> **Planning phase.** Implementation pending approval.
+
+The integration harness (`scripts/integration-harness.ps1`) is a self-contained Docker Compose-based test runner with:
+
+| Feature | Implementation |
+|---------|----------------|
+| Decision logging | Logs trigger reason (compat_critical / filter_failed) |
+| Wall-clock budget | 90s total, fails with `[BUDGET EXCEEDED]` |
+| Compose version check | Validates Docker Compose at startup |
+| Authoritative health | Gateway confirms broker, read-model confirms DB |
+| Schema validation | AJV on P1–P3 responses |
+| Scoped retries | Connection only, disabled after partial success |
+| Bootstrap capture | `finally` block captures artifacts on any failure |
+
+### Canonical Proof Paths
+
+| Path | Description | Schema |
+|------|-------------|--------|
+| P1 | POST /jobs → 201 | `job.json` |
+| P2 | GET /events has jobId | `event-envelope.json` |
+| P3 | GET /jobs/recent has COMPLETED | `job.json` |
+| P4 | GET /metrics has counter | regex |
+
+### Victory Gate
+
+Manual governance: 3 consecutive green PR runs + 1 nightly under 90s budget.
+

@@ -29,6 +29,14 @@ BUILD.bazel
 test/
 tests/
 
+# Coverage artifacts
+coverage/
+coverage.out
+**/coverage.out
+**/coverage
+.coverage
+htmlcov/
+
 # Development configs
 .env.example
 docker-compose*.yml

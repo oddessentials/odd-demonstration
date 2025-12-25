@@ -521,5 +521,244 @@ mod tests {
         assert_eq!(stats.completed_jobs, 8);
         assert_eq!(stats.failed_jobs, 2);
     }
+
+    // ========== JobPayload Serialization Tests ==========
+
+    #[test]
+    fn test_job_payload_serialization() {
+        let payload = JobPayload {
+            id: "test-id-123".to_string(),
+            job_type: "TEST_JOB".to_string(),
+            status: "PENDING".to_string(),
+            created_at: "2025-01-01T12:00:00Z".to_string(),
+        };
+        let json = serde_json::to_string(&payload).unwrap();
+        assert!(json.contains("\"id\":\"test-id-123\""));
+        assert!(json.contains("\"type\":\"TEST_JOB\""));
+        assert!(json.contains("\"status\":\"PENDING\""));
+        assert!(json.contains("\"createdAt\":\"2025-01-01T12:00:00Z\""));
+    }
+
+    #[test]
+    fn test_job_payload_field_rename() {
+        // Verify serde rename attributes work correctly
+        let payload = JobPayload {
+            id: "id".to_string(),
+            job_type: "TYPE".to_string(),
+            status: "status".to_string(),
+            created_at: "time".to_string(),
+        };
+        let json = serde_json::to_string(&payload).unwrap();
+        // Must use camelCase per Gateway API contract
+        assert!(json.contains("\"type\""));
+        assert!(json.contains("\"createdAt\""));
+        assert!(!json.contains("\"job_type\""));
+        assert!(!json.contains("\"created_at\""));
+    }
+
+    // ========== UiEntry Deserialization Tests ==========
+
+    #[test]
+    fn test_ui_entry_deserialization() {
+        let json = r#"{"id":"grafana","name":"Grafana","port":3001,"path":"/","emoji":"📊","description":"Metrics"}"#;
+        let entry: UiEntry = serde_json::from_str(json).unwrap();
+        assert_eq!(entry.id, "grafana");
+        assert_eq!(entry.name, "Grafana");
+        assert_eq!(entry.port, 3001);
+        assert_eq!(entry.path, "/");
+        assert_eq!(entry.emoji, "📊");
+        assert_eq!(entry.description, "Metrics");
+    }
+
+    #[test]
+    fn test_ui_entry_clone() {
+        let entry = UiEntry {
+            id: "test".to_string(),
+            name: "Test".to_string(),
+            port: 8080,
+            path: "/test".to_string(),
+            emoji: "🧪".to_string(),
+            description: "Test entry".to_string(),
+        };
+        let cloned = entry.clone();
+        assert_eq!(cloned.id, entry.id);
+        assert_eq!(cloned.port, entry.port);
+    }
+
+    // ========== UiRegistry Deserialization Tests ==========
+
+    #[test]
+    fn test_ui_registry_deserialization() {
+        let json = r#"{"baseUrl":"http://localhost","entries":[{"id":"test","name":"Test","port":80,"path":"/","emoji":"🔧","description":"Test"}]}"#;
+        let registry: UiRegistry = serde_json::from_str(json).unwrap();
+        assert_eq!(registry.base_url, "http://localhost");
+        assert_eq!(registry.entries.len(), 1);
+        assert_eq!(registry.entries[0].id, "test");
+    }
+
+    #[test]
+    fn test_ui_registry_empty_entries() {
+        let json = r#"{"baseUrl":"http://localhost","entries":[]}"#;
+        let registry: UiRegistry = serde_json::from_str(json).unwrap();
+        assert!(registry.entries.is_empty());
+    }
+
+    // ========== AlertLabels and Alert Tests ==========
+
+    #[test]
+    fn test_alert_labels_all_optional() {
+        let json = r#"{}"#;
+        let labels: AlertLabels = serde_json::from_str(json).unwrap();
+        assert!(labels.alertname.is_none());
+        assert!(labels.severity.is_none());
+        assert!(labels.service.is_none());
+    }
+
+    #[test]
+    fn test_alert_labels_partial() {
+        let json = r#"{"alertname":"TestAlert"}"#;
+        let labels: AlertLabels = serde_json::from_str(json).unwrap();
+        assert_eq!(labels.alertname, Some("TestAlert".to_string()));
+        assert!(labels.severity.is_none());
+    }
+
+    #[test]
+    fn test_alert_full() {
+        let json = r#"{"labels":{"alertname":"HighCPU","severity":"warning","service":"processor"}}"#;
+        let alert: Alert = serde_json::from_str(json).unwrap();
+        assert_eq!(alert.labels.alertname, Some("HighCPU".to_string()));
+        assert_eq!(alert.labels.severity, Some("warning".to_string()));
+        assert_eq!(alert.labels.service, Some("processor".to_string()));
+    }
+
+    #[test]
+    fn test_alert_clone() {
+        let alert = Alert {
+            labels: AlertLabels {
+                alertname: Some("Test".to_string()),
+                severity: None,
+                service: None,
+            },
+        };
+        let cloned = alert.clone();
+        assert_eq!(cloned.labels.alertname, alert.labels.alertname);
+    }
+
+    // ========== TaskCreationStatus Tests ==========
+
+    #[test]
+    fn test_task_creation_status_success() {
+        let status = TaskCreationStatus::Success("job-123".to_string());
+        if let TaskCreationStatus::Success(id) = status {
+            assert_eq!(id, "job-123");
+        } else {
+            panic!("Expected Success variant");
+        }
+    }
+
+    #[test]
+    fn test_task_creation_status_error() {
+        let status = TaskCreationStatus::Error("connection failed".to_string());
+        if let TaskCreationStatus::Error(msg) = status {
+            assert!(msg.contains("connection"));
+        } else {
+            panic!("Expected Error variant");
+        }
+    }
+
+    #[test]
+    fn test_task_creation_status_submitting() {
+        let status = TaskCreationStatus::Submitting;
+        assert_eq!(status, TaskCreationStatus::Submitting);
+    }
+
+    // ========== ClusterStatus Tests ==========
+
+    #[test]
+    fn test_cluster_status_error_message() {
+        let status = ClusterStatus::Error("kubectl not found".to_string());
+        if let ClusterStatus::Error(msg) = status {
+            assert!(msg.contains("kubectl"));
+        } else {
+            panic!("Expected Error variant");
+        }
+    }
+
+    // ========== UiLauncherState Tests ==========
+
+    #[test]
+    fn test_ui_launcher_state_default() {
+        let state = UiLauncherState::default();
+        assert_eq!(state.selected_index, 0);
+        assert!(state.registry.is_none());
+        assert!(state.error.is_none());
+    }
+
+    #[test]
+    fn test_ui_launcher_state_with_error() {
+        let mut state = UiLauncherState::default();
+        state.error = Some("Browser unavailable".to_string());
+        assert!(state.error.is_some());
+        assert!(state.error.unwrap().contains("Browser"));
+    }
+
+    // ========== SetupProgress Tests ==========
+
+    #[test]
+    fn test_setup_progress_fields() {
+        let mut progress = SetupProgress::default();
+        progress.current_step = "deploying".to_string();
+        progress.current_status = "running".to_string();
+        progress.message = "Deploying services...".to_string();
+        progress.error_hint = "Check Docker".to_string();
+        progress.remediation = vec!["Restart Docker".to_string()];
+        
+        assert_eq!(progress.current_step, "deploying");
+        assert_eq!(progress.current_status, "running");
+        assert!(!progress.remediation.is_empty());
+    }
+
+    #[test]
+    fn test_setup_progress_start_time() {
+        let mut progress = SetupProgress::default();
+        assert!(progress.start_time.is_none());
+        progress.start_time = Some(std::time::Instant::now());
+        assert!(progress.start_time.is_some());
+    }
+
+    // ========== Constants Validation Tests ==========
+
+    #[test]
+    fn test_spinner_frames_are_braille() {
+        for frame in SPINNER_FRAMES {
+            // Braille characters are in Unicode range U+2800..U+28FF
+            for c in frame.chars() {
+                let code = c as u32;
+                assert!(code >= 0x2800 && code <= 0x28FF, "Expected Braille character");
+            }
+        }
+    }
+
+    #[test]
+    fn test_loading_messages_not_empty() {
+        for msg in LOADING_MESSAGES {
+            assert!(!msg.is_empty());
+            assert!(msg.len() > 5);
+        }
+    }
+
+    #[test]
+    fn test_app_version_is_semver_like() {
+        // APP_VERSION should look like X.Y.Z
+        assert!(!APP_VERSION.is_empty());
+        let parts: Vec<&str> = APP_VERSION.split('.').collect();
+        assert!(parts.len() >= 2, "Version should have at least major.minor");
+    }
+
+    #[test]
+    fn test_max_alert_retries_reasonable() {
+        assert!(MAX_ALERT_RETRIES >= 1);
+        assert!(MAX_ALERT_RETRIES <= 10);
+    }
 }
 

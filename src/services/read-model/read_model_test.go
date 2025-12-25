@@ -304,3 +304,321 @@ func TestOpenApiContactInfo(t *testing.T) {
 		t.Errorf("Expected contact url 'https://oddessentials.com', got '%v'", contact["url"])
 	}
 }
+
+// ============================================================
+// Tests for CORS middleware
+// ============================================================
+
+// TestCorsMiddlewareAddsHeaders tests CORS headers are added.
+func TestCorsMiddlewareAddsHeaders(t *testing.T) {
+	handler := corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	resp := w.Result()
+	if resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf("Expected Access-Control-Allow-Origin '*', got '%s'", resp.Header.Get("Access-Control-Allow-Origin"))
+	}
+	if resp.Header.Get("Access-Control-Allow-Methods") != "GET, OPTIONS" {
+		t.Errorf("Expected Access-Control-Allow-Methods 'GET, OPTIONS', got '%s'", resp.Header.Get("Access-Control-Allow-Methods"))
+	}
+	if resp.Header.Get("Access-Control-Allow-Headers") != "Content-Type" {
+		t.Errorf("Expected Access-Control-Allow-Headers 'Content-Type', got '%s'", resp.Header.Get("Access-Control-Allow-Headers"))
+	}
+}
+
+// TestCorsMiddlewareOptionsRequest tests OPTIONS preflight handling.
+func TestCorsMiddlewareOptionsRequest(t *testing.T) {
+	handlerCalled := false
+	handler := corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		handlerCalled = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	req := httptest.NewRequest("OPTIONS", "/test", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
+	}
+	if handlerCalled {
+		t.Error("Handler should not be called for OPTIONS request")
+	}
+}
+
+// TestCorsMiddlewarePassesThrough tests that non-OPTIONS requests pass through.
+func TestCorsMiddlewarePassesThrough(t *testing.T) {
+	handlerCalled := false
+	handler := corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		handlerCalled = true
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("success"))
+	})
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if !handlerCalled {
+		t.Error("Handler should be called for GET request")
+	}
+	if w.Body.String() != "success" {
+		t.Errorf("Expected body 'success', got '%s'", w.Body.String())
+	}
+}
+
+// ============================================================
+// Tests for health handler
+// ============================================================
+
+// TestHealthHandler tests the health endpoint.
+func TestHealthHandler(t *testing.T) {
+	ServiceVersion = "1.2.3"
+
+	req := httptest.NewRequest("GET", "/health", nil)
+	w := httptest.NewRecorder()
+
+	healthHandler(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType != "application/json" {
+		t.Errorf("Expected Content-Type 'application/json', got '%s'", contentType)
+	}
+
+	var health HealthResponse
+	if err := json.NewDecoder(resp.Body).Decode(&health); err != nil {
+		t.Fatalf("Failed to decode health response: %v", err)
+	}
+
+	if health.Status != "ok" {
+		t.Errorf("Expected status 'ok', got '%s'", health.Status)
+	}
+	if health.Version != "1.2.3" {
+		t.Errorf("Expected version '1.2.3', got '%s'", health.Version)
+	}
+}
+
+// ============================================================
+// Additional struct serialization tests
+// ============================================================
+
+// TestStatsResponseJSONSerialization tests StatsResponse JSON roundtrip.
+func TestStatsResponseJSONSerialization(t *testing.T) {
+	stats := StatsResponse{
+		TotalJobs:     1000,
+		CompletedJobs: 850,
+		FailedJobs:    50,
+		LastEventTime: "2024-12-25T12:00:00Z",
+	}
+
+	data, err := json.Marshal(stats)
+	if err != nil {
+		t.Fatalf("Failed to marshal StatsResponse: %v", err)
+	}
+
+	var decoded StatsResponse
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("Failed to unmarshal StatsResponse: %v", err)
+	}
+
+	if decoded.TotalJobs != 1000 {
+		t.Errorf("Expected TotalJobs 1000, got %d", decoded.TotalJobs)
+	}
+	if decoded.CompletedJobs != 850 {
+		t.Errorf("Expected CompletedJobs 850, got %d", decoded.CompletedJobs)
+	}
+	if decoded.FailedJobs != 50 {
+		t.Errorf("Expected FailedJobs 50, got %d", decoded.FailedJobs)
+	}
+	if decoded.LastEventTime != "2024-12-25T12:00:00Z" {
+		t.Errorf("Expected LastEventTime '2024-12-25T12:00:00Z', got '%s'", decoded.LastEventTime)
+	}
+}
+
+// TestStatsResponseJSONFieldNames tests JSON field names are camelCase.
+func TestStatsResponseJSONFieldNames(t *testing.T) {
+	stats := StatsResponse{
+		TotalJobs:     100,
+		CompletedJobs: 80,
+		FailedJobs:    5,
+		LastEventTime: "2024-01-01T00:00:00Z",
+	}
+
+	data, _ := json.Marshal(stats)
+	jsonStr := string(data)
+
+	expectedFields := []string{"totalJobs", "completedJobs", "failedJobs", "lastEventTime"}
+	for _, field := range expectedFields {
+		if !strings.Contains(jsonStr, field) {
+			t.Errorf("Expected JSON to contain field '%s', got: %s", field, jsonStr)
+		}
+	}
+}
+
+// TestJobJSONSerialization tests Job struct JSON roundtrip.
+func TestJobJSONSerialization(t *testing.T) {
+	job := Job{
+		ID:        "job-abc-123",
+		Type:      "data-processing",
+		Status:    "COMPLETED",
+		CreatedAt: "2024-12-25T10:00:00Z",
+	}
+
+	data, err := json.Marshal(job)
+	if err != nil {
+		t.Fatalf("Failed to marshal Job: %v", err)
+	}
+
+	var decoded Job
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("Failed to unmarshal Job: %v", err)
+	}
+
+	if decoded.ID != "job-abc-123" {
+		t.Errorf("Expected ID 'job-abc-123', got '%s'", decoded.ID)
+	}
+	if decoded.Type != "data-processing" {
+		t.Errorf("Expected Type 'data-processing', got '%s'", decoded.Type)
+	}
+	if decoded.Status != "COMPLETED" {
+		t.Errorf("Expected Status 'COMPLETED', got '%s'", decoded.Status)
+	}
+}
+
+// TestHealthResponseJSONFieldNames tests HealthResponse JSON field names.
+func TestHealthResponseJSONFieldNames(t *testing.T) {
+	health := HealthResponse{
+		Status:  "ok",
+		Version: "1.0.0",
+	}
+
+	data, _ := json.Marshal(health)
+	jsonStr := string(data)
+
+	if !strings.Contains(jsonStr, "status") {
+		t.Errorf("Expected JSON to contain 'status', got: %s", jsonStr)
+	}
+	if !strings.Contains(jsonStr, "version") {
+		t.Errorf("Expected JSON to contain 'version', got: %s", jsonStr)
+	}
+}
+
+// ============================================================
+// Edge case tests
+// ============================================================
+
+// TestGetEnvMultipleCalls tests getEnv with multiple keys.
+func TestGetEnvMultipleCalls(t *testing.T) {
+	os.Setenv("RM_TEST_A", "alpha")
+	os.Setenv("RM_TEST_B", "beta")
+	defer os.Unsetenv("RM_TEST_A")
+	defer os.Unsetenv("RM_TEST_B")
+
+	if getEnv("RM_TEST_A", "x") != "alpha" {
+		t.Error("Expected 'alpha' for RM_TEST_A")
+	}
+	if getEnv("RM_TEST_B", "x") != "beta" {
+		t.Error("Expected 'beta' for RM_TEST_B")
+	}
+	if getEnv("RM_TEST_C", "gamma") != "gamma" {
+		t.Error("Expected fallback 'gamma' for RM_TEST_C")
+	}
+}
+
+// TestJobStatusValues tests Job with different status values.
+func TestJobStatusValues(t *testing.T) {
+	statuses := []string{"PENDING", "RUNNING", "COMPLETED", "FAILED", "CANCELLED"}
+	for _, status := range statuses {
+		job := Job{
+			ID:        "job-1",
+			Type:      "test",
+			Status:    status,
+			CreatedAt: "2024-01-01T00:00:00Z",
+		}
+		data, err := json.Marshal(job)
+		if err != nil {
+			t.Errorf("Failed to marshal Job with status '%s': %v", status, err)
+		}
+		if !strings.Contains(string(data), status) {
+			t.Errorf("Expected status '%s' in JSON output", status)
+		}
+	}
+}
+
+// TestStatsResponseZeroValues tests StatsResponse with zero values.
+func TestStatsResponseZeroValues(t *testing.T) {
+	stats := StatsResponse{
+		TotalJobs:     0,
+		CompletedJobs: 0,
+		FailedJobs:    0,
+		LastEventTime: "",
+	}
+
+	data, err := json.Marshal(stats)
+	if err != nil {
+		t.Fatalf("Failed to marshal StatsResponse with zeros: %v", err)
+	}
+
+	var decoded StatsResponse
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("Failed to unmarshal StatsResponse: %v", err)
+	}
+
+	if decoded.TotalJobs != 0 {
+		t.Errorf("Expected TotalJobs 0, got %d", decoded.TotalJobs)
+	}
+}
+
+// TestOpenApiVersionDynamic tests that OpenAPI version comes from ServiceVersion.
+func TestOpenApiVersionDynamic(t *testing.T) {
+	ServiceVersion = "99.88.77"
+
+	req := httptest.NewRequest("GET", "/openapi.json", nil)
+	w := httptest.NewRecorder()
+
+	openApiHandler(w, req)
+
+	var spec map[string]interface{}
+	json.NewDecoder(w.Result().Body).Decode(&spec)
+
+	info := spec["info"].(map[string]interface{})
+	if info["version"] != "99.88.77" {
+		t.Errorf("Expected version '99.88.77', got '%v'", info["version"])
+	}
+}
+
+// TestDocsHandlerContainsSwaggerUI tests docs endpoint has SwaggerUI.
+func TestDocsHandlerContainsSwaggerUI(t *testing.T) {
+	req := httptest.NewRequest("GET", "/docs", nil)
+	w := httptest.NewRecorder()
+
+	docsHandler(w, req)
+
+	body := w.Body.String()
+	requiredElements := []string{
+		"<!DOCTYPE html>",
+		"swagger-ui",
+		"SwaggerUIBundle",
+		"/openapi.json",
+		"dom_id",
+	}
+	for _, element := range requiredElements {
+		if !strings.Contains(body, element) {
+			t.Errorf("Expected docs HTML to contain '%s'", element)
+		}
+	}
+}

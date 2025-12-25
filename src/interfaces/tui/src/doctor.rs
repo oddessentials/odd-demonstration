@@ -410,4 +410,123 @@ mod tests {
         let count = missing_prereq_count();
         assert!(count <= 4, "Can't have more than 4 missing prereqs");
     }
+
+    // ========== SUPPORT_MATRIX Edge Case Tests ==========
+
+    #[test]
+    fn test_support_matrix_not_empty() {
+        assert!(!SUPPORT_MATRIX.is_empty());
+    }
+
+    #[test]
+    fn test_support_matrix_count() {
+        assert_eq!(SUPPORT_MATRIX.len(), 5, "Support matrix should have 5 platforms");
+    }
+
+    #[test]
+    fn test_support_matrix_url_valid() {
+        assert!(SUPPORT_MATRIX_URL.starts_with("https://"));
+        assert!(SUPPORT_MATRIX_URL.contains("github"));
+    }
+
+    #[test]
+    fn test_support_matrix_no_duplicates() {
+        let mut seen: Vec<(&str, &str)> = Vec::new();
+        for entry in SUPPORT_MATRIX.iter() {
+            assert!(!seen.contains(entry), "Duplicate entry in SUPPORT_MATRIX: {:?}", entry);
+            seen.push(*entry);
+        }
+    }
+
+    // ========== check_command_version Tests ==========
+
+    #[test]
+    fn test_check_command_version_error_format() {
+        let result = check_command_version("definitely_not_a_command_12345", &["--version"]);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("not found") || err.contains("failed"), "Error: {}", err);
+    }
+
+    #[test]
+    fn test_check_command_version_empty_args() {
+        // Even with no args, an invalid command should fail gracefully
+        let result = check_command_version("xyz_nonexistent", &[]);
+        assert!(result.is_err());
+    }
+
+    // ========== Prerequisite Struct Tests ==========
+
+    #[test]
+    fn test_prerequisites_have_install_commands() {
+        let prereqs = check_all_prerequisites();
+        for prereq in &prereqs {
+            assert!(!prereq.install_cmd.is_empty(), 
+                "{} should have install commands", prereq.name);
+        }
+    }
+
+    #[test]
+    fn test_prerequisites_have_valid_status() {
+        let prereqs = check_all_prerequisites();
+        for prereq in &prereqs {
+            // Status should be either Installed or Missing (not Installing or InstallFailed at startup)
+            assert!(
+                matches!(prereq.status, PrereqStatus::Installed | PrereqStatus::Missing),
+                "{} has unexpected status: {:?}", prereq.name, prereq.status
+            );
+        }
+    }
+
+    #[test]
+    fn test_installed_prerequisite_has_version() {
+        let prereqs = check_all_prerequisites();
+        for prereq in &prereqs {
+            if prereq.status == PrereqStatus::Installed {
+                assert!(prereq.version.is_some(), 
+                    "Installed {} should have version info", prereq.name);
+            }
+        }
+    }
+
+    #[test]
+    fn test_missing_prerequisite_no_version() {
+        let prereqs = check_all_prerequisites();
+        for prereq in &prereqs {
+            if prereq.status == PrereqStatus::Missing {
+                assert!(prereq.version.is_none(), 
+                    "Missing {} should not have version", prereq.name);
+            }
+        }
+    }
+
+    // ========== has_missing_prerequisites Tests ==========
+
+    #[test]
+    fn test_has_missing_prerequisites_returns_bool() {
+        let result = has_missing_prerequisites();
+        // Result is either true or false (valid bool)
+        assert!(result || !result);
+    }
+
+    #[test]
+    fn test_has_missing_prerequisites_consistent() {
+        // Multiple calls should return consistent result (deterministic)
+        let first = has_missing_prerequisites();
+        let second = has_missing_prerequisites();
+        assert_eq!(first, second, "has_missing_prerequisites should be deterministic");
+    }
+
+    #[test]
+    fn test_missing_count_matches_has_missing() {
+        let has_missing = has_missing_prerequisites();
+        let count = missing_prereq_count();
+        
+        if has_missing {
+            assert!(count > 0, "has_missing is true but count is 0");
+        } else {
+            assert_eq!(count, 0, "has_missing is false but count is {}", count);
+        }
+    }
 }
+

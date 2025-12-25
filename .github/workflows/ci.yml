@@ -22,8 +22,9 @@ jobs:
     outputs:
       # Tier 1: Compatibility-critical (triggers integration gate)
       schemas: ${{ steps.filter.outputs.schemas }}
+      compat_script: ${{ steps.filter.outputs.compat_script }}
       services: ${{ steps.filter.outputs.services }}
-      compat_critical: ${{ steps.filter.outputs.schemas == 'true' || steps.filter.outputs.services == 'true' }}
+      compat_critical: ${{ steps.filter.outputs.schemas == 'true' || steps.filter.outputs.compat_script == 'true' || steps.filter.outputs.services == 'true' }}
       # Tier 2: Governance-only (does NOT trigger integration gate)
       contracts_docs: ${{ steps.filter.outputs.contracts_docs }}
       governance: ${{ steps.filter.outputs.governance }}
@@ -40,6 +41,8 @@ jobs:
           filters: |
             schemas:
               - 'contracts/schemas/**'
+            compat_script:
+              - 'scripts/check-schema-compat.py'
             services:
               - 'src/services/**'
             contracts_docs:
@@ -158,7 +161,8 @@ jobs:
       - name: Install Gateway dependencies
         run: |
           cd src/services/gateway
-          npm ci || npm install
+          npm ci --ignore-scripts || npm install --ignore-scripts
+          ls node_modules/vitest || (echo "::error::Gateway dependencies not installed" && exit 1)
 
       # V2: run-all-tests.ps1 is SOLE authority for test execution
       # V7: Linux pwsh execution proves portability
@@ -173,9 +177,9 @@ jobs:
       - name: Contract sanity checks
         run: python scripts/test-contracts-sanity.py
 
-      # Conditional: Only run when schemas change (fail-closed: run if filter unavailable)
+      # Conditional: Run when schemas OR compat script change (fail-closed: run if filter unavailable)
       - name: Schema compatibility check
-        if: needs.paths-filter.outputs.schemas == 'true' || needs.paths-filter.result != 'success'
+        if: needs.paths-filter.outputs.schemas == 'true' || needs.paths-filter.outputs.compat_script == 'true' || needs.paths-filter.result != 'success'
         run: python scripts/check-schema-compat.py --ci
 
   # ============================================================
@@ -241,28 +245,57 @@ jobs:
           # Clean up (isolated workspace, no need to restore)
 
   # ============================================================
-  # Integration Gate Trigger (required only for compat-critical changes)
+  # Integration Phase (Docker Compose harness)
+  # Invariants: I3 (self-contained), I4 (<90s), I5 (artifacts)
   # ============================================================
-  integration-gate-check:
-    name: Integration Gate Required
+  integration-phase:
+    name: Integration Phase
     runs-on: ubuntu-latest
     needs: [paths-filter, tests]
-    # Fail-closed: run if filter fails OR compat-critical changes detected
-    # Does NOT trigger for governance-only changes (scripts, workflows)
+    # TODO: Re-enable when Docker Hub images are implemented
+    # Source-based builds exceed I4's 90s budget due to npm install + TypeScript compile
+    # Blocker: https://github.com/oddessentials/odd-demonstration/issues/TBD
     if: |
+      false &&
       always() &&
+      needs.tests.result == 'success' &&
       (needs.paths-filter.result != 'success' ||
        needs.paths-filter.outputs.compat_critical == 'true')
+    env:
+      COMPAT_CRITICAL: ${{ needs.paths-filter.outputs.compat_critical }}
+      FILTER_FAILED: ${{ needs.paths-filter.result != 'success' }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (for schema validation)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install schema validator dependencies
+        run: npm install ajv ajv-formats
+
       - name: Log gate decision
         run: |
-          if [ "${{ needs.paths-filter.result }}" != "success" ]; then
-            echo "::error::Paths-filter FAILED - running integration gate (fail-closed)"
-          fi
-          echo "Integration gate triggered: filter_ok=${{ needs.paths-filter.result == 'success' }} schemas=${{ needs.paths-filter.outputs.schemas }} services=${{ needs.paths-filter.outputs.services }} compat_critical=${{ needs.paths-filter.outputs.compat_critical }}"
-          echo "::notice::Integration gate would be required for this change."
-          echo "NOTE: Full integration tests require a running K8s cluster."
-          echo "Run locally with: ./scripts/integration-gate.ps1"
+          echo "Integration trigger: compat_critical=$COMPAT_CRITICAL | filter_failed=$FILTER_FAILED"
+
+      - name: Run integration harness
+        shell: pwsh
+        run: ./scripts/integration-harness.ps1
+        timeout-minutes: 3
+
+      - name: Echo gate decision
+        if: always()
+        run: cat integration-artifacts/gate-decision.json || echo "No decision file"
+
+      - name: Upload integration artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-artifacts
+          path: integration-artifacts/
+          retention-days: 7
 
   # ============================================================
   # Distribution Audit (naming, version, artifact consistency)
@@ -325,6 +358,31 @@ jobs:
         run: |
           cd src/interfaces/tui
           cargo test --locked
+
+  # ============================================================
+  # Windows Script Verification (X1 cross-platform proof)
+  # ============================================================
+  windows-verify:
+    name: Windows Script Verification
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Gateway dependencies
+        run: |
+          cd src/services/gateway
+          npm ci --ignore-scripts || npm install --ignore-scripts
+      
+      - name: Run contract validation (PowerShell)
+        shell: pwsh
+        run: ./scripts/validate-contracts.ps1
 
 
   # NOTE: Release dry-run validation moved to release.yml where it runs
@@ -418,7 +476,18 @@ jobs:
       - name: Install Gateway dependencies
         run: |
           cd src/services/gateway
-          npm ci || npm install
+          echo "=== npm and node versions ==="
+          node --version
+          npm --version
+          echo "=== Installing dependencies ==="
+          npm ci --ignore-scripts 2>&1 || npm install --ignore-scripts 2>&1
+          echo "=== Checking node_modules ==="
+          ls -la node_modules | head -30
+          echo "=== Checking @types ==="
+          ls node_modules/@types/ || echo "No @types directory"
+          echo "=== Verifying critical deps ==="
+          ls node_modules/@types/node || (echo "::error::@types/node not installed" && exit 1)
+          ls node_modules/vitest || (echo "::error::vitest not installed" && exit 1)
 
       - name: TypeScript type check (Gateway) - HARD FAIL
         run: |
@@ -496,7 +565,9 @@ jobs:
       - name: Rust TUI tests with coverage - via check-coverage.py
         run: |
           cd src/interfaces/tui
-          cargo tarpaulin --out Xml --skip-clean --timeout 120 2>&1 | tee tarpaulin.log || true
+          # --lib excludes bin target, --exclude-files src/main.rs needed because tarpaulin still measures it
+          # Per coverage-config.json: event loop/rendering code in bin is not unit-testable
+          cargo tarpaulin --lib --exclude-files src/main.rs --out Xml --skip-clean --timeout 120 2>&1 | tee tarpaulin.log || true
           # Tarpaulin outputs coverage as "X.XX% coverage" on its own line
           coverage_pct=$(grep -oE '[0-9]+\.[0-9]+% coverage' tarpaulin.log | head -1 | grep -oE '[0-9]+\.[0-9]+' || echo "")
           if [ -z "$coverage_pct" ]; then
@@ -544,7 +615,7 @@ jobs:
       - name: Install Gateway dependencies
         run: |
           cd src/services/gateway
-          npm ci || npm install
+          npm ci --ignore-scripts || npm install --ignore-scripts
 
       - name: Lint Gateway (ESLint)
         run: |

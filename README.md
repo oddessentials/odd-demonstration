@@ -1,10 +1,18 @@
 # 📡 Distributed Task Observatory
 
-A self-contained, local-first demonstration platform showcasing modern, production-grade distributed systems.
+A self-contained, local-first demonstration platform showcasing modern, production-grade distributed systems designed to enable professional-level agentic development at the most efficient rate possible.
 
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue)
 ![Stack](https://img.shields.io/badge/Stack-Polyglot-green)
 ![Platform](https://img.shields.io/badge/Platform-Kubernetes-326CE5)
+
+**Test Coverage:**
+
+![Gateway](https://img.shields.io/badge/Gateway-80%25-brightgreen)
+![Processor](https://img.shields.io/badge/Processor-80%25-brightgreen)
+![Metrics%20Engine](https://img.shields.io/badge/Metrics%20Engine-10%25-yellow)
+![Read%20Model](https://img.shields.io/badge/Read%20Model-18%25-yellow)
+![TUI](https://img.shields.io/badge/TUI%20Lib-32%25-yellowgreen)
 
 ## 🚀 Quick Start
 
@@ -18,6 +26,7 @@ cargo run --release
 ```
 
 **What happens:**
+
 1. ✅ Checks for Docker, PowerShell, kubectl, kind
 2. 📋 Shows missing tools with install commands
 3. 📎 Press **C** to copy install command to clipboard
@@ -53,16 +62,19 @@ pwsh ./scripts/start-all.ps1
 ### Quick Install
 
 **Linux/macOS:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/oddessentials/odd-demonstration/main/install.sh | sh
 ```
 
 **Windows (PowerShell):**
+
 ```powershell
 iwr -useb https://raw.githubusercontent.com/oddessentials/odd-demonstration/main/install.ps1 | iex
 ```
 
 **npm:**
+
 ```bash
 npm install -g @oddessentials/odd-dashboard
 ```
@@ -79,13 +91,13 @@ odd-dashboard doctor
 
 ### Supported Platforms
 
-| OS | Architecture | Artifact |
-|----|--------------|----------|
-| Windows | x64 | `odd-dashboard-windows-x64.exe` |
-| macOS | Intel | `odd-dashboard-macos-x64` |
-| macOS | Apple Silicon | `odd-dashboard-macos-arm64` |
-| Linux | x64 | `odd-dashboard-linux-x64` |
-| Linux | ARM64 | `odd-dashboard-linux-arm64` |
+| OS      | Architecture  | Artifact                        |
+| ------- | ------------- | ------------------------------- |
+| Windows | x64           | `odd-dashboard-windows-x64.exe` |
+| macOS   | Intel         | `odd-dashboard-macos-x64`       |
+| macOS   | Apple Silicon | `odd-dashboard-macos-arm64`     |
+| Linux   | x64           | `odd-dashboard-linux-x64`       |
+| Linux   | ARM64         | `odd-dashboard-linux-arm64`     |
 
 **System Requirements:** 8GB RAM minimum (16GB recommended), 4+ CPU cores, 15GB disk.
 See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.

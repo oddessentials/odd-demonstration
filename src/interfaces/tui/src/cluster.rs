@@ -541,4 +541,196 @@ mod tests {
         assert!(progress.is_complete);
         assert!(progress.has_error);
     }
+
+    // ========== validate_job_type Edge Case Tests ==========
+
+    #[test]
+    fn test_validate_job_type_whitespace_only() {
+        let result = validate_job_type("   ");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("empty"));
+    }
+
+    #[test]
+    fn test_validate_job_type_with_leading_whitespace() {
+        // Should be trimmed and valid
+        let result = validate_job_type("  valid_job");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_job_type_with_trailing_whitespace() {
+        let result = validate_job_type("valid_job  ");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_job_type_exactly_50_chars() {
+        let exact = "a".repeat(50);
+        let result = validate_job_type(&exact);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_job_type_numbers_only() {
+        assert!(validate_job_type("12345").is_ok());
+    }
+
+    #[test]
+    fn test_validate_job_type_single_char() {
+        assert!(validate_job_type("X").is_ok());
+    }
+
+    #[test]
+    fn test_validate_job_type_underscores() {
+        assert!(validate_job_type("test_job_type_v2").is_ok());
+    }
+
+    #[test]
+    fn test_validate_job_type_hyphens() {
+        assert!(validate_job_type("test-job-type").is_ok());
+    }
+
+    #[test]
+    fn test_validate_job_type_mixed_case() {
+        assert!(validate_job_type("TestJobType").is_ok());
+    }
+
+    #[test]
+    fn test_validate_job_type_space_in_middle() {
+        let result = validate_job_type("test job");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_job_type_newline() {
+        let result = validate_job_type("test\njob");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_job_type_dot() {
+        let result = validate_job_type("test.job");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_job_type_slash() {
+        let result = validate_job_type("test/job");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_job_type_colon() {
+        let result = validate_job_type("test:job");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_job_type_unicode() {
+        // Note: is_alphanumeric() accepts Unicode letters, so this is valid
+        // This is intentional - international characters are allowed
+        let result = validate_job_type("tëst");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_job_type_emoji() {
+        let result = validate_job_type("test🚀");
+        assert!(result.is_err());
+    }
+
+    // ========== ClusterStatus Tests ==========
+
+    #[test]
+    fn test_cluster_status_equality() {
+        assert_eq!(ClusterStatus::Ready, ClusterStatus::Ready);
+        assert_eq!(ClusterStatus::NoPods, ClusterStatus::NoPods);
+        assert_eq!(ClusterStatus::NotFound, ClusterStatus::NotFound);
+        assert_ne!(ClusterStatus::Ready, ClusterStatus::NoPods);
+    }
+
+    #[test]
+    fn test_cluster_status_error_with_details() {
+        let status = ClusterStatus::Error("Connection timeout".to_string());
+        if let ClusterStatus::Error(msg) = status {
+            assert!(msg.contains("timeout"));
+        } else {
+            panic!("Expected Error variant");
+        }
+    }
+
+    #[test]
+    fn test_cluster_status_clone() {
+        let status = ClusterStatus::Error("test error".to_string());
+        let cloned = status.clone();
+        assert_eq!(status, cloned);
+    }
+
+    #[test]
+    fn test_cluster_status_debug() {
+        let status = ClusterStatus::Ready;
+        let debug = format!("{:?}", status);
+        assert!(debug.contains("Ready"));
+    }
+
+    // ========== SetupProgress Tests ==========
+
+    #[test]
+    fn test_setup_progress_default_values() {
+        let progress = SetupProgress::default();
+        assert!(progress.current_step.is_empty());
+        assert!(progress.current_status.is_empty());
+        assert!(progress.message.is_empty());
+        assert!(progress.error_hint.is_empty());
+        assert!(progress.remediation.is_empty());
+        assert!(!progress.is_complete);
+        assert!(!progress.has_error);
+        assert!(progress.start_time.is_none());
+    }
+
+    #[test]
+    fn test_setup_progress_add_log_lines() {
+        let mut progress = SetupProgress::default();
+        progress.log_lines.push("Step 1: Starting...".to_string());
+        progress.log_lines.push("Step 2: Deploying...".to_string());
+        
+        assert_eq!(progress.log_lines.len(), 2);
+        assert!(progress.log_lines[0].contains("Starting"));
+    }
+
+    #[test]
+    fn test_setup_progress_remediation_steps() {
+        let mut progress = SetupProgress::default();
+        progress.remediation = vec![
+            "Step 1: Restart Docker".to_string(),
+            "Step 2: Run setup again".to_string(),
+        ];
+        
+        assert_eq!(progress.remediation.len(), 2);
+    }
+
+    #[test]
+    fn test_setup_progress_error_state() {
+        let mut progress = SetupProgress::default();
+        progress.has_error = true;
+        progress.error_hint = "Docker not running".to_string();
+        progress.is_complete = true;
+        
+        assert!(progress.has_error);
+        assert!(progress.is_complete);
+        assert!(!progress.error_hint.is_empty());
+    }
+
+    #[test]
+    fn test_setup_progress_clone() {
+        let mut progress = SetupProgress::default();
+        progress.current_step = "deploying".to_string();
+        progress.is_complete = true;
+        
+        let cloned = progress.clone();
+        assert_eq!(cloned.current_step, progress.current_step);
+        assert_eq!(cloned.is_complete, progress.is_complete);
+    }
 }
+

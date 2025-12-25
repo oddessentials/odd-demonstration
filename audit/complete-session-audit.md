@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-12-25
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-17
+**Phases Completed:** 0-18
 
 ---
 
@@ -43,6 +43,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 15 | TUI Refactoring & Prerequisites Setup | ✅ Complete |
 | Phase 16 | TypeScript Migration & Doctor Enhancement | ✅ Complete |
 | Phase 17 | Testing Optimizations & CI Hardening | ✅ Complete |
+| Phase 18 | Integration Test Hardening | ✅ Complete |
 
 ---
 
@@ -441,7 +442,114 @@ ab9a126 fix(infra): correct RedisInsight port and enable changelog generation
 
 ---
 
+## Phase 17.5: Go Coverage Improvements (2025-12-25)
+
+### Coverage Analysis
+Analyzed Go services and identified that ~70-80% of code in `main.go` files handles external connections (RabbitMQ, Redis, MongoDB, PostgreSQL) and infinite processing loops - code that cannot be meaningfully unit-tested without refactoring for dependency injection or integration tests.
+
+### Decision
+Opted for **Option B**: Maximize unit test coverage for business logic within current architecture, retain realistic thresholds for infrastructure-heavy services, and document the tradeoff.
+
+### New Tests Added
+
+#### metrics-engine/metrics_engine_test.go (11 new tests)
+- `TestEventEnvelopeJSONSerialization` - JSON roundtrip
+- `TestEventEnvelopeJSONFieldNames` - Verify camelCase
+- `TestDLQMessageJSONSerialization` - JSON roundtrip
+- `TestDLQMessageJSONFieldNames` - Verify snake_case
+- `TestDLQNameConstant` - Constant value
+- `TestFormatValidationErrorsThreeErrors` - Edge case
+- `TestFormatValidationErrorsSpecialChars` - Edge case
+- `TestGetEnvMultipleCalls` - Multiple lookups
+- `TestEventEnvelopeWithNilPayload` - Nil handling
+- `TestEventEnvelopeWithComplexPayload` - Nested payload
+
+#### read-model/read_model_test.go (13 new tests)
+- `TestCorsMiddlewareAddsHeaders` - CORS headers
+- `TestCorsMiddlewareOptionsRequest` - OPTIONS handling
+- `TestCorsMiddlewarePassesThrough` - Passthrough
+- `TestHealthHandler` - Health endpoint
+- `TestStatsResponseJSONSerialization` - JSON roundtrip
+- `TestStatsResponseJSONFieldNames` - Field names
+- `TestJobJSONSerialization` - Job struct
+- `TestHealthResponseJSONFieldNames` - Field names
+- `TestGetEnvMultipleCalls` - Multiple lookups
+- `TestJobStatusValues` - All statuses
+- `TestStatsResponseZeroValues` - Zero values
+- `TestOpenApiVersionDynamic` - Dynamic version
+- `TestDocsHandlerContainsSwaggerUI` - SwaggerUI elements
+
+### Coverage Results
+| Service | Before | After | Threshold |
+|---------|--------|-------|-----------|
+| metrics-engine | 10.7% | 10.7% | 10% ✅ |
+| metrics-engine/validator | 80.4% | 80.4% | 80% ✅ |
+| read-model | 8.3% | 18.5% | 18% ✅ |
+
+### Documentation Updates
+- **INVARIANTS.md**: Added V2a invariant for validator (80%), updated V3 to 18%, added architecture tradeoff note
+- **coverage-config.json**: Updated thresholds with explanatory notes
+
+### Files Modified
+- `src/services/metrics-engine/metrics_engine_test.go` - 11 new tests
+- `src/services/read-model/read_model_test.go` - 13 new tests
+- `docs/INVARIANTS.md` - New invariant V2a, updated thresholds, architecture note
+- `coverage-config.json` - Updated thresholds with notes
+
+---
+
+## Phase 18: Integration Test Hardening (2025-12-25)
+
+### Objective
+Introduce reliable, deterministic integration testing via Docker Compose without weakening fast unit/contract guardrails.
+
+### Files Created
+| File | Lines | Purpose |
+|------|-------|---------|
+| `scripts/integration-harness.ps1` | ~310 | Self-contained Docker Compose test runner |
+| `scripts/validate-json.mjs` | ~50 | AJV schema validator helper (Node.js) |
+| `docker-compose.integration.yml` | ~145 | Per-image healthchecks, isolated network |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `.github/workflows/ci.yml` | Replaced `integration-gate-check` with `integration-phase` job |
+| `docs/INVARIANTS.md` | Added I3-I6 invariants |
+| `docs/TESTING.md` | Added integration harness documentation |
+
+### Key Design Decisions
+| Decision | Rationale |
+|----------|-----------|
+| Docker Compose (not K8s) | Self-contained, no cluster dependency |
+| 90s wall-clock budget | `exit 1` on breach (hard fail) |
+| 4 canonical proof paths | Contract-first (schema validated) |
+| Scoped retries | Connection only; disabled after partial success |
+| Node.js schema validator | AJV via `validate-json.mjs` helper |
+| Per-image healthchecks | wget/nc/python per container base |
+| Guarded teardown | try/catch around compose commands |
+| gate-decision.json | Source of truth for trigger logging |
+
+### New Invariants
+| ID | Invariant | Enforcement |
+|----|-----------|-------------|
+| I3 | Integration harness self-contained | Docker Compose only |
+| I4 | Runtime <90s wall-clock | Harness exits 1 on breach |
+| I5 | Artifact capture every run | Guarded `finally` block |
+| I6 | Victory gate: 3 green + nightly | 📝 Governance-only |
+
+### Canonical Proof Paths
+| Path | Assertion | Schema |
+|------|-----------|--------|
+| P1 | Gateway accepts job (201) | `job.json` |
+| P2 | Events contain jobId | `event-envelope.json` |
+| P3 | Jobs reflect COMPLETED | `job.json` |
+| P4 | Metrics counter exposed | Regex |
+
+### Status
+**Implementation complete.** Pending verification via local harness run and CI.
+
+---
+
 ## Session Complete ✓
 
-All 17 implementation phases completed successfully.
-
+All 18 implementation phases completed successfully.

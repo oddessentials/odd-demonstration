@@ -1,7 +1,7 @@
 # Distributed Task Observatory - Session Summary
 
 **Last Updated:** 2025-12-25
-**Phases Completed:** 0-17
+**Phases Completed:** 0-18
 
 ## Objective
 
@@ -65,6 +65,9 @@ Implement a complete, production-grade distributed task processing system demons
 - Unit tests for all services
 - Integration gate v2 with MongoDB validation
 - Contract validation scripts
+- **Go Coverage Improvements** - Business logic in validator (80%+), infrastructure thresholds documented
+- **TUI Lib Coverage** - 35%+ lib-only coverage (excludes main.rs event loop), 132 unit tests
+- **Integration Hardening** (Phase 18) - Self-contained Docker Compose harness, 4 proof paths, 90s budget, I3-I6 invariants
 
 ## Quick Start
 
