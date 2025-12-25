@@ -101,8 +101,11 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       - RABBITMQ_URL=amqp://observatory:demo@odto-integ-rabbitmq:5672
+      - POSTGRES_URL=postgresql://observatory:demo@odto-integ-postgres:5432/events
     # Readiness: harness verifies job processing via Gateway/Read Model
 
   # Metrics Engine - Observability (pre-built from Docker Hub)
