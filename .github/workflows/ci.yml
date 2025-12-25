@@ -20,10 +20,15 @@ jobs:
     name: Detect Changed Paths
     runs-on: ubuntu-latest
     outputs:
+      # Tier 1: Compatibility-critical (triggers integration gate)
       schemas: ${{ steps.filter.outputs.schemas }}
-      contracts: ${{ steps.filter.outputs.contracts }}
       services: ${{ steps.filter.outputs.services }}
-      any_critical: ${{ steps.filter.outputs.schemas == 'true' || steps.filter.outputs.contracts == 'true' || steps.filter.outputs.services == 'true' }}
+      compat_critical: ${{ steps.filter.outputs.schemas == 'true' || steps.filter.outputs.services == 'true' }}
+      # Tier 2: Governance-only (does NOT trigger integration gate)
+      contracts_docs: ${{ steps.filter.outputs.contracts_docs }}
+      governance: ${{ steps.filter.outputs.governance }}
+      # Filter health
+      filter_ok: ${{ steps.filter.outcome == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,17 +40,30 @@ jobs:
           filters: |
             schemas:
               - 'contracts/schemas/**'
-            contracts:
-              - 'contracts/**'
             services:
               - 'src/services/**'
+            contracts_docs:
+              - 'contracts/*.md'
+              - 'contracts/fixtures/**'
+            governance:
+              - 'scripts/*.py'
+              - 'scripts/*.ps1'
+              - '.github/workflows/**'
 
-      # Debug echo (keep for a few PRs to verify filter behavior)
-      - name: Debug - Show detected changes
+      # Explicit filter-failed detection with CI annotation
+      - name: Check filter health
+        if: failure()
         run: |
-          echo "schemas changed: ${{ steps.filter.outputs.schemas }}"
-          echo "contracts changed: ${{ steps.filter.outputs.contracts }}"
-          echo "services changed: ${{ steps.filter.outputs.services }}"
+          echo "::error::Paths-filter evaluation FAILED. Integration gate will run (fail-closed)."
+          echo "FILTER_FAILED=true" >> $GITHUB_ENV
+
+      # Decision summary for auditing (three gate booleans)
+      - name: Log gate decisions
+        run: |
+          echo "=== Gate Decision Summary ==="
+          echo "Trigger: ${{ github.event_name }} | Ref: ${{ github.ref }}"
+          echo "schemas_changed=${{ steps.filter.outputs.schemas }} services_changed=${{ steps.filter.outputs.services }} governance_changed=${{ steps.filter.outputs.governance }}"
+          echo "Integration gate will trigger: ${{ steps.filter.outputs.schemas == 'true' || steps.filter.outputs.services == 'true' }}"
 
   # ============================================================
   # Bazel Build & Test
@@ -223,25 +241,26 @@ jobs:
           # Clean up (isolated workspace, no need to restore)
 
   # ============================================================
-  # Integration Gate Trigger (required when contracts/services change)
+  # Integration Gate Trigger (required only for compat-critical changes)
   # ============================================================
   integration-gate-check:
     name: Integration Gate Required
     runs-on: ubuntu-latest
     needs: [paths-filter, tests]
-    # Fail-closed: if paths-filter fails or detects critical changes, require integration gate
+    # Fail-closed: run if filter fails OR compat-critical changes detected
+    # Does NOT trigger for governance-only changes (scripts, workflows)
     if: |
       always() &&
       (needs.paths-filter.result != 'success' ||
-       needs.paths-filter.outputs.contracts == 'true' ||
-       needs.paths-filter.outputs.services == 'true')
+       needs.paths-filter.outputs.compat_critical == 'true')
     steps:
-      - name: Check integration requirement
+      - name: Log gate decision
         run: |
+          if [ "${{ needs.paths-filter.result }}" != "success" ]; then
+            echo "::error::Paths-filter FAILED - running integration gate (fail-closed)"
+          fi
+          echo "Integration gate triggered: filter_ok=${{ needs.paths-filter.result == 'success' }} schemas=${{ needs.paths-filter.outputs.schemas }} services=${{ needs.paths-filter.outputs.services }} compat_critical=${{ needs.paths-filter.outputs.compat_critical }}"
           echo "::notice::Integration gate would be required for this change."
-          echo "Contracts changed: ${{ needs.paths-filter.outputs.contracts }}"
-          echo "Services changed: ${{ needs.paths-filter.outputs.services }}"
-          echo ""
           echo "NOTE: Full integration tests require a running K8s cluster."
           echo "Run locally with: ./scripts/integration-gate.ps1"
 
@@ -413,7 +432,7 @@ jobs:
 
       # Processor coverage - HARD FAIL
       - name: Install Processor dependencies
-        run: pip install pytest pytest-cov diff-cover mypy types-pika types-jsonschema
+        run: pip install pytest pytest-cov diff-cover mypy jsonschema types-pika types-jsonschema
 
       - name: Python type check (Processor) - HARD FAIL
         run: |
@@ -423,23 +442,47 @@ jobs:
       - name: Processor test with coverage - via check-coverage.py
         run: |
           cd src/services/processor
-          coverage_pct=$(pytest --cov=. --cov-report=term tests/ 2>/dev/null | grep TOTAL | awk '{print $NF}' | tr -d '%')
+          # Run pytest with coverage
+          pytest --cov=. --cov-report=term tests/ > coverage_output.txt 2>&1 || true
+          cat coverage_output.txt
+          # Extract coverage from TOTAL line
+          coverage_pct=$(grep -E '^TOTAL' coverage_output.txt | awk '{print $NF}' | tr -d '%' || echo "")
+          # Fallback extraction
+          if [ -z "$coverage_pct" ]; then
+            coverage_pct=$(grep -oE '[0-9]+%' coverage_output.txt | tail -1 | tr -d '%' || echo "")
+          fi
+          # FAIL if coverage could not be extracted (don't silently use defaults)
+          if [ -z "$coverage_pct" ]; then
+            echo "::error::Coverage extraction FAILED for processor - output missing or corrupt"
+            exit 1
+          fi
+          echo "=== Coverage Summary ==="
           echo "Processor coverage: ${coverage_pct}%"
           python $GITHUB_WORKSPACE/scripts/check-coverage.py processor ${coverage_pct}
 
       - name: Go coverage (metrics-engine) - via check-coverage.py
         run: |
           cd src/services/metrics-engine
-          go test -coverprofile=coverage.out ./...
-          coverage_pct=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          go test -coverprofile=coverage.out ./... 2>&1 | tee test_output.txt
+          coverage_pct=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//' || echo "")
+          if [ -z "$coverage_pct" ]; then
+            echo "::error::Coverage extraction FAILED for metrics-engine - output missing or corrupt"
+            exit 1
+          fi
+          echo "=== Coverage Summary ==="
           echo "metrics-engine coverage: ${coverage_pct}%"
           python $GITHUB_WORKSPACE/scripts/check-coverage.py metrics-engine ${coverage_pct}
 
       - name: Go coverage (read-model) - via check-coverage.py
         run: |
           cd src/services/read-model
-          go test -coverprofile=coverage.out ./...
-          coverage_pct=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          go test -coverprofile=coverage.out ./... 2>&1 | tee test_output.txt
+          coverage_pct=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//' || echo "")
+          if [ -z "$coverage_pct" ]; then
+            echo "::error::Coverage extraction FAILED for read-model - output missing or corrupt"
+            exit 1
+          fi
+          echo "=== Coverage Summary ==="
           echo "read-model coverage: ${coverage_pct}%"
           python $GITHUB_WORKSPACE/scripts/check-coverage.py read-model ${coverage_pct}
 
@@ -453,9 +496,14 @@ jobs:
       - name: Rust TUI tests with coverage - via check-coverage.py
         run: |
           cd src/interfaces/tui
-          cargo tarpaulin --out Xml --skip-clean --timeout 120 > tarpaulin.log 2>&1 || true
-          coverage_pct=$(grep -oP '^\d+\.\d+%' tarpaulin.log | head -1 | tr -d '%' || echo "0")
-          cat tarpaulin.log
+          cargo tarpaulin --out Xml --skip-clean --timeout 120 2>&1 | tee tarpaulin.log || true
+          # Tarpaulin outputs coverage as "X.XX% coverage" on its own line
+          coverage_pct=$(grep -oE '[0-9]+\.[0-9]+% coverage' tarpaulin.log | head -1 | grep -oE '[0-9]+\.[0-9]+' || echo "")
+          if [ -z "$coverage_pct" ]; then
+            echo "::error::Coverage extraction FAILED for TUI - output missing or corrupt"
+            exit 1
+          fi
+          echo "=== Coverage Summary ==="
           echo "TUI coverage: ${coverage_pct}%"
           python $GITHUB_WORKSPACE/scripts/check-coverage.py tui ${coverage_pct}
 

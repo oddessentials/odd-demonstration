@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-12-25
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-16
+**Phases Completed:** 0-17
 
 ---
 
@@ -42,6 +42,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 14 | Distribution Strategy | ✅ Complete |
 | Phase 15 | TUI Refactoring & Prerequisites Setup | ✅ Complete |
 | Phase 16 | TypeScript Migration & Doctor Enhancement | ✅ Complete |
+| Phase 17 | Testing Optimizations & CI Hardening | ✅ Complete |
 
 ---
 
@@ -418,7 +419,29 @@ ab9a126 fix(infra): correct RedisInsight port and enable changelog generation
 
 ---
 
+## Phase 17: Testing Optimizations & CI Hardening (2025-12-25)
+
+### Invariants Documentation
+- Created `docs/INVARIANTS.md` with formal system guarantees
+- Contract, cross-platform, coverage, integration, and automation invariants
+
+### Coverage Enforcement
+- `coverage-config.json` - Externalized thresholds (single source of truth)
+- `scripts/check-coverage.py` - Unified validator with self-test capability
+
+### CI Optimizations
+- Added `dorny/paths-filter@v3` for reliable change detection
+- Conditional schema compatibility checks (fail-closed default)
+- Removed duplicate `contracts` job (covered by `run-all-tests.ps1`)
+- Integration gate trigger for contract/service changes
+
+### Performance
+- Parallel Go tests on pwsh 7+ with sequential fallback
+- Explicit exit code collection prevents swallowed failures
+
+---
+
 ## Session Complete ✓
 
-All 16 implementation phases completed successfully.
+All 17 implementation phases completed successfully.
 

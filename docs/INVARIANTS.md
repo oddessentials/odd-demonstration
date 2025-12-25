@@ -4,6 +4,35 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 
 ---
 
+## Invariant ↔ Enforcement Map
+
+> [!IMPORTANT]
+> Invariants marked **📝 Documented-Only** are manual governance controls (non-enforced).
+> Changes to this file require review (add to CODEOWNERS or branch protection path rules).
+
+| ID | Invariant | Automated Check | Status |
+|----|-----------|-----------------|--------|
+| C1 | Event messages conform to schema | `validate-contracts.ps1`, Gateway AJV | ✅ CI |
+| C2 | Job objects conform to schema | `validate-contracts.ps1`, Gateway AJV | ✅ CI |
+| C3 | Schemas have `$version` and `$id` | `test-contracts-sanity.py` | ✅ CI |
+| C4 | Breaking changes require major version | `check-schema-compat.py --ci` | ✅ CI (conditional) |
+| C5 | Schemas documented in VERSIONS.md | `test-contracts-sanity.py` | ✅ CI |
+| X1 | Scripts run on Windows + Linux pwsh | CI `shell: pwsh` on ubuntu | ✅ CI |
+| X2 | pwsh 7+ for parallel execution | `run-all-tests.ps1` version check | ✅ Runtime |
+| X3 | No hardcoded Windows paths | — | 📝 Documented-Only |
+| X4 | No bash-only constructs | — | 📝 Documented-Only |
+| V1 | Processor coverage ≥ 80% | `check-coverage.py processor` | ✅ CI |
+| V2 | metrics-engine coverage ≥ 10% | `check-coverage.py metrics-engine` | ✅ CI |
+| V3 | read-model coverage ≥ 3% | `check-coverage.py read-model` | ✅ CI |
+| V4 | TUI coverage ≥ 14% | `check-coverage.py tui` | ✅ CI |
+| I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
+| I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
+| A1 | Hermetic builds | Bazel `--lockfile_mode=error` | ✅ CI |
+| A2 | No manual intervention | — | 📝 Documented-Only |
+| A3 | Single test entrypoint | `run-all-tests.ps1` | ✅ CI |
+
+---
+
 ## Contract Invariants
 
 | Invariant | Enforcement |
