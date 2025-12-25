@@ -81,7 +81,9 @@ try {
     $health = Invoke-WithRetry -MaxRetries $MaxRetries -DelayMs $RetryDelayMs -Action {
         Invoke-RestMethod -Uri "$GatewayUrl/healthz" -TimeoutSec $TimeoutSec
     }
-    Write-Test "Gateway Health" ($health -eq "OK")
+    # Health endpoint may return JSON {"status":"ok"} or plain "OK"
+    $isHealthy = ($health -eq "OK") -or ($health.status -eq "ok")
+    Write-Test "Gateway Health" $isHealthy
 } catch {
     Write-Test "Gateway Health" $false $_.Exception.Message
 }
@@ -92,7 +94,9 @@ try {
     $health = Invoke-WithRetry -MaxRetries $MaxRetries -DelayMs $RetryDelayMs -Action {
         Invoke-RestMethod -Uri "$ReadModelUrl/health" -TimeoutSec $TimeoutSec
     }
-    Write-Test "Read Model Health" ($health -eq "OK")
+    # Health endpoint may return JSON {"status":"ok"} or plain "OK"
+    $isHealthy = ($health -eq "OK") -or ($health.status -eq "ok")
+    Write-Test "Read Model Health" $isHealthy
 } catch {
     Write-Test "Read Model Health" $false $_.Exception.Message
 }
