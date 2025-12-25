@@ -573,7 +573,9 @@ jobs:
       - name: Rust TUI tests with coverage - via check-coverage.py
         run: |
           cd src/interfaces/tui
-          cargo tarpaulin --out Xml --skip-clean --timeout 120 2>&1 | tee tarpaulin.log || true
+          # --lib excludes bin target, --exclude-files src/main.rs needed because tarpaulin still measures it
+          # Per coverage-config.json: event loop/rendering code in bin is not unit-testable
+          cargo tarpaulin --lib --exclude-files src/main.rs --out Xml --skip-clean --timeout 120 2>&1 | tee tarpaulin.log || true
           # Tarpaulin outputs coverage as "X.XX% coverage" on its own line
           coverage_pct=$(grep -oE '[0-9]+\.[0-9]+% coverage' tarpaulin.log | head -1 | grep -oE '[0-9]+\.[0-9]+' || echo "")
           if [ -z "$coverage_pct" ]; then
