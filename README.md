@@ -8,29 +8,22 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- **Docker Desktop** (running)
-  - [Windows](https://docs.docker.com/desktop/install/windows-install/) | [macOS](https://docs.docker.com/desktop/install/mac-install/) | [Linux](https://docs.docker.com/desktop/install/linux-install/)
-- **Rust** (for TUI) - [Install](https://rustup.rs)
-- **PowerShell Core** (`pwsh`) - Required on all platforms
-  - Windows: `winget install Microsoft.PowerShell` (or pre-installed PowerShell)
-  - macOS: `brew install powershell`
-  - Linux: [Install instructions](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux)
-- **kubectl** and **kind**
-  - Windows: `winget install Kubernetes.kubectl Kubernetes.kind`
-  - macOS: `brew install kubectl kind`
-  - Linux: See [kind installation](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
-
 ### Option 1: TUI Launcher (Recommended)
+
+The TUI automatically checks prerequisites and guides you through installation:
 
 ```bash
 cd src/interfaces/tui
 cargo run --release
-# Press 'L' when prompted to launch the cluster
 ```
 
-### Option 2: Script
+**What happens:**
+1. ✅ Checks for Docker, PowerShell, kubectl, kind
+2. 📋 Shows missing tools with install commands
+3. 📎 Press **C** to copy install command to clipboard
+4. 🚀 Press **L** to launch the cluster
+
+### Option 2: Script (if prerequisites installed)
 
 ```bash
 # Windows (PowerShell)
@@ -40,9 +33,15 @@ cargo run --release
 pwsh ./scripts/start-all.ps1
 ```
 
-### Option 3: Manual Setup
+### Prerequisites
 
-See [README_beginner.md](./README_beginner.md) for step-by-step instructions (Windows) or the platform-specific guides above.
+> 💡 **Tip:** The TUI will detect and help you install these!
+
+- **Docker Desktop** - [Install](https://docs.docker.com/desktop/)
+- **PowerShell Core** - `brew install powershell` (macOS) / `winget install Microsoft.PowerShell` (Windows)
+- **kubectl** - `brew install kubectl` or `winget install Kubernetes.kubectl`
+- **kind** - `brew install kind` or `winget install Kubernetes.kind`
+- **Rust** - [rustup.rs](https://rustup.rs) (only needed for building TUI from source)
 
 ---
 
@@ -154,10 +153,11 @@ After startup, access services via port-forwards:
 
 Terminal dashboard with:
 
-- **Cluster launcher** - One-key cluster startup
-- **Real-time stats** - Jobs, completions, failures
-- **Alerts panel** - Active Prometheus alerts
-- **Jobs table** - Recent job status
+- **Guided Setup** - Automatic prerequisite checking with clipboard copy
+- **Cluster Launcher** - One-key cluster startup
+- **Real-time Stats** - Jobs, completions, failures
+- **Alerts Panel** - Active Prometheus alerts
+- **UI Launcher** - Quick access to all web interfaces
 
 **Keyboard:**
 | Key | Action |
@@ -165,7 +165,8 @@ Terminal dashboard with:
 | `L` | Launch cluster (launcher mode) |
 | `Q` | Quit |
 | `R` | Refresh |
-| `N` | New Task (placeholder) |
+| `N` | New Task |
+| `U` | UI Launcher |
 
 ### Web Dashboard
 
