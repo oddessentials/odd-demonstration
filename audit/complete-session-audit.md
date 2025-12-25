@@ -1,8 +1,8 @@
 # Distributed Task Observatory - Complete Session Audit
 
-**Last Updated:** 2025-12-24
+**Last Updated:** 2025-12-25
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-15
+**Phases Completed:** 0-16
 
 ---
 
@@ -12,9 +12,10 @@ The Distributed Task Observatory is a production-grade distributed task processi
 
 ### Final System State
 - **15+ Kubernetes pods** running and healthy
-- **4 microservices** (Node.js, Python, Go x2)
+- **4 microservices** (Node.js/TypeScript, Python, Go x2)
 - **4 infrastructure components** (RabbitMQ, PostgreSQL, Redis, MongoDB)
 - **3 observability tools** (Prometheus, Grafana, Alertmanager)
+- **3 DB admin UIs** (pgAdmin, Mongo Express, RedisInsight)
 - **2 user interfaces** (Web Dashboard, Rust TUI with launcher)
 - **Multi-platform distribution** (install scripts, npm shim, release workflow)
 
@@ -40,6 +41,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 13 | Add Task/UI Launcher & Hardening | ✅ Complete |
 | Phase 14 | Distribution Strategy | ✅ Complete |
 | Phase 15 | TUI Refactoring & Prerequisites Setup | ✅ Complete |
+| Phase 16 | TypeScript Migration & Doctor Enhancement | ✅ Complete |
 
 ---
 
@@ -344,6 +346,79 @@ Refactored monolithic 2710-line `main.rs` into 7 clean modules:
 
 ---
 
+## Phase 16: TypeScript Migration & Doctor Enhancement (2025-12-25)
+
+### Doctor Command Enhancement
+The `doctor` command now displays OS-specific installation commands for missing prerequisites:
+
+```
+odd-dashboard doctor
+====================
+
+[OK] Platform: windows-x86_64 (supported)
+[OK] Docker: Docker version 24.0.7
+[FAIL] PowerShell Core: not found
+[OK] kubectl: Client Version: v1.28.3
+[FAIL] kind: not found
+
+Installation Commands (windows):
+----------------------------------------
+  PowerShell Core: winget install Microsoft.PowerShell
+  kind: winget install Kubernetes.kind
+
+Some prerequisites are missing.
+Run the commands above, then retry: odd-dashboard doctor
+```
+
+### TypeScript Migration
+Converted JavaScript test files to TypeScript with strict typing:
+
+| File | Changes |
+|------|---------|
+| `src/services/gateway/__tests__/index.test.ts` | Added interfaces for EventEnvelope, EventProducer, OpenApiSpec |
+| `src/services/gateway/__tests__/web-smoke.test.ts` | Added interfaces for Registry, RegistryEntry, JobPayload, ErrorResponse |
+| `tests/web-smoke.test.ts` | Root-level tests migrated to TypeScript |
+
+### New Configuration Files
+| File | Purpose |
+|------|---------|
+| `tsconfig.json` | Root TypeScript config with strict mode |
+| `vitest.config.ts` | Root vitest config for tests directory |
+| `src/services/gateway/vitest.config.ts` | Gateway vitest config for __tests__ directory |
+| `commitlint.config.cjs` | Renamed from .js for ESM compatibility |
+
+### Package Updates
+- Added `vitest` ^1.6.0 to root devDependencies
+- Added `typescript` ^5.3.3 to root devDependencies
+- Set `"type": "module"` in root package.json
+- Added `test` and `typecheck` scripts to root
+
+### Bazel Updates
+Updated `src/services/gateway/BUILD.bazel` to reference TypeScript test files.
+
+### Infrastructure Fix
+- **RedisInsight port correction**: Updated `infra/k8s/redisinsight.yaml` to use internal port 5540 (RedisInsight v2) while maintaining external access on port 8001
+
+### CHANGELOG Automation
+Added `@semantic-release/changelog` plugin to `.releaserc.json` for automatic CHANGELOG.md generation on releases.
+
+### Test Results
+| Component | Tests |
+|-----------|-------|
+| TUI (Rust) | 72 pass |
+| Gateway (TypeScript) | 17 pass |
+| Root (TypeScript) | 10 pass |
+
+### Commits
+```
+c85b856 refactor: migrate JavaScript tests to TypeScript with strict typing
+aa55c4f feat(tui): show OS-specific install commands in doctor output
+ab9a126 fix(infra): correct RedisInsight port and enable changelog generation
+```
+
+---
+
 ## Session Complete ✓
 
-All 15 implementation phases completed successfully.
+All 16 implementation phases completed successfully.
+
