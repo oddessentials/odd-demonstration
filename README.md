@@ -6,6 +6,14 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 ![Stack](https://img.shields.io/badge/Stack-Polyglot-green)
 ![Platform](https://img.shields.io/badge/Platform-Kubernetes-326CE5)
 
+**Test Coverage:**
+
+![Gateway](https://img.shields.io/badge/Gateway-80%25-brightgreen)
+![Processor](https://img.shields.io/badge/Processor-80%25-brightgreen)
+![Metrics%20Engine](https://img.shields.io/badge/Metrics%20Engine-10%25-yellow)
+![Read%20Model](https://img.shields.io/badge/Read%20Model-18%25-yellow)
+![TUI](https://img.shields.io/badge/TUI%20Lib-32%25-yellowgreen)
+
 ## 🚀 Quick Start
 
 ### Option 1: TUI Launcher (Recommended)
