@@ -75,13 +75,16 @@ services:
       - RABBITMQ_URL=amqp://observatory:demo@odto-integ-rabbitmq:5672
       - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events
     volumes:
-      - ./src/services/gateway:/app:ro
-    command: sh -c "npm install --omit=dev && npm start"
+      # Writable volume needed for npm install (node_modules) and npm run build (dist)
+      - ./src/services/gateway:/app
+    # Build TypeScript before running, install all deps including devDependencies for tsc
+    command: sh -c "npm install && npm run build && node dist/index.js"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/healthz"]
-      interval: 2s
+      interval: 3s
       timeout: 5s
-      retries: 15
+      retries: 20
+      start_period: 30s
 
   # Processor - Job execution (Python - has python)
   processor:
@@ -117,9 +120,11 @@ services:
       - RABBITMQ_URL=amqp://observatory:demo@odto-integ-rabbitmq:5672
     volumes:
       - ./src/services/metrics-engine:/app:ro
+    # go run compiles and runs (compile time can be slow first time)
     command: sh -c "go run ."
+    # No health endpoint exposed, just ensure container stays running
 
-  # Read Model - Query API (Go - use shell with nc)
+  # Read Model - Query API (Go - use shell with wget)
   read-model:
     container_name: odto-integ-read-model
     image: golang:1.21-alpine
@@ -137,12 +142,14 @@ services:
       - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events
     volumes:
       - ./src/services/read-model:/app:ro
-    command: sh -c "go run ."
+    # go run compiles and runs (compile time can be slow first time)
+    command: sh -c "apk add --no-cache wget && go run ."
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1"]
-      interval: 2s
+      interval: 3s
       timeout: 5s
-      retries: 15
+      retries: 20
+      start_period: 30s
 
 networks:
   odto-integ-net:

@@ -278,20 +278,9 @@ jobs:
           echo "Integration trigger: compat_critical=$COMPAT_CRITICAL | filter_failed=$FILTER_FAILED"
 
       - name: Run integration harness
-        id: integration
         shell: pwsh
-        # NOTE: integration harness requires pre-built Docker images
-        # Currently informational per I6 (governance-only victory gate)
-        continue-on-error: true
         run: ./scripts/integration-harness.ps1
         timeout-minutes: 3
-
-      - name: Report integration status
-        if: always()
-        run: |
-          if [ "${{ steps.integration.outcome }}" = "failure" ]; then
-            echo "::warning::Integration harness failed - requires pre-built Docker images (I6: governance-only)"
-          fi
 
       - name: Echo gate decision
         if: always()
