@@ -21,7 +21,7 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | X2 | pwsh 7+ for parallel execution | `run-all-tests.ps1` version check | ✅ Runtime |
 | X3 | No hardcoded Windows paths | — | 📝 Documented-Only |
 | X4 | No bash-only constructs | — | 📝 Documented-Only |
-| V1 | Processor coverage ≥ 30% | `check-coverage.py processor` | ✅ CI (interim floor; target 80%) |
+| V1 | Processor coverage ≥ 80% | `check-coverage.py processor` | ✅ CI |
 | V2 | metrics-engine coverage ≥ 10% | `check-coverage.py metrics-engine` | ✅ CI |
 | V3 | read-model coverage ≥ 3% | `check-coverage.py read-model` | ✅ CI |
 | V4 | TUI coverage ≥ 14% | `check-coverage.py tui` | ✅ CI |
@@ -62,7 +62,7 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 
 | Service | Min Threshold | Warn Threshold | Notes |
 |---------|---------------|----------------|-------|
-| Processor (Python) | 30% | 50% | Interim floor; target 80% |
+| Processor (Python) | 80% | 85% | Target achieved |
 | Metrics Engine (Go) | 10% | 15% | |
 | Read Model (Go) | 3% | 5% | |
 | TUI (Rust) | 14% | 20% | |

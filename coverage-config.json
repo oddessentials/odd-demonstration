@@ -3,10 +3,10 @@
     "description": "Coverage thresholds for all services. Single source of truth - CI reads from this file.",
     "thresholds": {
         "processor": {
-            "min": 30,
-            "warn": 50,
+            "min": 80,
+            "warn": 85,
             "tool": "pytest-cov",
-            "note": "Interim floor (target 80%); main.py at 0% - raise when integration tests added"
+            "note": "Target achieved with mocked unit tests"
         },
         "metrics-engine": {
             "min": 10,
