@@ -1,6 +1,6 @@
 # System Invariants
 
-This document defines the non-negotiable guarantees that the Distributed Task Observatory maintains. These invariants are enforced by CI and must pass on every merge to `main`.
+This document defines the non-negotiable guarantees that the Distributed Task Observatory maintains. These invariants are enforced by CI and must pass on every merge to `main`. Items marked 📝 are governance-only and not CI-enforced.
 
 ---
 
@@ -15,19 +15,19 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | C1 | Event messages conform to schema | `validate-contracts.ps1`, Gateway AJV | ✅ CI |
 | C2 | Job objects conform to schema | `validate-contracts.ps1`, Gateway AJV | ✅ CI |
 | C3 | Schemas have `$version` and `$id` | `test-contracts-sanity.py` | ✅ CI |
-| C4 | Breaking changes require major version | `check-schema-compat.py --ci` | ✅ CI (conditional) |
+| C4 | Breaking changes require major version | `check-schema-compat.py --ci` | ✅ CI (conditional: `schemas` + `compat_script` filters) |
 | C5 | Schemas documented in VERSIONS.md | `test-contracts-sanity.py` | ✅ CI |
 | X1 | Scripts run on Windows + Linux pwsh | CI `shell: pwsh` on ubuntu | ✅ CI |
 | X2 | pwsh 7+ for parallel execution | `run-all-tests.ps1` version check | ✅ Runtime |
 | X3 | No hardcoded Windows paths | — | 📝 Documented-Only |
 | X4 | No bash-only constructs | — | 📝 Documented-Only |
-| V1 | Processor coverage ≥ 80% | `check-coverage.py processor` | ✅ CI |
+| V1 | Processor coverage ≥ 30% | `check-coverage.py processor` | ✅ CI (interim floor; target 80%) |
 | V2 | metrics-engine coverage ≥ 10% | `check-coverage.py metrics-engine` | ✅ CI |
 | V3 | read-model coverage ≥ 3% | `check-coverage.py read-model` | ✅ CI |
 | V4 | TUI coverage ≥ 14% | `check-coverage.py tui` | ✅ CI |
 | I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
 | I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
-| A1 | Hermetic builds | Bazel `--lockfile_mode=error` | ✅ CI |
+| A1 | Hermetic Bazel builds | Bazel `--lockfile_mode=error` | ✅ CI |
 | A2 | No manual intervention | — | 📝 Documented-Only |
 | A3 | Single test entrypoint | `run-all-tests.ps1` | ✅ CI |
 
@@ -60,12 +60,12 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 
 Thresholds are externalized in `coverage-config.json` and enforced by `scripts/check-coverage.py`.
 
-| Service | Min Threshold | Warn Threshold |
-|---------|---------------|----------------|
-| Processor (Python) | 80% | 85% |
-| Metrics Engine (Go) | 10% | 15% |
-| Read Model (Go) | 3% | 5% |
-| TUI (Rust) | 14% | 20% |
+| Service | Min Threshold | Warn Threshold | Notes |
+|---------|---------------|----------------|-------|
+| Processor (Python) | 30% | 50% | Interim floor; target 80% |
+| Metrics Engine (Go) | 10% | 15% | |
+| Read Model (Go) | 3% | 5% | |
+| TUI (Rust) | 14% | 20% | |
 
 **Ratchet Policy**: Coverage can only increase. Decreases trigger warnings (not failures) with manual override option.
 
@@ -96,6 +96,6 @@ See [`tests/DETERMINISM.md`](../tests/DETERMINISM.md) for test timing contracts:
 
 | Invariant | Enforcement |
 |-----------|-------------|
-| All builds are hermetic and reproducible | Bazel with `MODULE.bazel.lock` |
-| No manual intervention required for any environment | Scripts automate cluster setup, port-forwarding |
+| All Bazel builds are hermetic and reproducible | Bazel with `MODULE.bazel.lock` |
+| No manual intervention required for any environment | Scripts automate cluster setup, port-forwarding (governance-only) |
 | Single canonical test entrypoint | `scripts/run-all-tests.ps1` |

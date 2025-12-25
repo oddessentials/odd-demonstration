@@ -22,8 +22,9 @@ jobs:
     outputs:
       # Tier 1: Compatibility-critical (triggers integration gate)
       schemas: ${{ steps.filter.outputs.schemas }}
+      compat_script: ${{ steps.filter.outputs.compat_script }}
       services: ${{ steps.filter.outputs.services }}
-      compat_critical: ${{ steps.filter.outputs.schemas == 'true' || steps.filter.outputs.services == 'true' }}
+      compat_critical: ${{ steps.filter.outputs.schemas == 'true' || steps.filter.outputs.compat_script == 'true' || steps.filter.outputs.services == 'true' }}
       # Tier 2: Governance-only (does NOT trigger integration gate)
       contracts_docs: ${{ steps.filter.outputs.contracts_docs }}
       governance: ${{ steps.filter.outputs.governance }}
@@ -40,6 +41,8 @@ jobs:
           filters: |
             schemas:
               - 'contracts/schemas/**'
+            compat_script:
+              - 'scripts/check-schema-compat.py'
             services:
               - 'src/services/**'
             contracts_docs:
@@ -173,9 +176,9 @@ jobs:
       - name: Contract sanity checks
         run: python scripts/test-contracts-sanity.py
 
-      # Conditional: Only run when schemas change (fail-closed: run if filter unavailable)
+      # Conditional: Run when schemas OR compat script change (fail-closed: run if filter unavailable)
       - name: Schema compatibility check
-        if: needs.paths-filter.outputs.schemas == 'true' || needs.paths-filter.result != 'success'
+        if: needs.paths-filter.outputs.schemas == 'true' || needs.paths-filter.outputs.compat_script == 'true' || needs.paths-filter.result != 'success'
         run: python scripts/check-schema-compat.py --ci
 
   # ============================================================
@@ -325,6 +328,31 @@ jobs:
         run: |
           cd src/interfaces/tui
           cargo test --locked
+
+  # ============================================================
+  # Windows Script Verification (X1 cross-platform proof)
+  # ============================================================
+  windows-verify:
+    name: Windows Script Verification
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Gateway dependencies
+        run: |
+          cd src/services/gateway
+          npm ci
+      
+      - name: Run contract validation (PowerShell)
+        shell: pwsh
+        run: ./scripts/validate-contracts.ps1
 
 
   # NOTE: Release dry-run validation moved to release.yml where it runs
