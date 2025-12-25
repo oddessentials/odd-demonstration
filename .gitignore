@@ -68,3 +68,7 @@ temp/
 
 # Archives (keep audit.zip in .gitignore since it's regeneratable)
 *.zip
+
+# Docker build artifacts (contracts copied for image builds)
+src/services/gateway/contracts/
+src/services/processor/contracts/

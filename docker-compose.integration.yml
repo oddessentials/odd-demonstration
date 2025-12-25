@@ -1,8 +1,10 @@
 # Docker Compose Integration Mode
-# Extends docker-compose.demo.yml with integration-specific overrides:
-# - Health checks with per-image appropriate tooling
-# - Shorter timeouts for fast-fail
-# - Fixed seed data for deterministic tests
+# Uses pre-built Docker Hub images for fast, reliable integration tests.
+# Invariants: I3 (self-contained), I4 (<90s runtime), I5 (artifact capture)
+#
+# NOTE: On PRs, this uses the last images pushed from `main`.
+# PR-specific code changes are NOT reflected in integration tests.
+# This provides a post-merge safety net, not PR validation.
 
 services:
   # PostgreSQL - Event sourcing store
@@ -56,11 +58,10 @@ services:
       timeout: 5s
       retries: 15
 
-  # Gateway - API entry point (Node.js - has wget)
+  # Gateway - API entry point (pre-built from Docker Hub)
   gateway:
     container_name: odto-integ-gateway
-    image: node:20-alpine
-    working_dir: /app
+    image: oddessentials/odto-gateway:latest
     networks: [odto-integ-net]
     ports:
       - "13000:3000"
@@ -74,61 +75,47 @@ services:
       - PORT=3000
       - RABBITMQ_URL=amqp://observatory:demo@odto-integ-rabbitmq:5672
       - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events
-    volumes:
-      # Writable volume needed for npm install (node_modules) and npm run build (dist)
-      - ./src/services/gateway:/app
-    # Build TypeScript before running, install all deps including devDependencies for tsc
-    command: sh -c "npm install && npm run build && node dist/index.js"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/healthz"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/healthz', (r) => process.exit(r.statusCode === 200 ? 0 : 1))\""]
       interval: 3s
       timeout: 5s
       retries: 20
-      start_period: 30s
+      start_period: 10s  # Reduced from 30s - no compile needed with pre-built images
 
-  # Processor - Job execution (Python - has python)
+  # Processor - Job execution (pre-built from Docker Hub)
   processor:
     container_name: odto-integ-processor
-    image: python:3.11-slim
-    working_dir: /app
+    image: oddessentials/odto-processor:latest
     networks: [odto-integ-net]
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - RABBITMQ_URL=amqp://observatory:demo@odto-integ-rabbitmq:5672
-    volumes:
-      - ./src/services/processor:/app:ro
-    command: sh -c "pip install --no-cache-dir -r requirements.txt && python main.py"
+    # Processor has no health endpoint - uses RabbitMQ connection as proxy
     healthcheck:
       test: ["CMD-SHELL", "python -c 'import socket; socket.create_connection((\"localhost\", 5672), 2)' 2>/dev/null || exit 0"]
       interval: 5s
       timeout: 10s
       retries: 10
-      start_period: 30s
+      start_period: 10s  # Reduced from 30s
 
-  # Metrics Engine - Observability (Go - use shell)
+  # Metrics Engine - Observability (pre-built from Docker Hub)
   metrics-engine:
     container_name: odto-integ-metrics-engine
-    image: golang:1.21-alpine
-    working_dir: /app
+    image: oddessentials/odto-metrics-engine:latest
     networks: [odto-integ-net]
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - RABBITMQ_URL=amqp://observatory:demo@odto-integ-rabbitmq:5672
-    volumes:
-      - ./src/services/metrics-engine:/app:ro
-    # go run compiles and runs (compile time can be slow first time)
-    command: sh -c "go run ."
-    # No health endpoint exposed, just ensure container stays running
+    # No health endpoint - just ensure container stays running
 
-  # Read Model - Query API (Go - use shell with wget)
+  # Read Model - Query API (pre-built from Docker Hub)
   read-model:
     container_name: odto-integ-read-model
-    image: golang:1.21-alpine
-    working_dir: /app
+    image: oddessentials/odto-read-model:latest
     networks: [odto-integ-net]
     ports:
       - "18080:8080"
@@ -140,22 +127,18 @@ services:
     environment:
       - MONGO_URL=mongodb://odto-integ-mongo:27017
       - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events
-    volumes:
-      - ./src/services/read-model:/app:ro
-    # go run compiles and runs (compile time can be slow first time)
-    command: sh -c "apk add --no-cache wget && go run ."
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1"]
       interval: 3s
       timeout: 5s
       retries: 20
-      start_period: 30s
+      start_period: 10s  # Reduced from 30s
 
 networks:
   odto-integ-net:
     name: odto-integ-net
 
-# Port mapping summary (integration mode uses same 13000+ range as demo):
+# Port mapping summary (integration mode uses 13000+ range):
 # 
 # | Service        | Internal | Host Port | Purpose           |
 # |----------------|----------|-----------|-------------------|

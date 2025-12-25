@@ -1,7 +1,7 @@
 # Distributed Task Observatory - Session Summary
 
 **Last Updated:** 2025-12-25
-**Phases Completed:** 0-18
+**Phases Completed:** 0-19
 
 ## Objective
 
@@ -13,6 +13,7 @@ Implement a complete, production-grade distributed task processing system demons
 - **Kubernetes:** kind (local cluster)
 - **Container Runtime:** Docker Desktop
 - **Build System:** Docker-native with Bazel for Go/Rust
+- **Container Registry:** Docker Hub (`oddessentials/odto-*`)
 
 ### Languages & Frameworks
 | Service | Language | Framework |
@@ -65,9 +66,10 @@ Implement a complete, production-grade distributed task processing system demons
 - Unit tests for all services
 - Integration gate v2 with MongoDB validation
 - Contract validation scripts
-- **Go Coverage Improvements** - Business logic in validator (80%+), infrastructure thresholds documented
+- **Gateway Coverage Improvements** - 80%+ via lib/ refactoring
 - **TUI Lib Coverage** - 35%+ lib-only coverage (excludes main.rs event loop), 132 unit tests
 - **Integration Hardening** (Phase 18) - Self-contained Docker Compose harness, 4 proof paths, 90s budget, I3-I6 invariants
+- **Docker Hub Images** (Phase 19) - Pre-built images for faster CI, multi-stage Dockerfiles, dual tagging
 
 ## Quick Start
 

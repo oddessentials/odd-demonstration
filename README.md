@@ -156,6 +156,45 @@ After startup, access services via port-forwards:
 
 ---
 
+## 🐳 Docker Hub Images
+
+Pre-built container images are published to Docker Hub for faster integration testing and CI reproducibility.
+
+### Available Images
+
+| Image | Base | Size | Purpose |
+|-------|------|------|---------|
+| `oddessentials/odto-gateway:latest` | node:20-slim | ~320 MB | API Gateway (Node.js/TypeScript) |
+| `oddessentials/odto-processor:latest` | python:3.11-slim | ~490 MB | Job Processor (Python) |
+| `oddessentials/odto-metrics-engine:latest` | distroless | ~23 MB | Metrics Aggregator (Go) |
+| `oddessentials/odto-read-model:latest` | distroless | ~20 MB | Query API (Go) |
+
+### Usage
+
+```bash
+# Pull latest images
+docker pull oddessentials/odto-gateway:latest
+docker pull oddessentials/odto-processor:latest
+docker pull oddessentials/odto-metrics-engine:latest
+docker pull oddessentials/odto-read-model:latest
+
+# Run integration tests with pre-built images
+docker compose -f docker-compose.integration.yml up -d
+```
+
+### Image Tagging
+
+- `:latest` — Current `main` branch build
+- `:sha-<commit>` — Exact commit traceability
+
+### CI Integration
+
+Images are automatically built and pushed on every merge to `main`:
+- Security: Build/push only runs on `main`, never on PRs or forks
+- Contracts are baked into Gateway and Processor images for self-contained tests
+- Integration tests use these pre-built images for <90s runtime (I4 invariant)
+
+
 ## 🖥️ Interfaces
 
 ### Rust TUI
