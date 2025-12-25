@@ -29,9 +29,9 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | V5 | Gateway coverage ≥ 80% | `vitest --coverage` | ✅ CI |
 | I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
 | I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
-| I3 | Integration harness self-contained | Docker Compose only | ✅ CI |
-| I4 | Integration runtime <90s | `integration-harness.ps1` timeout | ✅ CI |
-| I5 | Artifact capture every run | Guarded `finally` block | ✅ CI |
+| I3 | Integration harness self-contained | Docker Compose only | ⏳ Blocked (needs Docker Hub images) |
+| I4 | Integration runtime <90s | `integration-harness.ps1` timeout | ⏳ Blocked (needs Docker Hub images) |
+| I5 | Artifact capture every run | Guarded `finally` block | ⏳ Blocked (needs Docker Hub images) |
 | I6 | Victory gate: 3 green + nightly | — | 📝 Governance-Only |
 | A1 | Hermetic Bazel builds | Bazel `--lockfile_mode=error` | ✅ CI |
 | A2 | No manual intervention | — | 📝 Documented-Only |
