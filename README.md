@@ -71,10 +71,7 @@ npm install -g @oddessentials/odd-dashboard
 
 ```bash
 odd-dashboard --version
-# Shows: odd-dashboard 0.1.0
-#   commit: abc1234
-#   built:  2024-12-24T10:00:00Z
-#   rustc:  rustc 1.75.0
+# Shows version, commit, build time, and rustc version
 
 odd-dashboard doctor
 # Checks: Docker, PowerShell, kubectl, kind

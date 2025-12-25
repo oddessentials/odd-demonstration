@@ -36,7 +36,7 @@ use odd_dashboard::{
     check_platform_support, print_version, print_help, run_doctor,
     check_all_prerequisites, has_missing_prerequisites,
     check_cluster_status, run_setup_script, load_ui_registry, open_browser, submit_job,
-    get_install_command, copy_to_clipboard, InstallResult,
+    get_install_command, copy_to_clipboard, execute_install, InstallResult,
 };
 
 // ============================================================================
@@ -133,9 +133,9 @@ fn render_launcher_view<B: ratatui::backend::Backend>(
         let vertical_center = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Percentage(20),
-                Constraint::Length(20),
-                Constraint::Percentage(20),
+                Constraint::Percentage(15),
+                Constraint::Length(22),  // Increased to fit logo + hints
+                Constraint::Percentage(15),
             ])
             .split(size);
         
@@ -985,13 +985,29 @@ fn main() -> Result<(), Box<dyn Error>> {
                                     }
                                 }
                                 KeyCode::Enter => {
-                                    // Execute install - show message that execution is not available in TUI
+                                    // Execute install command
                                     if let Some(prereq) = missing.get(app.prereq_state.selected_index) {
-                                        if let Some(cmd) = get_install_command(&prereq.name) {
-                                            // Show that this requires manual execution
-                                            app.prereq_state.message = Some(format!(
-                                                "Run this command: {}", cmd
-                                            ));
+                                        app.prereq_state.message = Some(format!(
+                                            "Installing {}...", prereq.name
+                                        ));
+                                        
+                                        // Actually execute the install
+                                        match execute_install(&prereq.name) {
+                                            InstallResult::Success => {
+                                                app.prereq_state.message = Some(format!(
+                                                    "✓ {} installed successfully! Re-checking...", prereq.name
+                                                ));
+                                            }
+                                            InstallResult::Failed(e) => {
+                                                app.prereq_state.message = Some(format!(
+                                                    "✗ Install failed: {}. Try copying and running manually.", e
+                                                ));
+                                            }
+                                            InstallResult::Skipped => {
+                                                app.prereq_state.message = Some(
+                                                    "Install skipped".to_string()
+                                                );
+                                            }
                                         }
                                     }
                                 }
