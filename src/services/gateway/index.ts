@@ -1,289 +1,109 @@
-import express, { Request, Response } from 'express';
+/**
+ * Gateway Service Entry Point
+ * 
+ * This file handles runtime initialization only:
+ * - Loads VERSION file
+ * - Connects to RabbitMQ
+ * - Starts Express server
+ * 
+ * All business logic is in ./lib/ modules for testability.
+ * Side effects are behind the runtime guard at the bottom.
+ */
+
 import amqp, { Channel } from 'amqplib';
-import { v4 as uuidv4 } from 'uuid';
-import prom from 'prom-client';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import swaggerUi from 'swagger-ui-express';
+
+import { createDefaultConfig, loadVersionFile } from './lib/config.js';
+import { createValidators, createDefaultSchemaReader } from './lib/validators.js';
+import { createApp } from './lib/app.js';
+import { v4 as uuidv4 } from 'uuid';
 
 // ESM __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Type definitions
-interface JobData {
-    id?: string;
-    type?: string;
-    payload?: unknown;
-}
+// Re-export lib modules for testing convenience
+export * from './lib/index.js';
 
-interface EventEnvelope {
-    contractVersion: string;
-    eventType: string;
-    eventId: string;
-    occurredAt: string;
-    producer: {
-        service: string;
-        instanceId: string;
-        version: string;
-    };
-    correlationId: string;
-    idempotencyKey: string;
-    payload: JobData;
-}
-
-interface HealthResponse {
-    status: string;
-    version: string;
-}
-
-const app = express();
-app.use(express.json());
-
-// Read VERSION file with fail-fast on missing/invalid
-const VERSION_PATH = path.join(__dirname, 'VERSION');
-let SERVICE_VERSION: string;
-try {
-    SERVICE_VERSION = fs.readFileSync(VERSION_PATH, 'utf8').trim();
-    if (!/^\d+\.\d+\.\d+$/.test(SERVICE_VERSION)) {
-        throw new Error(`Invalid SemVer format: ${SERVICE_VERSION}`);
-    }
-    console.log(`Gateway version: ${SERVICE_VERSION}`);
-} catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`FATAL: Failed to load VERSION file: ${errorMessage}`);
-    process.exit(1);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ajv = new Ajv.default({ strict: false }) as any;
-addFormats.default(ajv);
-
-// Load schemas (paths relative to Bazel runfiles or project root)
-const CONTRACTS_PATH = process.env.CONTRACTS_PATH || path.join(__dirname, '../../../contracts');
-const eventSchema = JSON.parse(fs.readFileSync(path.join(CONTRACTS_PATH, 'schemas/event-envelope.json'), 'utf8'));
-const jobSchema = JSON.parse(fs.readFileSync(path.join(CONTRACTS_PATH, 'schemas/job.json'), 'utf8'));
-
-// Ajv validate function with errors property
-interface ValidateFn {
-    (data: unknown): boolean;
-    errors?: Array<{ message?: string; instancePath?: string }> | null;
-}
-
-const validateJob: ValidateFn = ajv.compile(jobSchema);
-const validateEvent: ValidateFn = ajv.compile(eventSchema);
-
-// Metrics setup
-const register = new prom.Registry();
-prom.collectDefaultMetrics({ register });
-
-const jobsSubmitted = new prom.Counter({
-    name: 'gateway_jobs_submitted_total',
-    help: 'Total number of jobs submitted via gateway',
-    labelNames: ['type'] as const,
-    registers: [register],
-});
-
-const jobsAccepted = new prom.Counter({
-    name: 'gateway_jobs_accepted_total',
-    help: 'Total number of jobs accepted and published to RabbitMQ',
-    registers: [register],
-});
-
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672';
-const QUEUE_NAME = 'jobs.created';
-
+/**
+ * RabbitMQ connection state
+ */
 let channel: Channel | null = null;
 
-async function connectRabbitMQ(): Promise<void> {
+/**
+ * Connect to RabbitMQ with retry logic
+ */
+async function connectRabbitMQ(url: string, queueName: string): Promise<void> {
     try {
-        const connection = await amqp.connect(RABBITMQ_URL);
+        const connection = await amqp.connect(url);
         channel = await connection.createChannel();
-        await channel.assertQueue(QUEUE_NAME, { durable: true });
+        await channel.assertQueue(queueName, { durable: true });
         console.log('Connected to RabbitMQ');
     } catch (error) {
         console.error('Failed to connect to RabbitMQ', error);
-        setTimeout(connectRabbitMQ, 5000);
+        setTimeout(() => connectRabbitMQ(url, queueName), 5000);
     }
 }
 
-connectRabbitMQ();
+/**
+ * File reader for VERSION and schemas
+ */
+function readFileSync(filePath: string): string {
+    return fs.readFileSync(filePath, 'utf8');
+}
 
-app.post('/jobs', async (req: Request, res: Response): Promise<void> => {
-    const jobData: JobData = req.body;
-    jobsSubmitted.inc({ type: jobData.type || 'unknown' });
-
-    if (!validateJob(jobData)) {
-        res.status(400).json({ error: 'Invalid job data', details: validateJob.errors });
-        return;
-    }
-
-    const eventId = uuidv4();
-    const correlationId = req.get('X-Correlation-Id') || uuidv4();
-
-    const event: EventEnvelope = {
-        contractVersion: '1.0.0',
-        eventType: 'job.created',
-        eventId: eventId,
-        occurredAt: new Date().toISOString(),
-        producer: {
-            service: 'gateway',
-            instanceId: process.env.HOSTNAME || 'unknown',
-            version: '0.1.0',
-        },
-        correlationId: correlationId,
-        idempotencyKey: jobData.id || eventId,
-        payload: jobData,
-    };
-
-    if (!validateEvent(event)) {
-        console.error('Internal Error: Generated event violates contract', validateEvent.errors);
-        res.status(500).json({ error: 'Internal contract violation' });
-        return;
-    }
-
+/**
+ * Start the gateway service.
+ * Exported for testing, but only called at runtime via the guard below.
+ */
+export async function startServer(): Promise<void> {
+    // Load version with fail-fast
+    const versionPath = path.join(__dirname, 'VERSION');
+    let serviceVersion: string;
     try {
-        if (!channel) {
-            throw new Error('RabbitMQ channel not initialized');
-        }
-        channel.sendToQueue(QUEUE_NAME, Buffer.from(JSON.stringify(event)), {
-            persistent: true,
-        });
-        jobsAccepted.inc();
-        res.status(202).json({ jobId: jobData.id, eventId: eventId });
+        serviceVersion = loadVersionFile(versionPath, readFileSync);
+        console.log(`Gateway version: ${serviceVersion}`);
     } catch (error) {
-        console.error('Failed to publish event', error);
-        res.status(500).json({ error: 'Failed to submit job' });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`FATAL: Failed to load VERSION file: ${errorMessage}`);
+        process.exit(1);
     }
-});
 
-// Health endpoints with version
-const healthResponse = (): HealthResponse => ({ status: 'ok', version: SERVICE_VERSION });
-app.get('/healthz', (_req: Request, res: Response) => res.json(healthResponse()));
-app.get('/readyz', (_req: Request, res: Response) => res.json(healthResponse()));
+    // Create config
+    const config = createDefaultConfig(__dirname, serviceVersion);
 
-const PORT = process.env.PORT || 3000;
+    // Load validators
+    const schemaReader = createDefaultSchemaReader(readFileSync);
+    const { validateJob, validateEvent } = createValidators(config.contractsPath, schemaReader);
 
-// OpenAPI Specification
-const openApiSpec = {
-    openapi: '3.0.3',
-    info: {
-        title: 'Gateway API',
-        description: 'Distributed Task Observatory Gateway Service - accepts jobs and publishes events to RabbitMQ',
-        version: SERVICE_VERSION,
-        contact: { name: 'Odd Essentials', url: 'https://oddessentials.com' },
-    },
-    servers: [{ url: 'http://localhost:3000', description: 'Local development' }],
-    paths: {
-        '/jobs': {
-            post: {
-                summary: 'Submit a new job',
-                description: 'Validates job data against schema and publishes to RabbitMQ',
-                requestBody: {
-                    required: true,
-                    content: {
-                        'application/json': {
-                            schema: {
-                                type: 'object',
-                                properties: {
-                                    id: { type: 'string', description: 'Unique job identifier' },
-                                    type: { type: 'string', description: 'Job type' },
-                                    payload: { type: 'object', description: 'Job payload data' },
-                                },
-                                required: ['id', 'type'],
-                            },
-                        },
-                    },
-                },
-                responses: {
-                    '202': { description: 'Job accepted', content: { 'application/json': { schema: { type: 'object', properties: { jobId: { type: 'string' }, eventId: { type: 'string' } } } } } },
-                    '400': { description: 'Invalid job data' },
-                    '500': { description: 'Server error' },
-                },
-            },
-        },
-        '/healthz': {
-            get: { summary: 'Health check', responses: { '200': { description: 'Service healthy' } } },
-        },
-        '/readyz': {
-            get: { summary: 'Readiness check', responses: { '200': { description: 'Service ready' } } },
-        },
-        '/metrics': {
-            get: { summary: 'Prometheus metrics', responses: { '200': { description: 'Prometheus metrics in text format' } } },
-        },
-        '/proxy/alerts': {
-            get: { summary: 'Proxy Alertmanager alerts', responses: { '200': { description: 'Current alerts' }, '502': { description: 'Alertmanager unavailable' } } },
-        },
-        '/proxy/targets': {
-            get: { summary: 'Proxy Prometheus targets', responses: { '200': { description: 'Prometheus targets' }, '502': { description: 'Prometheus unavailable' } } },
-        },
-    },
-};
+    // Create app with all dependencies
+    const { app } = createApp({
+        config,
+        validateJob,
+        validateEvent,
+        generateUuid: uuidv4,
+        getDate: () => new Date(),
+        getChannel: () => channel,
+    });
 
-// API Documentation endpoints
-app.get('/openapi.json', (_req: Request, res: Response) => res.json(openApiSpec));
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+    // Connect to RabbitMQ
+    connectRabbitMQ(config.rabbitmqUrl, config.queueName);
 
-// Metrics endpoint
-app.get('/metrics', async (_req: Request, res: Response) => {
-    res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
-});
+    // Start server
+    app.listen(config.port, () => {
+        console.log(`Gateway service listening on port ${config.port}`);
+    });
+}
 
-// Proxy endpoints for observability APIs (avoid CORS issues in browser)
-const ALERTMANAGER_URL = process.env.ALERTMANAGER_URL || 'http://alertmanager:9093';
-const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://prometheus:9090';
-const PROXY_TIMEOUT_MS = 5000;
+/**
+ * Runtime guard - only execute when run directly, not when imported
+ * This enables testing without triggering side effects
+ */
+// Check if this module is the entry point
+const isMainModule = import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`;
 
-app.get('/proxy/alerts', async (_req: Request, res: Response) => {
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
-
-        const response = await fetch(`${ALERTMANAGER_URL}/api/v2/alerts`, {
-            signal: controller.signal,
-            headers: { Accept: 'application/json' },
-        });
-        clearTimeout(timeout);
-
-        const data = await response.json();
-        res.status(response.status).json(data);
-    } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-            res.status(504).json({ error: 'Alertmanager timeout' });
-        } else {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            res.status(502).json({ error: 'Alertmanager unavailable', details: errorMessage });
-        }
-    }
-});
-
-app.get('/proxy/targets', async (_req: Request, res: Response) => {
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
-
-        const response = await fetch(`${PROMETHEUS_URL}/api/v1/targets`, {
-            signal: controller.signal,
-            headers: { Accept: 'application/json' },
-        });
-        clearTimeout(timeout);
-
-        const data = await response.json();
-        res.status(response.status).json(data);
-    } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-            res.status(504).json({ error: 'Prometheus timeout' });
-        } else {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            res.status(502).json({ error: 'Prometheus unavailable', details: errorMessage });
-        }
-    }
-});
-
-app.listen(PORT, () => {
-    console.log(`Gateway service listening on port ${PORT}`);
-});
+if (isMainModule) {
+    startServer();
+}

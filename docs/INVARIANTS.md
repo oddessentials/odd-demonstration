@@ -26,6 +26,7 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | V2a | metrics-engine/validator coverage ≥ 80% | `check-coverage.py metrics-engine` (subpkg) | ✅ CI |
 | V3 | read-model coverage ≥ 18% | `check-coverage.py read-model` | ✅ CI |
 | V4 | TUI coverage ≥ 14% | `check-coverage.py tui` | ✅ CI |
+| V5 | Gateway coverage ≥ 80% | `vitest --coverage` | ✅ CI |
 | I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
 | I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
 | A1 | Hermetic Bazel builds | Bazel `--lockfile_mode=error` | ✅ CI |
@@ -68,6 +69,7 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 | Metrics Engine Validator (Go) | 80% | 85% | Core validation logic |
 | Read Model (Go) | 18% | 25% | Infrastructure-heavy; HTTP handlers and middleware tested |
 | TUI (Rust) | 14% | 20% | |
+| Gateway (TypeScript) | 80% | 85% | Core logic in lib/ modules maintains 100% coverage |
 
 > [!NOTE]
 > **Go Service Architecture Tradeoff**: The `metrics-engine` and `read-model` packages are infrastructure-heavy,
