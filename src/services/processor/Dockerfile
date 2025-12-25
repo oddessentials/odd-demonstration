@@ -1,6 +1,11 @@
 # src/services/processor/Dockerfile
 # Python Processor service
-# Context: ./src/services/processor (service-local, not repo root)
+#
+# BUILD CONTEXTS:
+# - start-all.ps1: Uses repo root (.) as context, contracts/ found at root
+# - CI builds: CI copies contracts/ before build
+# - Manual local builds from service dir: Copy contracts first:
+#     cp -r ../../contracts ./contracts && docker build -t odto-processor:local .
 
 FROM python:3.11-slim
 
