@@ -21,9 +21,11 @@
             "note": "Infrastructure-heavy main package. HTTP handlers and middleware are tested."
         },
         "tui": {
-            "min": 14,
-            "warn": 20,
-            "tool": "cargo-tarpaulin"
+            "min": 33,
+            "warn": 35,
+            "tool": "cargo-tarpaulin",
+            "measurement": "--lib --exclude-files src/main.rs",
+            "note": "Lib coverage only. --exclude-files needed because tarpaulin --lib still measures main.rs. Event loop/rendering code in bin is not unit-testable."
         },
         "gateway": {
             "min": 80,

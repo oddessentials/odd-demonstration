@@ -9,6 +9,10 @@ readme = "README.md"
 keywords = ["kubernetes", "observability", "dashboard", "tui"]
 categories = ["command-line-utilities", "development-tools"]
 
+[lib]
+name = "odd_dashboard"
+path = "src/lib.rs"
+
 [[bin]]
 name = "odd-dashboard"
 path = "src/main.rs"

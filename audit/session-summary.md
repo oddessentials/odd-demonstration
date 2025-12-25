@@ -66,6 +66,7 @@ Implement a complete, production-grade distributed task processing system demons
 - Integration gate v2 with MongoDB validation
 - Contract validation scripts
 - **Go Coverage Improvements** - Business logic in validator (80%+), infrastructure thresholds documented
+- **TUI Lib Coverage** - 35%+ lib-only coverage (excludes main.rs event loop), 132 unit tests
 
 ## Quick Start
 

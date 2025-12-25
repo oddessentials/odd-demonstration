@@ -17,7 +17,7 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | C3 | Schemas have `$version` and `$id` | `test-contracts-sanity.py` | ✅ CI |
 | C4 | Breaking changes require major version | `check-schema-compat.py --ci` | ✅ CI (conditional: `schemas` + `compat_script` filters) |
 | C5 | Schemas documented in VERSIONS.md | `test-contracts-sanity.py` | ✅ CI |
-| X1 | Scripts run on Windows + Linux pwsh | CI `shell: pwsh` on ubuntu | ✅ CI |
+| X1 | Scripts run on Linux pwsh | CI `shell: pwsh` on ubuntu-latest | ✅ CI |
 | X2 | pwsh 7+ for parallel execution | `run-all-tests.ps1` version check | ✅ Runtime |
 | X3 | No hardcoded Windows paths | — | 📝 Documented-Only |
 | X4 | No bash-only constructs | — | 📝 Documented-Only |
@@ -25,7 +25,7 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | V2 | metrics-engine coverage ≥ 10% | `check-coverage.py metrics-engine` | ✅ CI |
 | V2a | metrics-engine/validator coverage ≥ 80% | `check-coverage.py metrics-engine` (subpkg) | ✅ CI |
 | V3 | read-model coverage ≥ 18% | `check-coverage.py read-model` | ✅ CI |
-| V4 | TUI coverage ≥ 14% | `check-coverage.py tui` | ✅ CI |
+| V4 | TUI lib coverage ≥ 33% | `check-coverage.py tui` (tarpaulin --lib --exclude-files) | ✅ CI |
 | V5 | Gateway coverage ≥ 80% | `vitest --coverage` | ✅ CI |
 | I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
 | I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
@@ -51,7 +51,7 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 
 | Invariant | Enforcement |
 |-----------|-------------|
-| All PowerShell scripts execute on Windows pwsh AND Linux pwsh | CI runs on `ubuntu-latest` with `shell: pwsh` |
+| All PowerShell scripts execute on Linux pwsh | CI runs on `ubuntu-latest` with `shell: pwsh` |
 | PowerShell 7+ is required for parallel execution | `run-all-tests.ps1` checks `$PSVersionTable.PSVersion.Major` with sequential fallback |
 | No hardcoded Windows paths (e.g., `C:\`) | Code review, cross-platform CI job |
 | No bash-only constructs in scripts | PowerShell-only scripts in `scripts/` |
@@ -68,7 +68,7 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 | Metrics Engine (Go) | 10% | 15% | Infrastructure-heavy main; business logic in validator (80%+) |
 | Metrics Engine Validator (Go) | 80% | 85% | Core validation logic |
 | Read Model (Go) | 18% | 25% | Infrastructure-heavy; HTTP handlers and middleware tested |
-| TUI (Rust) | 14% | 20% | |
+| TUI (Rust lib) | 33% | 35% | Lib-only; `--exclude-files main.rs` needed because `--lib` still measures bin |
 | Gateway (TypeScript) | 80% | 85% | Core logic in lib/ modules maintains 100% coverage |
 
 > [!NOTE]
