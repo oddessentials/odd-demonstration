@@ -4,7 +4,7 @@
 //! All functionality is modularized in the library crate.
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -969,6 +969,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
+                // Only process key press events, ignore repeat/release
+                if key.kind != KeyEventKind::Press {
+                    continue;
+                }
                 match app.mode {
                     AppMode::Launcher => {
                         match key.code {
