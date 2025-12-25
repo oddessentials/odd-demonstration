@@ -6,6 +6,12 @@
         "@semantic-release/commit-analyzer",
         "@semantic-release/release-notes-generator",
         [
+            "@semantic-release/changelog",
+            {
+                "changelogFile": "CHANGELOG.md"
+            }
+        ],
+        [
             "@semantic-release/exec",
             {
                 "prepareCmd": "echo ${nextRelease.version} > src/interfaces/tui/VERSION && sed -i 's/^version = \"[^\"]*\"/version = \"${nextRelease.version}\"/' src/interfaces/tui/Cargo.toml && cd src/interfaces/tui && cargo update --workspace && cd ../../../packages/npm-shim && npm version ${nextRelease.version} --no-git-tag-version --allow-same-version"
@@ -15,6 +21,7 @@
             "@semantic-release/git",
             {
                 "assets": [
+                    "CHANGELOG.md",
                     "src/interfaces/tui/VERSION",
                     "src/interfaces/tui/Cargo.toml",
                     "src/interfaces/tui/Cargo.lock",
