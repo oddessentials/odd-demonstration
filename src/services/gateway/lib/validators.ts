@@ -5,7 +5,7 @@
  * Uses dependency injection for all external dependencies.
  */
 
-import Ajv from 'ajv';
+import Ajv, { AnySchema } from 'ajv';
 import addFormats from 'ajv-formats';
 import type { ValidateFn, FileReader } from './types.js';
 
@@ -40,7 +40,7 @@ export function createAjv(): Ajv.default {
  * Compile a JSON schema into a validator function
  */
 export function compileSchema(ajv: Ajv.default, schema: unknown): ValidateFn {
-    return ajv.compile(schema) as ValidateFn;
+    return ajv.compile(schema as AnySchema) as ValidateFn;
 }
 
 /**

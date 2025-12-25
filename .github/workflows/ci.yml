@@ -161,7 +161,8 @@ jobs:
       - name: Install Gateway dependencies
         run: |
           cd src/services/gateway
-          npm ci || npm install
+          npm ci --ignore-scripts || npm install --ignore-scripts
+          ls node_modules/vitest || (echo "::error::Gateway dependencies not installed" && exit 1)
 
       # V2: run-all-tests.ps1 is SOLE authority for test execution
       # V7: Linux pwsh execution proves portability
@@ -374,7 +375,7 @@ jobs:
       - name: Install Gateway dependencies
         run: |
           cd src/services/gateway
-          npm ci
+          npm ci --ignore-scripts || npm install --ignore-scripts
       
       - name: Run contract validation (PowerShell)
         shell: pwsh
@@ -472,7 +473,18 @@ jobs:
       - name: Install Gateway dependencies
         run: |
           cd src/services/gateway
-          npm ci || npm install
+          echo "=== npm and node versions ==="
+          node --version
+          npm --version
+          echo "=== Installing dependencies ==="
+          npm ci --ignore-scripts 2>&1 || npm install --ignore-scripts 2>&1
+          echo "=== Checking node_modules ==="
+          ls -la node_modules | head -30
+          echo "=== Checking @types ==="
+          ls node_modules/@types/ || echo "No @types directory"
+          echo "=== Verifying critical deps ==="
+          ls node_modules/@types/node || (echo "::error::@types/node not installed" && exit 1)
+          ls node_modules/vitest || (echo "::error::vitest not installed" && exit 1)
 
       - name: TypeScript type check (Gateway) - HARD FAIL
         run: |
@@ -598,7 +610,7 @@ jobs:
       - name: Install Gateway dependencies
         run: |
           cd src/services/gateway
-          npm ci || npm install
+          npm ci --ignore-scripts || npm install --ignore-scripts
 
       - name: Lint Gateway (ESLint)
         run: |

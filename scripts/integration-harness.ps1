@@ -155,22 +155,22 @@ try {
     $waitStart = Get-Date
     
     while (((Get-Date) - $waitStart).TotalSeconds -lt $StartupTimeoutSec) {
-        # Gateway health
+        # Gateway health - endpoint returns JSON {"status":"ok"} not plain "OK"
         if (-not $healthyGateway) {
             try {
                 $gwHealth = Invoke-RestMethod -Uri "$GatewayUrl/healthz" -TimeoutSec 2 -ErrorAction SilentlyContinue
-                $healthyGateway = $gwHealth -eq "OK"
+                $healthyGateway = ($gwHealth -eq "OK") -or ($gwHealth.status -eq "ok")
                 if ($healthyGateway) {
                     Save-Artifact "health-snapshots/gateway.json" ($gwHealth | ConvertTo-Json)
                 }
             } catch {}
         }
         
-        # Read Model health
+        # Read Model health - endpoint returns JSON {"status":"ok"} not plain "OK"
         if (-not $healthyReadModel) {
             try {
                 $rmHealth = Invoke-RestMethod -Uri "$ReadModelUrl/health" -TimeoutSec 2 -ErrorAction SilentlyContinue
-                $healthyReadModel = $rmHealth -eq "OK"
+                $healthyReadModel = ($rmHealth -eq "OK") -or ($rmHealth.status -eq "ok")
                 if ($healthyReadModel) {
                     Save-Artifact "health-snapshots/read-model.json" ($rmHealth | ConvertTo-Json)
                 }
