@@ -7,6 +7,33 @@ import { describe, it, expect } from 'vitest';
  * requiring a running server. They test data structures and helper logic.
  */
 
+// Type definitions
+interface RegistryEntry {
+    id: string;
+    name: string;
+    port: number;
+    path: string;
+    emoji: string;
+    description: string;
+}
+
+interface Registry {
+    baseUrl: string;
+    entries: RegistryEntry[];
+}
+
+interface JobPayload {
+    id: string;
+    type: string;
+    status: string;
+    createdAt: string;
+}
+
+interface ErrorResponse {
+    error: string;
+    details: unknown[];
+}
+
 describe('Web Dashboard', () => {
     describe('Task Submission', () => {
         it('should build correct job payload structure', () => {
@@ -14,7 +41,7 @@ describe('Web Dashboard', () => {
             const jobId = 'mock-uuid-1234';
             const createdAt = '2024-01-01T00:00:00.000Z';
 
-            const payload = {
+            const payload: JobPayload = {
                 id: jobId,
                 type: jobType,
                 status: 'PENDING',
@@ -28,7 +55,7 @@ describe('Web Dashboard', () => {
         });
 
         it('should have required fields for Gateway API', () => {
-            const payload = {
+            const payload: JobPayload = {
                 id: crypto.randomUUID(),
                 type: 'PROCESS',
                 status: 'PENDING',
@@ -42,7 +69,7 @@ describe('Web Dashboard', () => {
         });
 
         it('should handle gateway error response format', () => {
-            const errorResponse = { error: 'Invalid job data', details: [] };
+            const errorResponse: ErrorResponse = { error: 'Invalid job data', details: [] };
 
             expect(errorResponse).toHaveProperty('error');
             expect(typeof errorResponse.error).toBe('string');
@@ -62,7 +89,7 @@ describe('Web Dashboard', () => {
 
     describe('UI Launcher', () => {
         it('should parse registry entries correctly', () => {
-            const registry = {
+            const registry: Registry = {
                 baseUrl: 'http://localhost',
                 entries: [
                     { id: 'dashboard', name: 'Web Dashboard', port: 8081, path: '/', emoji: '📊', description: 'Main dashboard' },
@@ -76,7 +103,7 @@ describe('Web Dashboard', () => {
         });
 
         it('should construct correct launch URL', () => {
-            const registry = {
+            const registry: Registry = {
                 baseUrl: 'http://localhost',
                 entries: [
                     { id: 'gateway-docs', name: 'Gateway API', port: 3000, path: '/docs', emoji: '📖', description: 'Swagger' }
@@ -90,14 +117,16 @@ describe('Web Dashboard', () => {
         });
 
         it('should handle missing registry gracefully', () => {
-            const registry = null;
+            // Simulate fetching registry that may not exist
+            const getRegistry = (): Registry | undefined => undefined;
+            const registry = getRegistry();
             const entries = registry?.entries ?? [];
 
             expect(entries).toHaveLength(0);
         });
 
         it('should have required fields for each UI entry', () => {
-            const entry = {
+            const entry: RegistryEntry = {
                 id: 'test',
                 name: 'Test UI',
                 port: 8080,
@@ -117,7 +146,7 @@ describe('Web Dashboard', () => {
 
     describe('UI Registry Contract', () => {
         it('should match expected registry structure', () => {
-            const registry = {
+            const registry: Registry = {
                 baseUrl: 'http://localhost',
                 entries: []
             };

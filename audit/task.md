@@ -76,3 +76,30 @@
 - [x] Add TUI task creation placeholder
 - [x] Update Web Mirror for feature parity
 - [x] Add unit tests for TUI components
+
+## Phase 13: Add Task/UI Launcher & Hardening [x]
+- [x] Implement Add Task form in TUI (N key)
+- [x] Implement UI Launcher in TUI (U key)
+- [x] Add Web dashboard feature parity
+- [x] Add error enums and input validation
+
+## Phase 14: Distribution Strategy [x]
+- [x] Binary rename to odd-dashboard
+- [x] CLI features (--version, doctor)
+- [x] Install scripts (install.sh, install.ps1)
+- [x] npm shim package
+- [x] Release workflow
+
+## Phase 15: TUI Refactoring & Prerequisites Setup [x]
+- [x] Refactor monolithic main.rs into modules
+- [x] Add guided prerequisites setup
+- [x] Add clipboard support via arboard
+
+## Phase 16: TypeScript Migration & Doctor Enhancement [x]
+- [x] Enhance doctor command with OS-specific install commands
+- [x] Migrate gateway tests to TypeScript with strict typing
+- [x] Add root-level TypeScript/vitest configuration
+- [x] Fix RedisInsight port mapping (5540 internal)
+- [x] Add @semantic-release/changelog for CHANGELOG.md generation
+- [x] Update BUILD.bazel for TypeScript tests
+

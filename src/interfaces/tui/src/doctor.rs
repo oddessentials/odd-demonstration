@@ -113,6 +113,8 @@ pub fn print_help() {
 
 /// Run the doctor command - check prerequisites and show diagnostic info
 pub fn run_doctor() {
+    use crate::error::get_install_command;
+    
     println!("odd-dashboard doctor");
     println!("====================");
     println!();
@@ -123,12 +125,14 @@ pub fn run_doctor() {
     println!("[OK] Platform: {}-{} (supported)", os, arch);
     
     let mut all_ok = true;
+    let mut missing: Vec<&str> = Vec::new();
     
     // Check Docker
     match check_command_version("docker", &["--version"]) {
         Ok(version) => println!("[OK] Docker: {}", version),
         Err(msg) => {
             println!("[FAIL] Docker: {}", msg);
+            missing.push("Docker");
             all_ok = false;
         }
     }
@@ -144,12 +148,13 @@ pub fn run_doctor() {
                     Ok(version) => println!("[WARN] PowerShell (Windows): {} (pwsh recommended)", version),
                     Err(msg) => {
                         println!("[FAIL] PowerShell: {}", msg);
+                        missing.push("PowerShell Core");
                         all_ok = false;
                     }
                 }
             } else {
                 println!("[FAIL] PowerShell Core: not found");
-                println!("       Install: https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell");
+                missing.push("PowerShell Core");
                 all_ok = false;
             }
         }
@@ -168,6 +173,7 @@ pub fn run_doctor() {
                 }
                 Err(msg) => {
                     println!("[FAIL] kubectl: {}", msg);
+                    missing.push("kubectl");
                     all_ok = false;
                 }
             }
@@ -179,11 +185,24 @@ pub fn run_doctor() {
         Ok(version) => println!("[OK] kind: {}", version),
         Err(msg) => {
             println!("[FAIL] kind: {}", msg);
+            missing.push("kind");
             all_ok = false;
         }
     }
     
     println!();
+    
+    // Print install commands for missing prerequisites
+    if !missing.is_empty() {
+        println!("Installation Commands ({}):", os);
+        println!("----------------------------------------");
+        for name in &missing {
+            if let Some(cmd) = get_install_command(name) {
+                println!("  {}: {}", name, cmd);
+            }
+        }
+        println!();
+    }
     
     // Summary
     if all_ok {
@@ -192,7 +211,7 @@ pub fn run_doctor() {
         println!("Run 'odd-dashboard' to start the TUI.");
     } else {
         println!("Some prerequisites are missing.");
-        println!("See: {}", SUPPORT_MATRIX_URL);
+        println!("Run the commands above, then retry: odd-dashboard doctor");
         std::process::exit(1);
     }
 }

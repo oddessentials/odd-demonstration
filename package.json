@@ -2,6 +2,7 @@
     "name": "distributed-task-observatory",
     "version": "0.1.0",
     "private": true,
+    "type": "module",
     "engines": {
         "node": ">=20.0.0"
     },
@@ -11,22 +12,27 @@
         "lint:commits": "commitlint --from=HEAD~1",
         "validate:contracts": "powershell -ExecutionPolicy Bypass -File ./scripts/validate-contracts.ps1",
         "test:smoke": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-test.ps1",
-        "test:integration": "powershell -ExecutionPolicy Bypass -File ./scripts/integration-gate.ps1"
+        "test:integration": "powershell -ExecutionPolicy Bypass -File ./scripts/integration-gate.ps1",
+        "test": "vitest run",
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "express": "^4.18.2",
-        "amqplib": "^0.10.3",
         "ajv": "^8.12.0",
         "ajv-formats": "^2.1.1",
-        "uuid": "^9.0.1",
+        "amqplib": "^0.10.3",
         "body-parser": "^1.20.2",
-        "prom-client": "^15.1.0"
+        "express": "^4.18.2",
+        "prom-client": "^15.1.0",
+        "uuid": "^9.0.1"
     },
     "devDependencies": {
         "@commitlint/cli": "^18.4.3",
         "@commitlint/config-conventional": "^18.4.3",
+        "@semantic-release/changelog": "^6.0.3",
         "@types/node": "^20.10.0",
-        "husky": "^8.0.3"
+        "husky": "^8.0.3",
+        "typescript": "^5.3.3",
+        "vitest": "^1.6.0"
     },
     "pnpm": {
         "onlyBuiltDependencies": []

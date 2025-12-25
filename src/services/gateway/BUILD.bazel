@@ -53,7 +53,8 @@ sh_test(
     srcs = ["run_tests.sh"],
     data = [
         "package.json",
-        "__tests__/index.test.js",
+        "__tests__/index.test.ts",
+        "__tests__/web-smoke.test.ts",
         "VERSION",
     ],
     tags = ["manual"],  # Excluded - needs npm install outside Bazel

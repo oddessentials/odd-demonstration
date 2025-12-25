@@ -1,9 +1,49 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Type definitions
+interface EventProducer {
+    service: string;
+    instanceId: string;
+    version: string;
+}
+
+interface EventEnvelope {
+    contractVersion: string;
+    eventType: string;
+    eventId: string;
+    occurredAt: string;
+    producer: EventProducer;
+    correlationId: string;
+    idempotencyKey: string;
+    payload: Record<string, unknown>;
+}
+
+interface EventEnvelopeOptions {
+    eventId?: string;
+    version?: string;
+    correlationId?: string;
+    idempotencyKey?: string;
+}
+
+interface OpenApiSpec {
+    openapi: string;
+    info: {
+        title: string;
+        description: string;
+        version: string;
+        contact: { name: string; url: string };
+    };
+    servers: Array<{ url: string; description: string }>;
+    paths: Record<string, Record<string, { summary: string }>>;
+}
 
 // Version reader helper
-function readVersion() {
+function readVersion(): string {
     const versionPath = path.join(__dirname, '..', 'VERSION');
     if (!fs.existsSync(versionPath)) {
         throw new Error(`VERSION file not found at ${versionPath}`);
@@ -16,20 +56,24 @@ function readVersion() {
 }
 
 // Event envelope builder helper
-function buildEventEnvelope(eventType, payload, options = {}) {
-    const { v4: uuidv4 } = require('uuid');
+function buildEventEnvelope(
+    eventType: string,
+    payload: Record<string, unknown>,
+    options: EventEnvelopeOptions = {}
+): EventEnvelope {
+    const { v4: uuidv4 } = require('uuid') as { v4: () => string };
     return {
         contractVersion: '1.0.0',
         eventType,
-        eventId: options.eventId || uuidv4(),
+        eventId: options.eventId ?? uuidv4(),
         occurredAt: new Date().toISOString(),
         producer: {
             service: 'gateway',
-            instanceId: process.env.HOSTNAME || 'test-instance',
-            version: options.version || '0.1.0'
+            instanceId: process.env.HOSTNAME ?? 'test-instance',
+            version: options.version ?? '0.1.0'
         },
-        correlationId: options.correlationId || uuidv4(),
-        idempotencyKey: options.idempotencyKey || uuidv4(),
+        correlationId: options.correlationId ?? uuidv4(),
+        idempotencyKey: options.idempotencyKey ?? uuidv4(),
         payload
     };
 }
@@ -75,7 +119,7 @@ describe('Gateway', () => {
 
     describe('OpenAPI Specification', () => {
         // Build a mock OpenAPI spec structure matching index.ts
-        const buildOpenApiSpec = (version) => ({
+        const buildOpenApiSpec = (version: string): OpenApiSpec => ({
             openapi: '3.0.3',
             info: {
                 title: 'Gateway API',
@@ -109,8 +153,8 @@ describe('Gateway', () => {
             const spec = buildOpenApiSpec('0.1.0');
             const requiredPaths = ['/jobs', '/healthz', '/readyz', '/metrics', '/proxy/alerts', '/proxy/targets'];
 
-            for (const path of requiredPaths) {
-                expect(spec.paths[path]).toBeDefined();
+            for (const reqPath of requiredPaths) {
+                expect(spec.paths[reqPath]).toBeDefined();
             }
         });
 
