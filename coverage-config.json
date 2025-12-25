@@ -1,0 +1,31 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Coverage thresholds for all services. Single source of truth - CI reads from this file.",
+    "thresholds": {
+        "processor": {
+            "min": 80,
+            "warn": 85,
+            "tool": "pytest-cov"
+        },
+        "metrics-engine": {
+            "min": 10,
+            "warn": 15,
+            "tool": "go-cover"
+        },
+        "read-model": {
+            "min": 3,
+            "warn": 5,
+            "tool": "go-cover"
+        },
+        "tui": {
+            "min": 14,
+            "warn": 20,
+            "tool": "cargo-tarpaulin"
+        }
+    },
+    "ratchet": {
+        "enabled": true,
+        "mode": "warn",
+        "description": "Coverage can only increase. Decreases trigger warnings, not failures."
+    }
+}
