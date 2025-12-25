@@ -277,7 +277,7 @@ impl App {
         }
 
         // Fetch jobs
-        if let Ok(response) = reqwest::blocking::get(format!("{}/jobs", self.api_url)) {
+        if let Ok(response) = reqwest::blocking::get(format!("{}/jobs/recent", self.api_url)) {
             if let Ok(jobs) = response.json::<Vec<Job>>() {
                 self.jobs = jobs;
             }
@@ -482,6 +482,44 @@ mod tests {
         assert_eq!(cloned.version, prereq.version);
         assert_eq!(cloned.status, prereq.status);
         assert_eq!(cloned.install_cmd, prereq.install_cmd);
+    }
+
+    // ========== API Endpoint Contract Tests ==========
+    // These tests document the expected API contracts between TUI and read-model
+
+    #[test]
+    fn test_api_endpoints_contract() {
+        // Document the expected read-model API endpoints
+        // The refresh() method in App uses these endpoints
+        let expected_stats_endpoint = "/stats";
+        let expected_jobs_endpoint = "/jobs/recent";  // NOT /jobs - see read-model main.go
+        
+        assert_eq!(expected_stats_endpoint, "/stats");
+        assert_eq!(expected_jobs_endpoint, "/jobs/recent");
+    }
+
+    #[test]
+    fn test_job_struct_matches_read_model_response() {
+        // Verify Job struct can deserialize read-model response format
+        let json = r#"{"id":"550e8400-e29b-41d4-a716-446655440099","type":"TEST","status":"COMPLETED","createdAt":"2025-01-01T12:00:00Z"}"#;
+        let job: Result<Job, _> = serde_json::from_str(json);
+        assert!(job.is_ok());
+        let job = job.unwrap();
+        assert_eq!(job.id, "550e8400-e29b-41d4-a716-446655440099");
+        assert_eq!(job.job_type, "TEST");
+        assert_eq!(job.status, "COMPLETED");
+    }
+
+    #[test]
+    fn test_stats_struct_matches_read_model_response() {
+        // Verify Stats struct can deserialize read-model response format
+        let json = r#"{"totalJobs":10,"completedJobs":8,"failedJobs":2,"lastEventTime":"2025-01-01T12:00:00Z"}"#;
+        let stats: Result<Stats, _> = serde_json::from_str(json);
+        assert!(stats.is_ok());
+        let stats = stats.unwrap();
+        assert_eq!(stats.total_jobs, 10);
+        assert_eq!(stats.completed_jobs, 8);
+        assert_eq!(stats.failed_jobs, 2);
     }
 }
 

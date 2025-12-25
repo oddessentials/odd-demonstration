@@ -87,7 +87,7 @@ def process_job(ch, method, properties, body):
         cur.execute(
             "INSERT INTO jobs (id, type, status, payload, created_at) VALUES (%s, %s, %s, %s, %s) "
             "ON CONFLICT (id) DO UPDATE SET status = %s, updated_at = %s",
-            (job_id, job_data['type'], 'EXECUTING', json.dumps(job_data['payload']), job_data['createdAt'],
+            (job_id, job_data['type'], 'EXECUTING', json.dumps(job_data.get('payload', {})), job_data['createdAt'],
              'EXECUTING', 'NOW()')
         )
         conn.commit()

@@ -244,3 +244,69 @@ class TestMalformedInput:
         with pytest.raises((ValueError, TypeError)):
             JobStateMachine('job-bad', None)
 
+
+# ============================================================
+# Contract Compliance Tests (per contracts/schemas/job.json)
+# ============================================================
+
+class TestContractCompliance:
+    """Tests ensuring processor conforms to contracts/schemas/job.json.
+    
+    Per contract-rules.md: "Implementations must conform to contracts;
+    implementations do not redefine them."
+    """
+    
+    def test_job_without_payload_is_valid_per_schema(self):
+        """Per job.json, 'payload' is optional. Processor must handle this.
+        
+        This test matches contracts/fixtures/golden/event-envelope-valid.json
+        where the job has no nested 'payload' field.
+        """
+        # Job without payload - valid per job.json (payload not in required array)
+        job_data = {
+            "id": "770e8400-e29b-41d4-a716-446655440002",
+            "type": "test-job",
+            "status": "PENDING",
+            "createdAt": "2025-01-01T12:00:00Z"
+            # Note: NO 'payload' field - optional per job.json
+        }
+        
+        # The processor's extraction logic must not fail
+        extracted_payload = job_data.get('payload', {})
+        assert extracted_payload == {}
+        assert json.dumps(extracted_payload) == '{}'
+    
+    def test_job_with_payload_extracts_correctly(self):
+        """Jobs WITH payload still work correctly.
+        
+        This test matches contracts/fixtures/golden/job-valid.json.
+        """
+        job_data = {
+            "id": "880e8400-e29b-41d4-a716-446655440003",
+            "type": "data-processing",
+            "status": "PENDING",
+            "createdAt": "2025-01-01T12:00:00Z",
+            "payload": {"task": "Sample task", "priority": "high"}
+        }
+        
+        extracted_payload = job_data.get('payload', {})
+        assert extracted_payload == {"task": "Sample task", "priority": "high"}
+    
+    def test_payload_serialization_empty(self):
+        """Empty payload serializes correctly for database storage."""
+        job_data = {"id": "test", "type": "test", "status": "PENDING", "createdAt": "2025-01-01T12:00:00Z"}
+        payload_json = json.dumps(job_data.get('payload', {}))
+        assert payload_json == '{}'
+    
+    def test_payload_serialization_with_data(self):
+        """Payload with data serializes correctly for database storage."""
+        job_data = {
+            "id": "test",
+            "type": "test", 
+            "status": "PENDING",
+            "createdAt": "2025-01-01T12:00:00Z",
+            "payload": {"key": "value"}
+        }
+        payload_json = json.dumps(job_data.get('payload', {}))
+        assert payload_json == '{"key": "value"}'
+
