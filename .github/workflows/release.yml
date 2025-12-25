@@ -119,6 +119,9 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Checkout the release tag so VERSION file has the correct version
+          ref: ${{ needs.release.outputs.tag }}
       
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
