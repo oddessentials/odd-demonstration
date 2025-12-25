@@ -227,6 +227,8 @@ pub struct PrerequisiteSetupState {
     pub install_action: Option<InstallAction>,
     pub current_install: Option<usize>,  // Index of currently installing prereq
     pub message: Option<String>,         // Feedback message for user
+    pub output_lines: Vec<String>,       // Captured install output for display
+    pub is_installing: bool,             // Whether install is currently running
 }
 
 // ============================================================================
@@ -401,4 +403,85 @@ mod tests {
     fn test_loading_messages_count() {
         assert!(LOADING_MESSAGES.len() >= 4);
     }
+
+    // ========== PrerequisiteSetupState Tests ==========
+
+    #[test]
+    fn test_prerequisite_setup_state_default() {
+        let state = PrerequisiteSetupState::default();
+        assert!(state.prerequisites.is_empty());
+        assert_eq!(state.selected_index, 0);
+        assert!(state.install_action.is_none());
+        assert!(state.current_install.is_none());
+        assert!(state.message.is_none());
+        assert!(state.output_lines.is_empty());
+        assert!(!state.is_installing);
+    }
+
+    #[test]
+    fn test_prerequisite_setup_state_with_output() {
+        let mut state = PrerequisiteSetupState::default();
+        state.output_lines = vec![
+            "Downloading...".to_string(),
+            "Installing...".to_string(),
+            "Done!".to_string(),
+        ];
+        assert_eq!(state.output_lines.len(), 3);
+        assert!(state.output_lines[0].contains("Downloading"));
+    }
+
+    #[test]
+    fn test_prerequisite_setup_state_installing_flag() {
+        let mut state = PrerequisiteSetupState::default();
+        assert!(!state.is_installing);
+        state.is_installing = true;
+        assert!(state.is_installing);
+    }
+
+    #[test]
+    fn test_prerequisite_setup_state_message() {
+        let mut state = PrerequisiteSetupState::default();
+        state.message = Some("✓ Docker installed successfully!".to_string());
+        assert!(state.message.is_some());
+        assert!(state.message.as_ref().unwrap().starts_with("✓"));
+    }
+
+    #[test]
+    fn test_prerequisite_setup_state_selected_navigation() {
+        let mut state = PrerequisiteSetupState::default();
+        state.prerequisites = vec![
+            Prerequisite {
+                name: "docker".to_string(),
+                version: None,
+                status: PrereqStatus::Missing,
+                install_cmd: vec![],
+            },
+            Prerequisite {
+                name: "kubectl".to_string(),
+                version: None,
+                status: PrereqStatus::Missing,
+                install_cmd: vec![],
+            },
+        ];
+        assert_eq!(state.selected_index, 0);
+        state.selected_index = 1;
+        assert_eq!(state.selected_index, 1);
+        assert_eq!(state.prerequisites[state.selected_index].name, "kubectl");
+    }
+
+    #[test]
+    fn test_prerequisite_clone() {
+        let prereq = Prerequisite {
+            name: "docker".to_string(),
+            version: Some("24.0.0".to_string()),
+            status: PrereqStatus::Installed,
+            install_cmd: vec!["brew install docker".to_string()],
+        };
+        let cloned = prereq.clone();
+        assert_eq!(cloned.name, prereq.name);
+        assert_eq!(cloned.version, prereq.version);
+        assert_eq!(cloned.status, prereq.status);
+        assert_eq!(cloned.install_cmd, prereq.install_cmd);
+    }
 }
+

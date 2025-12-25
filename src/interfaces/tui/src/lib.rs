@@ -43,6 +43,6 @@ pub use cluster::{
 };
 
 pub use install::{
-    InstallResult,
-    copy_to_clipboard, execute_install, get_install_description,
+    InstallOutput,
+    copy_to_clipboard, execute_install_with_output, get_install_description,
 };
