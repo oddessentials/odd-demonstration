@@ -36,7 +36,7 @@ use odd_dashboard::{
     check_platform_support, print_version, print_help, run_doctor,
     check_all_prerequisites, has_missing_prerequisites,
     check_cluster_status, run_setup_script, load_ui_registry, open_browser, submit_job,
-    get_install_command,
+    get_install_command, copy_to_clipboard, InstallResult,
 };
 
 // ============================================================================
@@ -483,6 +483,17 @@ fn render_prerequisite_setup<B: ratatui::backend::Backend>(
             lines.push(Line::from(""));
             lines.push(Line::from(vec![
                 Span::styled("  Press any key to continue...", Style::default().fg(Color::Gray)),
+            ]));
+        }
+        
+        // Show feedback message if any
+        if let Some(ref msg) = app.prereq_state.message {
+            lines.push(Line::from(""));
+            let msg_color = if msg.starts_with("✓") { Color::Green } 
+                           else if msg.starts_with("✗") { Color::Red }
+                           else { Color::Yellow };
+            lines.push(Line::from(vec![
+                Span::styled(format!("  {}", msg), Style::default().fg(msg_color)),
             ]));
         }
         
@@ -956,6 +967,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         
                         if missing.is_empty() {
                             // All installed, continue to launcher
+                            app.prereq_state.message = Some("All prerequisites installed!".to_string());
                             app.mode = AppMode::Launcher;
                         } else {
                             match key.code {
@@ -973,22 +985,28 @@ fn main() -> Result<(), Box<dyn Error>> {
                                     }
                                 }
                                 KeyCode::Enter => {
-                                    // Execute install command
+                                    // Execute install - show message that execution is not available in TUI
                                     if let Some(prereq) = missing.get(app.prereq_state.selected_index) {
                                         if let Some(cmd) = get_install_command(&prereq.name) {
-                                            // For now, show the command - in a real implementation
-                                            // we would execute via std::process::Command
-                                            // This is a placeholder for the execute functionality
-                                            let _ = cmd; // Acknowledge the command
+                                            // Show that this requires manual execution
+                                            app.prereq_state.message = Some(format!(
+                                                "Run this command: {}", cmd
+                                            ));
                                         }
                                     }
                                 }
                                 KeyCode::Char('c') | KeyCode::Char('C') => {
-                                    // Copy to clipboard - would need clipboard crate
-                                    // For now, this is a placeholder
+                                    // Copy to clipboard
                                     if let Some(prereq) = missing.get(app.prereq_state.selected_index) {
-                                        if let Some(_cmd) = get_install_command(&prereq.name) {
-                                            // Would copy to clipboard here
+                                        match copy_to_clipboard(&prereq.name) {
+                                            Ok(()) => {
+                                                app.prereq_state.message = Some(format!(
+                                                    "✓ Copied {} install command to clipboard!", prereq.name
+                                                ));
+                                            }
+                                            Err(e) => {
+                                                app.prereq_state.message = Some(format!("✗ {}", e));
+                                            }
                                         }
                                     }
                                 }

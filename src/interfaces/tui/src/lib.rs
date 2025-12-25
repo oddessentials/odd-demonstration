@@ -7,6 +7,7 @@ pub mod types;
 pub mod error;
 pub mod doctor;
 pub mod cluster;
+pub mod install;
 
 // Re-export commonly used items for convenience
 pub use types::{
@@ -39,4 +40,9 @@ pub use cluster::{
     find_project_root, run_setup_script,
     load_ui_registry, open_browser,
     validate_job_type, submit_job,
+};
+
+pub use install::{
+    InstallResult,
+    copy_to_clipboard, execute_install, get_install_description,
 };

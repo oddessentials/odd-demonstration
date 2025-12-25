@@ -1,7 +1,7 @@
 # Distributed Task Observatory - Session Summary
 
 **Last Updated:** 2025-12-24
-**Phases Completed:** 0-14
+**Phases Completed:** 0-15
 
 ## Objective
 
@@ -22,7 +22,7 @@ Implement a complete, production-grade distributed task processing system demons
 | Metrics Engine | Go | amqp091-go, go-redis, mongo-driver |
 | Read Model | Go | net/http, go-redis, lib/pq |
 | Web UI | HTML/JS | Vanilla (Glassmorphic) |
-| TUI | Rust | ratatui 0.24 |
+| TUI | Rust | ratatui 0.24 (modular architecture) |
 
 ### Infrastructure
 - **Message Bus:** RabbitMQ 3.12
@@ -40,12 +40,13 @@ Implement a complete, production-grade distributed task processing system demons
 
 ### One-Click Startup
 - TUI launcher mode with cluster detection
+- **Guided Prerequisites Setup** - Automatic detection with clipboard copy (NEW)
 - `scripts/start-all.ps1` automation script
 - Parallel Docker builds
 - Automatic port-forwarding
 
 ### Interfaces
-- **TUI:** Animated loading, alerts panel, Add Task (N), UI Launcher (U)
+- **TUI:** Modular 7-file architecture, guided setup, Add Task (N), UI Launcher (U)
 - **Web:** Glassmorphic design, loading splash, Add Task form, UI Launcher modal
 
 ### Distribution (Phase 14)
@@ -53,6 +54,11 @@ Implement a complete, production-grade distributed task processing system demons
 - **Install scripts:** `install.sh` (Linux/macOS), `install.ps1` (Windows)
 - **npm shim:** `@oddessentials/odd-dashboard`
 - **Release workflow:** Multi-platform builds with checksums
+
+### TUI Architecture (Phase 15)
+- Refactored from 2710-line monolith to 7 modules
+- 49 unit tests passing
+- Clipboard support via `arboard` crate
 
 ### Testing
 - Unit tests for all services
@@ -62,11 +68,11 @@ Implement a complete, production-grade distributed task processing system demons
 ## Quick Start
 
 ```powershell
-# Using TUI (recommended)
+# Using TUI (recommended) - guided setup for missing prerequisites
 cd src/interfaces/tui && cargo run --release
 # or use installed binary: odd-dashboard
 
-# Using script
+# Using script (if prerequisites installed)
 .\scripts\start-all.ps1
 ```
 
@@ -89,3 +95,4 @@ cd src/interfaces/tui && cargo run --release
 | `task.md` | Phase-by-phase task checklist |
 | `walkthrough.md` | Implementation walkthrough |
 | `session-summary.md` | This document |
+

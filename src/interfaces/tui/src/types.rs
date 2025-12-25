@@ -226,6 +226,7 @@ pub struct PrerequisiteSetupState {
     pub selected_index: usize,
     pub install_action: Option<InstallAction>,
     pub current_install: Option<usize>,  // Index of currently installing prereq
+    pub message: Option<String>,         // Feedback message for user
 }
 
 // ============================================================================
