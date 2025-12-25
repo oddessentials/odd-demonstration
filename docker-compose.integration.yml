@@ -2,11 +2,22 @@
 # Uses pre-built Docker Hub images for fast, reliable integration tests.
 # Invariants: I3 (self-contained), I4 (<90s runtime), I5 (artifact capture)
 #
+# HEALTH CHECK STRATEGY:
+# - Infrastructure (postgres, mongodb, redis, rabbitmq): Compose-level health checks
+#   for dependency ordering via `depends_on: condition: service_healthy`
+# - Application services (gateway, processor, metrics-engine, read-model):
+#   NO compose-level health checks. Integration harness owns all readiness probes
+#   via authoritative HTTP checks on exposed ports.
+#
 # NOTE: On PRs, this uses the last images pushed from `main`.
 # PR-specific code changes are NOT reflected in integration tests.
 # This provides a post-merge safety net, not PR validation.
 
 services:
+  # ============================================================
+  # Infrastructure Services (compose-level health checks)
+  # ============================================================
+
   # PostgreSQL - Event sourcing store
   postgres:
     container_name: odto-integ-postgres
@@ -58,6 +69,11 @@ services:
       timeout: 5s
       retries: 15
 
+  # ============================================================
+  # Application Services (harness-level health checks only)
+  # Readiness is proven by integration harness via HTTP probes
+  # ============================================================
+
   # Gateway - API entry point (pre-built from Docker Hub)
   gateway:
     container_name: odto-integ-gateway
@@ -74,13 +90,8 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - RABBITMQ_URL=amqp://observatory:demo@odto-integ-rabbitmq:5672
-      - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/healthz', (r) => process.exit(r.statusCode === 200 ? 0 : 1))\""]
-      interval: 3s
-      timeout: 5s
-      retries: 20
-      start_period: 10s  # Reduced from 30s - no compile needed with pre-built images
+      - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events?sslmode=disable
+    # Readiness: harness probes GET http://localhost:13000/healthz
 
   # Processor - Job execution (pre-built from Docker Hub)
   processor:
@@ -92,13 +103,7 @@ services:
         condition: service_healthy
     environment:
       - RABBITMQ_URL=amqp://observatory:demo@odto-integ-rabbitmq:5672
-    # Processor has no health endpoint - uses RabbitMQ connection as proxy
-    healthcheck:
-      test: ["CMD-SHELL", "python -c 'import socket; socket.create_connection((\"localhost\", 5672), 2)' 2>/dev/null || exit 0"]
-      interval: 5s
-      timeout: 10s
-      retries: 10
-      start_period: 10s  # Reduced from 30s
+    # Readiness: harness verifies job processing via Gateway/Read Model
 
   # Metrics Engine - Observability (pre-built from Docker Hub)
   metrics-engine:
@@ -110,7 +115,7 @@ services:
         condition: service_healthy
     environment:
       - RABBITMQ_URL=amqp://observatory:demo@odto-integ-rabbitmq:5672
-    # No health endpoint - just ensure container stays running
+    # Readiness: harness verifies metrics via P4 proof path
 
   # Read Model - Query API (pre-built from Docker Hub)
   read-model:
@@ -126,13 +131,8 @@ services:
         condition: service_healthy
     environment:
       - MONGO_URL=mongodb://odto-integ-mongo:27017
-      - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1"]
-      interval: 3s
-      timeout: 5s
-      retries: 20
-      start_period: 10s  # Reduced from 30s
+      - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events?sslmode=disable
+    # Readiness: harness probes GET http://localhost:18080/health
 
 networks:
   odto-integ-net:
