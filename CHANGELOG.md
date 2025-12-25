@@ -1,3 +1,15 @@
+## [1.2.1](https://github.com/oddessentials/odd-demonstration/compare/v1.2.0...v1.2.1) (2025-12-25)
+
+
+### Bug Fixes
+
+* set processor coverage threshold to current reality (33%) ([ebd9abf](https://github.com/oddessentials/odd-demonstration/commit/ebd9abfaf565805663b02c01566efd791fffc459))
+
+
+### Performance Improvements
+
+* parallelize Go tests with pwsh < 7 fallback ([5329009](https://github.com/oddessentials/odd-demonstration/commit/5329009143de88db0085db15e53ba6b7dc4d0925))
+
 # [1.2.0](https://github.com/oddessentials/odd-demonstration/compare/v1.1.1...v1.2.0) (2025-12-25)
 
 
