@@ -137,6 +137,43 @@ services:
       - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events?sslmode=disable
     # Readiness: harness probes GET http://localhost:18080/health
 
+  # Web PTY Server - Terminal WebSocket broker (built locally until Docker Hub image available)
+  web-pty-server:
+    container_name: odto-integ-web-pty
+    build:
+      context: src/services/web-pty-server
+      dockerfile: Dockerfile
+    networks: [odto-integ-net]
+    depends_on:
+      read-model:
+        condition: service_started
+      gateway:
+        condition: service_started
+    environment:
+      - PTY_WS_PORT=9000
+      - PTY_METRICS_PORT=9001
+      - PTY_TUI_BINARY=/app/odd-dashboard
+      - READ_MODEL_URL=http://odto-integ-read-model:8080
+      - GATEWAY_URL=http://odto-integ-gateway:3000
+    # Readiness: web-ui nginx proxies to this service
+
+  # Web UI - nginx serving static + proxying WebSocket (built locally)
+  web-ui:
+    container_name: odto-integ-web-ui
+    build:
+      context: src/interfaces/web
+      dockerfile: Dockerfile
+    networks: [odto-integ-net]
+    ports:
+      - "8081:80"
+    depends_on:
+      - web-pty-server
+      - read-model
+    volumes:
+      # Mount integration-specific nginx config
+      - ./src/interfaces/web/nginx.integration.conf:/etc/nginx/conf.d/default.conf:ro
+    # Readiness: harness probes GET http://localhost:8081/health
+
 networks:
   odto-integ-net:
     name: odto-integ-net

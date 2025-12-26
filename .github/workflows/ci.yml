@@ -25,7 +25,9 @@ jobs:
       compat_script: ${{ steps.filter.outputs.compat_script }}
       services: ${{ steps.filter.outputs.services }}
       compat_critical: ${{ steps.filter.outputs.schemas == 'true' || steps.filter.outputs.compat_script == 'true' || steps.filter.outputs.services == 'true' }}
-      # Tier 2: Governance-only (does NOT trigger integration gate)
+      # Tier 2: Visual tests
+      web_terminal: ${{ steps.filter.outputs.web_terminal }}
+      # Tier 3: Governance-only (does NOT trigger integration gate)
       contracts_docs: ${{ steps.filter.outputs.contracts_docs }}
       governance: ${{ steps.filter.outputs.governance }}
       # Filter health
@@ -45,6 +47,9 @@ jobs:
               - 'scripts/check-schema-compat.py'
             services:
               - 'src/services/**'
+            web_terminal:
+              - 'src/interfaces/web/**'
+              - 'src/services/web-pty-server/**'
             contracts_docs:
               - 'contracts/*.md'
               - 'contracts/fixtures/**'
@@ -353,6 +358,80 @@ jobs:
           name: integration-artifacts
           path: integration-artifacts/
           retention-days: 7
+
+  # ============================================================
+  # Visual Regression Tests (Playwright)
+  # Runs when web terminal code changes
+  # ============================================================
+  visual-regression:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+    needs: [paths-filter, tests]
+    # Run when web terminal files change, or on manual dispatch
+    if: |
+      needs.tests.result == 'success' &&
+      (needs.paths-filter.outputs.web_terminal == 'true' || github.event_name == 'workflow_dispatch')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Start services with Docker Compose
+        run: |
+          docker compose -f docker-compose.integration.yml up -d
+          echo "Waiting for services to be healthy..."
+          sleep 30
+
+      - name: Wait for web-ui to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8081/health > /dev/null 2>&1; then
+              echo "Web UI is ready"
+              exit 0
+            fi
+            echo "Waiting for web-ui... ($i/30)"
+            sleep 2
+          done
+          echo "Web UI failed to become ready"
+          docker compose -f docker-compose.integration.yml logs
+          exit 1
+
+      - name: Install Playwright
+        run: |
+          cd tests/visual
+          npm ci
+          npx playwright install chromium --with-deps
+
+      - name: Run visual tests
+        run: |
+          cd tests/visual
+          npm test
+        timeout-minutes: 5
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/visual/playwright-report/
+          retention-days: 7
+
+      - name: Upload snapshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-snapshots
+          path: tests/visual/terminal.spec.ts-snapshots/
+          retention-days: 7
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f docker-compose.integration.yml down -v
 
   # ============================================================
   # Distribution Audit (naming, version, artifact consistency)
