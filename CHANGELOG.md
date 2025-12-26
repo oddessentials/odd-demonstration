@@ -1,3 +1,20 @@
+# [3.0.0](https://github.com/oddessentials/odd-demonstration/compare/v2.0.1...v3.0.0) (2025-12-26)
+
+
+### Bug Fixes
+
+* **visual:** add WebSocket cleanup + fix snapshot restore ([3f676a4](https://github.com/oddessentials/odd-demonstration/commit/3f676a4c83d84d6650cf18ed5af1fd5d3f02cccd))
+
+
+### Features
+
+* **web:** bundle xterm.js with esbuild and self-host assets ([3625bf2](https://github.com/oddessentials/odd-demonstration/commit/3625bf20a8e913b6e82560b74af05522734db60d))
+
+
+### BREAKING CHANGES
+
+* **web:** xterm.js is now self-hosted via bundled assets
+
 ## [2.0.1](https://github.com/oddessentials/odd-demonstration/compare/v2.0.0...v2.0.1) (2025-12-26)
 
 
