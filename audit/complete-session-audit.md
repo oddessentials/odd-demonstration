@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-12-25
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-19
+**Phases Completed:** 0-20
 
 ---
 
@@ -12,11 +12,11 @@ The Distributed Task Observatory is a production-grade distributed task processi
 
 ### Final System State
 - **15+ Kubernetes pods** running and healthy
-- **4 microservices** (Node.js/TypeScript, Python, Go x2)
+- **5 microservices** (Node.js/TypeScript, Python, Go x2, Rust)
 - **4 infrastructure components** (RabbitMQ, PostgreSQL, Redis, MongoDB)
 - **3 observability tools** (Prometheus, Grafana, Alertmanager)
 - **3 DB admin UIs** (pgAdmin, Mongo Express, RedisInsight)
-- **2 user interfaces** (Web Dashboard, Rust TUI with launcher)
+- **2 user interfaces** (Web Terminal via PTY, Rust TUI with launcher)
 - **Multi-platform distribution** (install scripts, npm shim, release workflow)
 
 ---
@@ -45,6 +45,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 17 | Testing Optimizations & CI Hardening | ✅ Complete |
 | Phase 18 | Integration Test Hardening | ✅ Complete |
 | Phase 19 | Docker Hub Pre-Built Images | ✅ Complete |
+| Phase 20 | Web Terminal Modernization | ✅ Complete |
 
 ---
 
@@ -57,7 +58,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Processor | Python | pika, psycopg2 |
 | Metrics Engine | Go | amqp091-go, go-redis, mongo-driver |
 | Read Model | Go | net/http, go-redis, lib/pq, mongo-go-driver |
-| Web UI | HTML/JS | Vanilla (Glassmorphic) |
+| Web Terminal | Rust/JS | web-pty-server (Rust), xterm.js |
 | TUI | Rust | ratatui 0.24, crossterm, reqwest |
 
 ### Infrastructure
@@ -86,12 +87,13 @@ The Distributed Task Observatory is a production-grade distributed task processi
 - **Environment-Aware Errors** - SSH/headless detection for browser launch
 - **Doctor Command** - Checks Docker, PowerShell, kubectl, kind
 
-### Web Dashboard
-- **Glassmorphic Design** - Modern, premium aesthetic
-- **Loading Animation** - Animated splash matching TUI
-- **Feature Parity** - Alerts, stats, jobs, events tables
-- **Add Task Form** - Real form with validation and Gateway submission
-- **UI Launcher Modal** - Clickable cards for all observatory UIs
+### Web Terminal
+- **PTY Multiplexer** - Runs TUI in pseudo-terminal, streams to browser
+- **xterm.js Client** - Identical rendering to native terminal
+- **Split K8s Deployments** - `web-ui-http` (nginx) + `web-pty-ws` (PTY broker)
+- **Session Reconnect** - Single-use tokens, page refresh reconnects
+- **Fallback Dashboard** - Shows stats when WebSocket unavailable
+- **Read-Only Mode** - Optional input filtering for mutating operations
 
 ### Startup Automation
 - **One-Click Script** - `scripts/start-all.ps1`
@@ -114,9 +116,21 @@ The Distributed Task Observatory is a production-grade distributed task processi
 ### User Interfaces
 | Path | Description |
 |------|-------------|
-| `src/interfaces/web/index.html` | Web dashboard with loading splash |
-| `src/interfaces/web/launcher.html` | Offline bootstrap page |
+| `src/interfaces/web/index.html` | xterm.js terminal page |
+| `src/interfaces/web/terminal.js` | WebSocket client with auto-reconnect |
+| `src/interfaces/web/styles.css` | Terminal and fallback styles |
+| `src/interfaces/web/nginx.conf` | nginx proxy config (/ws proxy) |
 | `src/interfaces/tui/src/main.rs` | Rust TUI with launcher mode |
+
+### Web PTY Server (Phase 20)
+| Path | Description |
+|------|-------------|
+| `src/services/web-pty-server/src/main.rs` | WebSocket server, metrics endpoint |
+| `src/services/web-pty-server/src/session.rs` | Session management, reconnect tokens |
+| `src/services/web-pty-server/src/protocol.rs` | Client/server message types |
+| `src/services/web-pty-server/src/auth.rs` | Bearer token authentication |
+| `src/services/web-pty-server/src/pty.rs` | PTY spawning with terminal caps |
+| `src/services/web-pty-server/src/config.rs` | Environment-driven configuration |
 
 ### Distribution (Phase 14)
 | Path | Description |
@@ -156,7 +170,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Web Dashboard | http://localhost:8081 | - |
+| Web Terminal | http://localhost:8081 | - |
 | RabbitMQ | http://localhost:15672 | guest / guest |
 | Grafana | http://localhost:3002 | admin / admin |
 | Prometheus | http://localhost:9090 | - |
@@ -605,6 +619,64 @@ Replace source-based Docker Compose builds with pre-built Docker Hub images for 
 
 ---
 
+## Phase 20: Web Terminal Modernization (2025-12-25)
+
+### BREAKING CHANGE
+Replaced the glassmorphic Web Dashboard with an xterm.js-based terminal that mirrors the TUI via WebSocket PTY streaming. This provides 100% visual fidelity with the native TUI.
+
+### Architecture: PTY Multiplexer
+- **web-pty-ws** (Rust): PTY broker running `odd-dashboard` in pseudo-terminal
+- **web-ui-http** (nginx): Static files + `/ws` proxy to PTY server
+- **Split K8s deployments**: HTTP can roll independently without killing PTY sessions
+
+### web-pty-server (Rust)
+| Module | Purpose |
+|--------|---------|
+| `main.rs` | WebSocket server, cleanup task, metrics endpoint |
+| `session.rs` | Session lifecycle, single-use reconnect tokens |
+| `protocol.rs` | Client/server message types, input classification |
+| `auth.rs` | Bearer token validation (never logged) |
+| `pty.rs` | PTY spawning with xterm-256color, UTF-8, truecolor |
+| `config.rs` | Environment-driven configuration |
+
+### Frontend (xterm.js)
+| File | Purpose |
+|------|---------|
+| `terminal.js` | WebSocket client, auto-reconnect, resize handling |
+| `styles.css` | Terminal theme matching TUI colors |
+| `nginx.conf` | /ws proxy, /api proxy for fallback stats |
+
+### Requirements Implemented
+| Req | Feature |
+|-----|---------|
+| R1 | Split K8s deployments (PTY survival during HTTP rollouts) |
+| R2 | Session model with single-use reconnect tokens |
+| R3 | Environment-driven resource limits (logged at startup) |
+| R4 | Read-only mode with rate-limited notices |
+| R5 | Bearer token auth (never logged, only for /ws) |
+| R6 | WebSocket ping/pong keepalive |
+| R7 | Terminal capabilities (xterm-256color, UTF-8, truecolor) |
+| R9 | Output coalescing with backpressure metrics |
+| R10 | Minimal fallback dashboard when WS unavailable |
+| R11 | Single access URL (http://localhost:8081) |
+
+### Test Results
+| Component | Tests |
+|-----------|-------|
+| web-pty-server | 35 pass (config, session, protocol, auth, pty) |
+
+### Files Created
+- `src/services/web-pty-server/` (6 modules, Dockerfile, README)
+- `infra/k8s/web-ui-http.yaml` (nginx deployment)
+- `infra/k8s/web-pty-ws.yaml` (PTY server deployment + secret)
+- `src/interfaces/web/terminal.js` (xterm.js client)
+- `src/interfaces/web/nginx.conf` (proxy config)
+
+### Files Removed
+- `infra/k8s/web-ui.yaml` (replaced by split deployments)
+
+---
+
 ## Session Complete ✓
 
-All 19 implementation phases completed successfully.
+All 20 implementation phases completed successfully.

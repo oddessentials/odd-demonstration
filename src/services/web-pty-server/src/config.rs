@@ -125,6 +125,9 @@ mod tests {
         env::remove_var("PTY_WS_PORT");
         env::remove_var("PTY_IDLE_TIMEOUT_SECS");
         env::remove_var("PTY_AUTH_TOKEN");
+        env::remove_var("PTY_READ_ONLY");
+        env::remove_var("PTY_PER_IP_CAP");
+        env::remove_var("PTY_GLOBAL_CAP");
         
         let config = Config::from_env();
         

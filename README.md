@@ -106,32 +106,74 @@ See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements an
 
 ![Architecture diagram](./mermaid-diagram.svg)
 
+### Web Terminal Architecture
+
+```mermaid
+flowchart LR
+    subgraph Browser
+        XT[xterm.js]
+    end
+    
+    subgraph "web-ui-http (nginx)"
+        STATIC[Static Files]
+        PROXY[/ws Proxy]
+        API["/api Proxy"]
+    end
+    
+    subgraph "web-pty-ws"
+        WS[WebSocket Server]
+        PTY[PTY Broker]
+        TUI[odd-dashboard]
+    end
+    
+    subgraph Backend
+        RM[Read Model]
+        GW[Gateway]
+    end
+    
+    XT <-->|WebSocket| PROXY
+    PROXY <--> WS
+    WS <--> PTY
+    PTY <--> TUI
+    XT -->|HTTP| STATIC
+    XT -->|fallback| API
+    API --> RM
+    TUI --> RM
+    TUI --> GW
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Web UI    │     │  Rust TUI   │     │   Gateway   │
-│  (Nginx)    │     │  (ratatui)  │     │  (Node.js)  │
-└──────┬──────┘     └──────┬──────┘     └──────┬──────┘
-       │                   │                   │
-       └───────────────────┴─────────┬─────────┘
-                                     │
-                              ┌──────▼──────┐
-                              │ Read Model  │
-                              │    (Go)     │
-                              └──────┬──────┘
-                                     │
-       ┌─────────────────────────────┼─────────────────────────────┐
-       │                  │          │          │                  │
-┌──────▼──────┐   ┌───────▼───────┐  │  ┌───────▼───────┐  ┌───────▼───────┐
-│   Redis     │   │   MongoDB     │  │  │  PostgreSQL   │  │   RabbitMQ    │
-│  (Cache)    │   │ (Event Store) │  │  │(Authoritative)│  │ (Event Spine) │
-└─────────────┘   └───────────────┘  │  └───────────────┘  └───────┬───────┘
-                                     │                             │
-                              ┌──────┴─────────────────────────────┤
-                              │                                    │
-                       ┌──────▼──────┐                     ┌───────▼───────┐
-                       │  Processor  │                     │ Metrics Engine│
-                       │  (Python)   │                     │     (Go)      │
-                       └─────────────┘                     └───────────────┘
+
+### System Overview
+
+```
+┌─────────────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Web Terminal      │     │  Rust TUI   │     │   Gateway   │
+│  (xterm.js+nginx)   │     │  (ratatui)  │     │  (Node.js)  │
+│   ↓ WebSocket ↓     │     └──────┬──────┘     └──────┬──────┘
+│ ┌─────────────────┐ │            │                   │
+│ │  web-pty-ws     │ │            │                   │
+│ │  (PTY Broker)   │ │            │                   │
+│ └────────┬────────┘ │            │                   │
+└──────────┼──────────┘            │                   │
+           └───────────────────────┴─────────┬─────────┘
+                                             │
+                                      ┌──────▼──────┐
+                                      │ Read Model  │
+                                      │    (Go)     │
+                                      └──────┬──────┘
+                                             │
+       ┌─────────────────────────────────────┼─────────────────────────────┐
+       │                  │                  │          │                  │
+┌──────▼──────┐   ┌───────▼───────┐         │  ┌───────▼───────┐  ┌───────▼───────┐
+│   Redis     │   │   MongoDB     │         │  │  PostgreSQL   │  │   RabbitMQ    │
+│  (Cache)    │   │ (Event Store) │         │  │(Authoritative)│  │ (Event Spine) │
+└─────────────┘   └───────────────┘         │  └───────────────┘  └───────┬───────┘
+                                            │                             │
+                                     ┌──────┴─────────────────────────────┤
+                                     │                                    │
+                              ┌──────▼──────┐                     ┌───────▼───────┐
+                              │  Processor  │                     │ Metrics Engine│
+                              │  (Python)   │                     │     (Go)      │
+                              └─────────────┘                     └───────────────┘
 ```
 
 ---
