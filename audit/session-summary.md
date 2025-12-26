@@ -73,6 +73,8 @@ Implement a complete, production-grade distributed task processing system demons
 - **Integration Hardening** (Phase 18) - Self-contained Docker Compose harness, 4 proof paths, 90s budget, I3-I6 invariants
 - **Docker Hub Images** (Phase 19) - Pre-built images for faster CI, multi-stage Dockerfiles, dual tagging
 - **Web Terminal Modernization** (Phase 20) - PTY Multiplexer, xterm.js mirror, split K8s deployments
+- **Visual Regression Tests** - Playwright screenshot tests, CI-triggered on web terminal changes
+- **PTY Server Coverage** - 81% (35 unit tests)
 
 ## Quick Start
 

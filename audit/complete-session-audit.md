@@ -675,6 +675,17 @@ Replaced the glassmorphic Web Dashboard with an xterm.js-based terminal that mir
 ### Files Removed
 - `infra/k8s/web-ui.yaml` (replaced by split deployments)
 
+### Visual Regression Tests (CI Integration)
+- **Playwright tests**: 6 tests for terminal rendering fidelity
+- **CI job**: `visual-regression` triggers on web_terminal path changes
+- **Docker Compose**: Services spun up automatically for tests
+- **Artifacts**: playwright-report and snapshots on failure
+- **V7 invariant**: Visual regression tests enforced in CI
+
+### Coverage
+- web-pty-server: **81.12%** (35 unit tests)
+- Exceeds V6 threshold of 80%
+
 ---
 
 ## Session Complete ✓
