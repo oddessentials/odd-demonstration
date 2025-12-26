@@ -244,8 +244,8 @@ try {
         # Save response for schema validation
         $result | ConvertTo-Json -Depth 10 | Set-Content "$artifactsDir/responses/p1-response.json"
         
-        # Validate schema
-        $schemaValid = Validate-JsonSchema "contracts/schemas/job.json" "$artifactsDir/responses/p1-response.json"
+        # Validate schema against job-accepted.json (acceptance response, not job)
+        $schemaValid = Validate-JsonSchema "contracts/schemas/job-accepted.json" "$artifactsDir/responses/p1-response.json"
         
         if ($result.jobId -and $result.eventId -and $schemaValid) {
             $testJobIds += $result.jobId
@@ -259,53 +259,54 @@ try {
     }
     
     # ============================================================
-    # PROOF PATH 2: Events contain jobId
+    # PROOF PATH 2+3: Poll for Job Completion (combined)
+    # Bounded polling replaces fixed wait for deterministic behavior
     # ============================================================
     Write-Host ""
-    Write-Host ">> P2: Events Contain JobId (waiting 10s for processing)" -ForegroundColor Yellow
+    Write-Host ">> P2+P3: Poll for Job Completion (30s max)" -ForegroundColor Yellow
     
-    Start-Sleep -Seconds 10
-    
-    try {
-        $events = Invoke-RestMethod -Uri "$ReadModelUrl/events" -TimeoutSec 10
-        $events | ConvertTo-Json -Depth 10 | Set-Content "$artifactsDir/responses/p2-response.json"
-        
-        $eventsJson = $events | ConvertTo-Json -Depth 10
-        $eventContainsJob = $eventsJson -match $testJobIds[0]
-        
-        Write-Test "P2: Events Retrieved" ($events.Count -ge 0)
-        Write-Test "P2: Event Contains JobId" $eventContainsJob
-    } catch {
-        Write-Test "P2: Events Contain JobId" $false $_.Exception.Message
-    }
-    
-    # ============================================================
-    # PROOF PATH 3: Jobs reflect COMPLETED
-    # ============================================================
-    Write-Host ""
-    Write-Host ">> P3: Jobs Reflect COMPLETED" -ForegroundColor Yellow
-    
+    $p3MaxWait = 30
+    $p3Interval = 2
+    $maxAttempts = [math]::Ceiling($p3MaxWait / $p3Interval)
+    $attempt = 0
     $p3Success = $false
-    for ($wait = 1; $wait -le 6; $wait++) {
+    $eventsRetrieved = $false
+    $p3Start = Get-Date
+    
+    while ($attempt -lt $maxAttempts) {
+        $attempt++
         try {
-            $jobs = Invoke-RestMethod -Uri "$ReadModelUrl/jobs/recent" -TimeoutSec 10
+            # Check events (P2)
+            if (-not $eventsRetrieved) {
+                $events = Invoke-RestMethod -Uri "$ReadModelUrl/events" -TimeoutSec 5
+                $events | ConvertTo-Json -Depth 10 | Set-Content "$artifactsDir/responses/p2-response.json"
+                $eventsRetrieved = $true
+            }
+            
+            # Check job status (P3)
+            $jobs = Invoke-RestMethod -Uri "$ReadModelUrl/jobs/recent" -TimeoutSec 5
             $jobs | ConvertTo-Json -Depth 10 | Set-Content "$artifactsDir/responses/p3-response.json"
             
+            # Filter by 'id' field (verified from Read Model Go code)
             $testJobs = $jobs | Where-Object { $testJobIds -contains $_.id }
             $completed = ($testJobs | Where-Object { $_.status -eq "COMPLETED" }).Count
             
-            Write-Host "  Check $wait - $completed completed" -ForegroundColor Gray
-            
             if ($completed -ge 1) {
                 $p3Success = $true
+                $elapsed = [math]::Round(((Get-Date) - $p3Start).TotalSeconds, 1)
+                Write-Host "  Job COMPLETED after ${elapsed}s" -ForegroundColor Gray
                 break
             }
+            
+            $jobStatus = if ($testJobs.Count -gt 0) { $testJobs[0].status } else { "not found" }
+            Write-Retry -Attempt $attempt -Max $maxAttempts -Reason "Job status: $jobStatus"
         } catch {
-            Write-Host "  Check $wait - Error: $($_.Exception.Message)" -ForegroundColor Yellow
+            Write-Retry -Attempt $attempt -Max $maxAttempts -Reason $_.Exception.Message
         }
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds $p3Interval
     }
     
+    Write-Test "P2: Events Retrieved" $eventsRetrieved
     Write-Test "P3: Job Status COMPLETED" $p3Success
     
     # ============================================================

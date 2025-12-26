@@ -245,20 +245,77 @@ jobs:
           # Clean up (isolated workspace, no need to restore)
 
   # ============================================================
+  # Build and Push Docker Images to Docker Hub
+  # Runs on main when services change (or on first push to bootstrap)
+  # ============================================================
+  build-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [paths-filter, tests]
+    # Push images on main when: services changed, or filter failed (fail-closed)
+    if: |
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/main' &&
+      (needs.paths-filter.outputs.services == 'true' || needs.paths-filter.result != 'success')
+    
+    strategy:
+      matrix:
+        include:
+          - service: gateway
+            context: src/services/gateway
+            dockerfile: src/services/gateway/Dockerfile
+          - service: processor
+            context: src/services/processor
+            dockerfile: src/services/processor/Dockerfile
+          - service: metrics-engine
+            context: src/services/metrics-engine
+            dockerfile: src/services/metrics-engine/Dockerfile
+          - service: read-model
+            context: src/services/read-model
+            dockerfile: src/services/read-model/Dockerfile
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy contracts for services that need them
+        if: matrix.service == 'gateway' || matrix.service == 'processor'
+        run: cp -r contracts ${{ matrix.context }}/contracts
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: oddessentials/odto-${{ matrix.service }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================
   # Integration Phase (Docker Compose harness)
   # Invariants: I3 (self-contained), I4 (<90s), I5 (artifacts)
   # ============================================================
   integration-phase:
     name: Integration Phase
     runs-on: ubuntu-latest
-    needs: [paths-filter, tests]
-    # TODO: Re-enable when Docker Hub images are implemented
-    # Source-based builds exceed I4's 90s budget due to npm install + TypeScript compile
-    # Blocker: https://github.com/oddessentials/odd-demonstration/issues/TBD
+    needs: [paths-filter, tests, build-images]
+    # Integration tests use pre-built Docker Hub images.
+    # On PRs: Uses last images pushed from main (not PR-specific builds).
+    # This provides a post-merge safety net, not PR validation.
     if: |
-      false &&
       always() &&
       needs.tests.result == 'success' &&
+      (needs.build-images.result == 'success' || needs.build-images.result == 'skipped') &&
       (needs.paths-filter.result != 'success' ||
        needs.paths-filter.outputs.compat_critical == 'true')
     env:
@@ -387,21 +444,7 @@ jobs:
 
   # NOTE: Release dry-run validation moved to release.yml where it runs
   # in the correct permission context (on main, not on PR branches)
-  # ============================================================
-  # Container Image Builds (Future extensibility)
-  # ============================================================
-  # docker:
-  #   name: Build Container Images
-  #   runs-on: ubuntu-latest
-  #   needs: [bazel]
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Build images
-  #       run: |
-  #         docker build -t gateway:ci src/services/gateway
-  #         docker build -t processor:ci src/services/processor
-
+  
   # ============================================================
   # Cross-Platform Script Verification (conditional on script changes)
   # ============================================================

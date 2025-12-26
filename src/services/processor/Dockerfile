@@ -1,28 +1,34 @@
 # src/services/processor/Dockerfile
+# Python Processor service
+#
+# BUILD CONTEXTS:
+# - start-all.ps1: Uses repo root (.) as context, contracts/ found at root
+# - CI builds: CI copies contracts/ before build
+# - Manual local builds from service dir: Copy contracts first:
+#     cp -r ../../contracts ./contracts && docker build -t odto-processor:local .
+
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies for psycopg2
-RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
+# Install system dependencies for psycopg2 binary compilation
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libpq-dev gcc && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY src/services/processor/requirements.txt ./
-
-# Install dependencies
+# Copy and install Python dependencies first (cache layer)
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code (all Python files including schema_validator)
-COPY src/services/processor/main.py ./main.py
-COPY src/services/processor/schema_validator.py ./schema_validator.py
+# Copy application code
+COPY main.py ./
+COPY schema_validator.py ./
+COPY schemas ./schemas/
 
-# Copy VERSION file
-COPY src/services/processor/VERSION ./VERSION
+# Copy VERSION file for runtime version reporting
+COPY VERSION ./VERSION
 
-# Copy schemas directory
-COPY src/services/processor/schemas ./schemas
-
-# Copy contracts
+# Bake contracts into image for I3 (self-contained) compliance
 COPY contracts ./contracts
 
 # Environment defaults

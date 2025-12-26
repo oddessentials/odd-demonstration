@@ -68,3 +68,10 @@ temp/
 
 # Archives (keep audit.zip in .gitignore since it's regeneratable)
 *.zip
+
+# Integration harness artifacts (regenerated on each run)
+integration-artifacts/
+
+# Docker build artifacts (contracts copied for image builds)
+src/services/gateway/contracts/
+src/services/processor/contracts/

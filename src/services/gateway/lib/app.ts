@@ -126,13 +126,27 @@ export function createJobsRouter(deps: AppDependencies, metrics: AppMetrics): Ro
 
 /**
  * Create health check router
+ * /healthz checks RabbitMQ connection - returns 503 if not ready
+ * /readyz is a simple liveness check
  */
-export function createHealthRouter(version: string): Router {
+export function createHealthRouter(
+    version: string,
+    getChannel: () => Channel | null
+): Router {
     const router = Router();
-    const healthResponse = () => buildHealthResponse(version);
 
-    router.get('/healthz', (_req: Request, res: Response) => res.json(healthResponse()));
-    router.get('/readyz', (_req: Request, res: Response) => res.json(healthResponse()));
+    // Readiness check - only healthy when RabbitMQ is connected
+    router.get('/healthz', (_req: Request, res: Response) => {
+        const channel = getChannel();
+        if (channel) {
+            res.json(buildHealthResponse(version));
+        } else {
+            res.status(503).json({ status: 'not_ready', reason: 'RabbitMQ not connected' });
+        }
+    });
+
+    // Liveness check - always healthy if process is running
+    router.get('/readyz', (_req: Request, res: Response) => res.json(buildHealthResponse(version)));
 
     return router;
 }
@@ -230,7 +244,7 @@ export function createApp(deps: AppDependencies): { app: Express; metrics: AppMe
     const metrics = createMetrics();
 
     // Mount routers
-    app.use(createHealthRouter(deps.config.serviceVersion));
+    app.use(createHealthRouter(deps.config.serviceVersion, deps.getChannel));
     app.use(createMetricsRouter(metrics));
     app.use(createDocsRouter(deps.config.serviceVersion));
     app.use('/jobs', createJobsRouter(deps, metrics));

@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-12-25
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-18
+**Phases Completed:** 0-19
 
 ---
 
@@ -44,6 +44,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 16 | TypeScript Migration & Doctor Enhancement | ✅ Complete |
 | Phase 17 | Testing Optimizations & CI Hardening | ✅ Complete |
 | Phase 18 | Integration Test Hardening | ✅ Complete |
+| Phase 19 | Docker Hub Pre-Built Images | ✅ Complete |
 
 ---
 
@@ -550,6 +551,60 @@ Introduce reliable, deterministic integration testing via Docker Compose without
 
 ---
 
+## Phase 19: Docker Hub Pre-Built Images (2025-12-25)
+
+### Objective
+Replace source-based Docker Compose builds with pre-built Docker Hub images for faster, more reliable integration tests. Unblock I3-I5 invariant enforcement in CI.
+
+### Dockerfiles Updated
+| Service | Image Size | Base | Changes |
+|---------|------------|------|---------|
+| Gateway | 322 MB | node:20-slim | Multi-stage, baked contracts, prod deps only |
+| Processor | 491 MB | python:3.11-slim | Baked contracts |
+| Metrics Engine | 22.9 MB | distroless/static | Optimized binary flags (`-s -w`) |
+| Read Model | 19.5 MB | distroless/static | Optimized binary flags (`-s -w`) |
+
+### CI Integration (`.github/workflows/ci.yml`)
+- **New `build-images` job** with matrix strategy (4 services)
+- Security: Only runs on `main` branch pushes, never on PRs or forks
+- Dual tagging: `:latest` + `:sha-<commit>` for traceability
+- GitHub Actions cache for faster rebuilds
+- Contracts copied into Gateway/Processor contexts for I3 compliance
+
+### docker-compose.integration.yml Updates
+- Replaced source-based builds with `oddessentials/odto-*:latest` images
+- Removed volume mounts and command overrides
+- Reduced `start_period` from 30s to 10s (no compilation delay)
+- Added note documenting PR behavior (uses last `main` images)
+
+### Re-enabled `integration-phase` Job
+- Depends on `[paths-filter, tests, build-images]`
+- Runs when `build-images` succeeds or is skipped
+- Uses pre-built images for <90s runtime budget
+
+### README.md Updates
+- Added 🐳 Docker Hub Images section with image table
+- Usage examples, tagging strategy, CI integration notes
+
+### Files Created/Modified
+| File | Changes |
+|------|---------|
+| `src/services/gateway/Dockerfile` | Multi-stage build, baked contracts |
+| `src/services/processor/Dockerfile` | Baked contracts |
+| `src/services/metrics-engine/Dockerfile` | Optimized binary flags |
+| `src/services/read-model/Dockerfile` | Optimized binary flags |
+| `.github/workflows/ci.yml` | Added `build-images` job, re-enabled `integration-phase` |
+| `docker-compose.integration.yml` | Pre-built images, reduced startup times |
+| `README.md` | Docker Hub section |
+| `.gitignore` | Ignore copied contracts directories |
+
+### Pending Steps
+1. Add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets to GitHub
+2. Push changes to `main` to trigger image builds
+3. Update `INVARIANTS.md` to mark I3-I5 as ✅ CI after verification
+
+---
+
 ## Session Complete ✓
 
-All 18 implementation phases completed successfully.
+All 19 implementation phases completed successfully.

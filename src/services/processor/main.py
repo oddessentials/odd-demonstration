@@ -156,9 +156,16 @@ def main():
             print(f"Waiting for DB... {e}")
             time.sleep(5)
 
-    params = pika.URLParameters(RABBITMQ_URL)
-    connection = pika.BlockingConnection(params)
-    channel = connection.channel()
+    # Connect to RabbitMQ with retry logic (same pattern as DB)
+    while True:
+        try:
+            params = pika.URLParameters(RABBITMQ_URL)
+            connection = pika.BlockingConnection(params)
+            channel = connection.channel()
+            break
+        except pika.exceptions.AMQPConnectionError as e:
+            print(f"Waiting for RabbitMQ... {e}")
+            time.sleep(5)
     
     # Declare queues
     channel.queue_declare(queue=QUEUE_NAME, durable=True)

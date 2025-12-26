@@ -8,6 +8,7 @@ This document tracks schema versions and service compatibility.
 |--------|-----------------|------------|--------|
 | [event-envelope](./schemas/event-envelope.json) | 1.0.0 | Phase 11 | Stable |
 | [job](./schemas/job.json) | 1.0.0 | Phase 11 | Stable |
+| [job-accepted](./schemas/job-accepted.json) | 1.0.0 | Phase 19 | Stable |
 
 ## Service Compatibility
 
@@ -39,3 +40,6 @@ This document tracks schema versions and service compatibility.
 
 ### job
 - **1.0.0** — Initial stable release (Phase 11)
+
+### job-accepted
+- **1.0.0** — Initial release for Gateway acceptance response validation (Phase 19)

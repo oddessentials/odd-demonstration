@@ -71,10 +71,11 @@ describe('App Factory', () => {
     });
 
     describe('createHealthRouter', () => {
-        it('should handle GET /healthz', async () => {
+        it('should return 200 on GET /healthz when channel connected', async () => {
             const express = await import('express');
             const app = express.default();
-            app.use(createHealthRouter('2.0.0'));
+            const mockChannel = {} as import('amqplib').Channel;
+            app.use(createHealthRouter('2.0.0', () => mockChannel));
 
             const response = await request(app).get('/healthz');
 
@@ -82,10 +83,21 @@ describe('App Factory', () => {
             expect(response.body).toEqual({ status: 'ok', version: '2.0.0' });
         });
 
-        it('should handle GET /readyz', async () => {
+        it('should return 503 on GET /healthz when channel not connected', async () => {
             const express = await import('express');
             const app = express.default();
-            app.use(createHealthRouter('3.0.0'));
+            app.use(createHealthRouter('2.0.0', () => null));
+
+            const response = await request(app).get('/healthz');
+
+            expect(response.status).toBe(503);
+            expect(response.body.status).toBe('not_ready');
+        });
+
+        it('should handle GET /readyz regardless of channel state', async () => {
+            const express = await import('express');
+            const app = express.default();
+            app.use(createHealthRouter('3.0.0', () => null));
 
             const response = await request(app).get('/readyz');
 
