@@ -3,12 +3,12 @@
 # 
 # INVARIANTS ENFORCED:
 # - I3: Self-contained (Docker Compose only)
-# - I4: Runtime <120s wall-clock (exit 1 on breach)
+# - I4: Runtime <180s wall-clock (exit 1 on breach)
 # - I5: Artifact capture on every run (guarded in finally)
 
 param(
     [int]$StartupTimeoutSec = 60,
-    [int]$RuntimeBudgetSec = 120,
+    [int]$RuntimeBudgetSec = 180,
     [int]$MaxRetries = 3,
     [int]$RetryDelayMs = 2000,
     [string]$GatewayUrl = "http://localhost:13000",

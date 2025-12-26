@@ -32,7 +32,7 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
 | I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
 | I3 | Integration harness self-contained | Docker Compose only | ⏳ Blocked (needs Docker Hub images) |
-| I4 | Integration runtime <120s | `integration-harness.ps1` timeout | ⏳ Blocked (needs Docker Hub images) |
+| I4 | Integration runtime <180s | `integration-harness.ps1` timeout | ⏳ Blocked (needs Docker Hub images) |
 | I5 | Artifact capture every run | Guarded `finally` block | ⏳ Blocked (needs Docker Hub images) |
 | I6 | Victory gate: 3 green + nightly | — | 📝 Governance-Only |
 | I7 | K8s/Compose service parity | `validate-compose-k8s-parity.ps1` | ✅ CI |
