@@ -56,18 +56,22 @@ services:
       retries: 15
 
   # RabbitMQ - Message broker
+  # Note: Erlang distribution can fail on fast container starts (race condition)
+  # restart: on-failure handles this by automatically retrying
   rabbitmq:
     container_name: odto-integ-rabbitmq
     image: rabbitmq:3-management-alpine
     networks: [odto-integ-net]
+    restart: on-failure:3
     environment:
       RABBITMQ_DEFAULT_USER: observatory
       RABBITMQ_DEFAULT_PASS: demo
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 2s
-      timeout: 5s
+      interval: 3s
+      timeout: 10s
       retries: 15
+      start_period: 10s
 
   # ============================================================
   # Application Services (harness-level health checks only)
