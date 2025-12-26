@@ -7,6 +7,51 @@
 
 import { test, expect } from '@playwright/test';
 
+/**
+ * Bundle Smoke Tests - Deterministic tests that don't require live WebSocket
+ * These tests verify the bundle is correctly served and the page loads without errors.
+ */
+test.describe('Bundle Smoke Tests', () => {
+    test('no HTTP errors on page load', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('response', (res) => {
+            if (res.status() >= 400) {
+                errors.push(`${res.status()} ${res.url()}`);
+            }
+        });
+        await page.goto('/');
+        await page.waitForTimeout(1000);
+        expect(errors).toEqual([]);
+    });
+
+    test('connection indicator visible on load', async ({ page }) => {
+        // Element exists in DOM on initial load (even in disconnected state)
+        await page.goto('/');
+        const status = page.locator('.connection-status');
+        await expect(status).toBeVisible({ timeout: 5000 });
+        // Text will be "Connecting..." initially
+    });
+
+    test('exactly one script tag referencing bundle', async ({ page }) => {
+        await page.goto('/');
+        const scripts = await page.locator('script[src*="bundle"]').count();
+        expect(scripts).toBe(1);
+    });
+
+    test('no CDN references remain', async ({ page }) => {
+        await page.goto('/');
+        const html = await page.content();
+        expect(html).not.toContain('cdn.jsdelivr');
+        expect(html).not.toContain('terminal.js');
+    });
+
+    test('no stray terminal.js reference', async ({ page }) => {
+        await page.goto('/');
+        const terminalScripts = await page.locator('script[src*="terminal.js"]').count();
+        expect(terminalScripts).toBe(0);
+    });
+});
+
 // SKIP: These tests have session limit race conditions in CI
 // The beforeEach waits for WebSocket connection which exhausts session limits
 // TODO: Implement session cleanup between tests or increase session limits
