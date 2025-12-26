@@ -1,3 +1,12 @@
+## [3.0.3](https://github.com/oddessentials/odd-demonstration/compare/v3.0.2...v3.0.3) (2025-12-26)
+
+
+### Bug Fixes
+
+* **pty:** treat empty PTY_AUTH_TOKEN as auth disabled ([5548fb0](https://github.com/oddessentials/odd-demonstration/commit/5548fb0cefe65b01a1c621e637f8a3c10baa9620))
+* **tui:** correct Docker build contexts in start-all.ps1 ([5374231](https://github.com/oddessentials/odd-demonstration/commit/5374231176cdc90adb632135e644e1b502c65866))
+* **tui:** enforce consistent image versioning across K8s manifests ([31ac426](https://github.com/oddessentials/odd-demonstration/commit/31ac426c896aef352679b7e39c6e8f64b0a54051))
+
 ## [3.0.2](https://github.com/oddessentials/odd-demonstration/compare/v3.0.1...v3.0.2) (2025-12-26)
 
 
