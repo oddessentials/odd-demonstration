@@ -174,7 +174,7 @@ function Build-DockerImages {
         @{ Name = "processor"; Dockerfile = "src/services/processor/Dockerfile"; Context = "src/services/processor"; VersionFile = "src/services/processor/VERSION" }
         @{ Name = "metrics-engine"; Dockerfile = "src/services/metrics-engine/Dockerfile"; Context = "src/services/metrics-engine"; VersionFile = "src/services/metrics-engine/VERSION" }
         @{ Name = "read-model"; Dockerfile = "src/services/read-model/Dockerfile"; Context = "src/services/read-model"; VersionFile = "src/services/read-model/VERSION" }
-        @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web"; VersionFile = $null }
+        @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web"; VersionFile = "src/interfaces/web/VERSION" }
         @{ Name = "web-pty-server"; Dockerfile = "src/services/web-pty-server/Dockerfile"; Context = "."; VersionFile = "src/services/web-pty-server/VERSION" }
     )
     
