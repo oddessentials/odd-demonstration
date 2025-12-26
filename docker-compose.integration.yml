@@ -142,13 +142,13 @@ services:
     # Readiness: harness probes GET http://localhost:18080/health
 
   # Web PTY Server - Terminal WebSocket broker
-  # Built from repo root with mock mode for fast CI testing
+  # Built from repo root with real TUI for visual regression testing
   web-pty-server:
     container_name: odto-integ-web-pty
     build:
       context: .
       dockerfile: src/services/web-pty-server/Dockerfile
-      target: mock
+      target: real
     networks: [odto-integ-net]
     depends_on:
       read-model:

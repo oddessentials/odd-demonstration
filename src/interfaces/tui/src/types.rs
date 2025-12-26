@@ -248,6 +248,9 @@ pub struct App {
     pub task_state: TaskCreationState,
     pub launcher_state: UiLauncherState,
     pub prereq_state: PrerequisiteSetupState,
+    /// W11: Server mode flag - bypasses prereq checks in containers
+    /// Renders prominent warning banner when true
+    pub server_mode: bool,
 }
 
 impl App {
@@ -265,6 +268,7 @@ impl App {
             task_state: TaskCreationState::default(),
             launcher_state: UiLauncherState::default(),
             prereq_state: PrerequisiteSetupState::default(),
+            server_mode: crate::config::is_server_mode(),
         }
     }
 

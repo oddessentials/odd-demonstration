@@ -58,6 +58,11 @@ pub fn spawn_pty(
     cmd.env("LC_ALL", "en_US.UTF-8");
     cmd.env("COLORTERM", "truecolor");
     
+    // W11: Server mode - skip prereq checks in-container
+    // The TUI will bypass Docker/kubectl/kind/pwsh detection and go directly
+    // to Dashboard/Launcher views. Shows prominent warning banner.
+    cmd.env("ODD_DASHBOARD_SERVER_MODE", "1");
+    
     // Pass through API URLs
     cmd.env("READ_MODEL_URL", &config.read_model_url);
     cmd.env("GATEWAY_URL", &config.gateway_url);

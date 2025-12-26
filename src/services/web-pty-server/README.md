@@ -33,6 +33,8 @@ All configuration is via environment variables:
 | `PTY_DISCONNECT_GRACE_SECS` | 30 | Grace period after disconnect |
 | `PTY_MAX_OUTPUT_QUEUE_BYTES` | 1048576 | Max output buffer size |
 
+> **Note (W11):** The server automatically sets `ODD_DASHBOARD_SERVER_MODE=1` when spawning the TUI, bypassing prerequisite checks. See [TUI README](../../../interfaces/tui/README.md#server-mode-w11-container-contract) for details.
+
 ## Protocol
 
 ### Client → Server
