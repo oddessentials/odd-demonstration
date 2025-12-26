@@ -112,24 +112,34 @@ jobs:
           bazel version 2>&1 | tee bazelisk_debug.log
           echo "✓ Bazel resolved successfully"
 
-      # HARD ENFORCEMENT: Verify SHA256 of the EXACT binary that will execute
+      # HARD ENFORCEMENT: Verify SHA256 of the downloaded Bazel binary (not the launcher)
       - name: Verify Bazel binary integrity (SHA256)
         run: |
-          # Resolve the actual binary via symlink chain
-          BAZEL_LAUNCHER=$(which bazel)
-          BAZEL_REAL=$(readlink -f "$BAZEL_LAUNCHER")
-          echo "Bazel launcher: $BAZEL_LAUNCHER"
-          echo "Resolved binary: $BAZEL_REAL"
+          # Read version from .bazelversion
+          BAZEL_VERSION=$(cat .bazelversion | tr -d '[:space:]')
+          BINARY_NAME="bazel-${BAZEL_VERSION}-linux-x86_64"
+          echo "Looking for: $BINARY_NAME"
           
-          # Verify we found an executable
-          if [ ! -x "$BAZEL_REAL" ]; then
-            echo "::error::Cannot resolve Bazel binary - readlink failed"
+          # Locate the actual downloaded binary in Bazelisk cache (exact filename match)
+          BAZEL_BINARY=$(find ~/.cache/bazelisk ~/.bazelisk -name "$BINARY_NAME" -type f 2>/dev/null | head -1)
+          
+          if [ -z "$BAZEL_BINARY" ] || [ ! -f "$BAZEL_BINARY" ]; then
+            echo "::error::Cannot locate $BINARY_NAME in Bazelisk cache"
+            echo "Cache contents:"
+            find ~/.cache/bazelisk ~/.bazelisk -type f 2>/dev/null || true
+            exit 1
+          fi
+          echo "Found binary: $BAZEL_BINARY"
+          
+          # Extract expected SHA (ignore comments, match exact filename)
+          EXPECTED_SHA=$(grep -v '^#' tools/bazel/SHA256SUMS | grep "$BINARY_NAME" | awk '{print $1}')
+          
+          if [ -z "$EXPECTED_SHA" ]; then
+            echo "::error::No checksum found for $BINARY_NAME in tools/bazel/SHA256SUMS"
             exit 1
           fi
           
-          # Compute and verify checksum
-          EXPECTED_SHA=$(grep 'linux-x86_64' tools/bazel/SHA256SUMS | awk '{print $1}')
-          ACTUAL_SHA=$(sha256sum "$BAZEL_REAL" | awk '{print $1}')
+          ACTUAL_SHA=$(sha256sum "$BAZEL_BINARY" | awk '{print $1}')
           echo "Expected: $EXPECTED_SHA"
           echo "Actual:   $ACTUAL_SHA"
           
@@ -142,12 +152,24 @@ jobs:
       # HARD ENFORCEMENT: Fail if network used releases.bazel.build
       - name: Enforce mirror-only (no releases.bazel.build)
         run: |
+          # Check debug logs for external download attempts
           if grep -q "releases.bazel.build" bazelisk_debug.log 2>/dev/null; then
             echo "::error::EXTERNAL FALLBACK DETECTED - releases.bazel.build was used"
             cat bazelisk_debug.log
             exit 1
           fi
-          echo "✓ Mirror-only enforcement passed (no external downloads)"
+          
+          # Verify our GitHub mirror was used (if any download occurred)
+          if grep -q "Downloading" bazelisk_debug.log 2>/dev/null; then
+            if ! grep -q "github.com/oddessentials" bazelisk_debug.log; then
+              echo "::error::Download occurred but not from GitHub mirror"
+              cat bazelisk_debug.log
+              exit 1
+            fi
+            echo "✓ Download verified from GitHub mirror"
+          else
+            echo "✓ No download needed (cache hit)"
+          fi
 
       # Lockfile enforcement (unchanged - strict)
       - name: Verify MODULE.bazel.lock is current
