@@ -84,6 +84,12 @@ FROM debian:bookworm-slim AS mock-builder
 
 RUN mkdir -p /app && printf '%s\n' \
     '#!/bin/bash' \
+    '# Mock TUI binary for integration testing' \
+    '# Handle --help flag for validation (exits immediately)' \
+    'if [[ "$1" == "--help" || "$1" == "-h" || "$1" == "--version" ]]; then' \
+    '  echo "odd-dashboard mock v1.0.0"' \
+    '  exit 0' \
+    'fi' \
     'echo "ODTO Mock Terminal - Press Ctrl+C to exit"' \
     'echo "Mode: Integration Test (mock)"' \
     'while true; do' \
