@@ -175,6 +175,49 @@ async fn handle_connection(
     // Extract auth token from query string (browser WebSocket compat)
     let auth_query = parse_auth_param(query_string.as_deref());
     
+    // === Test Mode: Failure Injection ===
+    // Check for server-side test mode (PTY_TEST_MODE env var)
+    // This allows Playwright/nightly tests to exercise fallback UI deterministically
+    match &state.config.test_mode {
+        web_pty_server::TestMode::FailConnection => {
+            // Immediately reject connection with a test-mode error
+            let (mut write, _) = ws_stream.split();
+            let msg = ServerMessage::error(
+                "Test mode: connection rejected", 
+                error_codes::INTERNAL_ERROR
+            );
+            let json = serde_json::to_string(&msg)?;
+            write.send(Message::Text(json)).await?;
+            write.close().await?;
+            info!("Test mode: rejected connection from {}", client_ip);
+            return Ok(());
+        }
+        web_pty_server::TestMode::DelayConnection(ms) => {
+            // Delay before proceeding (for timing tests)
+            tokio::time::sleep(Duration::from_millis(*ms)).await;
+        }
+        web_pty_server::TestMode::None => {
+            // Normal operation
+        }
+    }
+    
+    // Also check for query-string test mode override (?test_mode=fail)
+    // This allows per-request failure injection without restarting the server
+    if let Some(ref qs) = query_string {
+        if qs.contains("test_mode=fail") {
+            let (mut write, _) = ws_stream.split();
+            let msg = ServerMessage::error(
+                "Test mode: connection rejected (query param)", 
+                error_codes::INTERNAL_ERROR
+            );
+            let json = serde_json::to_string(&msg)?;
+            write.send(Message::Text(json)).await?;
+            write.close().await?;
+            info!("Test mode (query): rejected connection from {}", client_ip);
+            return Ok(());
+        }
+    }
+    
     // Authenticate (R5) - checks header first, then query string
     let auth_result = authenticate(&state.config, auth_header.as_deref(), auth_query.as_deref());
     if let AuthResult::Failed(err) = auth_result {

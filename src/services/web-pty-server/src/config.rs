@@ -6,6 +6,23 @@ use std::env;
 use std::time::Duration;
 use tracing::info;
 
+/// Test mode for failure injection (test-only, not for production)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TestMode {
+    /// Normal operation (default)
+    None,
+    /// Immediately fail all new connections (for fallback UI testing)
+    FailConnection,
+    /// Delay all connections by N ms (for timing tests)
+    DelayConnection(u64),
+}
+
+impl Default for TestMode {
+    fn default() -> Self {
+        TestMode::None
+    }
+}
+
 /// Server configuration loaded from environment variables
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -42,6 +59,11 @@ pub struct Config {
     pub ring_max_bytes: usize,
     /// Ring buffer max frames (whichever limit hits first)
     pub ring_max_frames: usize,
+    
+    // === Test Mode (for Playwright/nightly testing) ===
+    
+    /// Test mode for failure injection (PTY_TEST_MODE env var)
+    pub test_mode: TestMode,
 }
 
 impl Config {
@@ -106,6 +128,21 @@ impl Config {
                 .ok()
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(1000),
+            
+            // Test mode for failure injection (test-only)
+            test_mode: env::var("PTY_TEST_MODE")
+                .ok()
+                .map(|s| match s.to_lowercase().as_str() {
+                    "fail" => TestMode::FailConnection,
+                    s if s.starts_with("delay:") => {
+                        let ms = s.trim_start_matches("delay:")
+                            .parse()
+                            .unwrap_or(1000);
+                        TestMode::DelayConnection(ms)
+                    }
+                    _ => TestMode::None,
+                })
+                .unwrap_or(TestMode::None),
         };
         
         config
@@ -137,6 +174,16 @@ impl Config {
         } else {
             info!("PTY auth: disabled (no token configured)");
         }
+        // Log test mode if enabled (intentionally visible for debugging)
+        match &self.test_mode {
+            TestMode::None => {}
+            TestMode::FailConnection => {
+                info!("PTY test mode: FAIL_CONNECTION (all connections will be rejected)");
+            }
+            TestMode::DelayConnection(ms) => {
+                info!("PTY test mode: DELAY_CONNECTION ({}ms delay)", ms);
+            }
+        }
     }
 }
 
@@ -162,6 +209,7 @@ mod tests {
         env::remove_var("PTY_TOKEN_TTL_SECS");
         env::remove_var("PTY_RING_MAX_BYTES");
         env::remove_var("PTY_RING_MAX_FRAMES");
+        env::remove_var("PTY_TEST_MODE");
         
         let config = Config::from_env();
         
@@ -178,6 +226,9 @@ mod tests {
         assert_eq!(config.token_ttl, Duration::from_secs(300)); // 5 min
         assert_eq!(config.ring_max_bytes, 1_048_576); // 1MB
         assert_eq!(config.ring_max_frames, 1000);
+        
+        // Test mode default
+        assert_eq!(config.test_mode, TestMode::None);
     }
     
     #[test]

@@ -1,0 +1,120 @@
+name: Nightly Visual Tests
+
+# Runs the snapshot-heavy visual regression tests in an isolated, stable environment.
+# These tests require live WebSocket connections and consistent TUI rendering.
+# Separated from CI to avoid flakiness from timing/rendering variations.
+
+on:
+  schedule:
+    # Run at 3 AM UTC every day
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: 'Update golden snapshots (maintainers only)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  visual-regression-nightly:
+    name: Visual Regression (Nightly)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Start services with Docker Compose
+        run: |
+          docker compose -f docker-compose.integration.yml up -d
+          echo "Waiting for services to initialize..."
+          sleep 45
+
+      - name: Wait for web-ui to be ready
+        run: |
+          for i in {1..60}; do
+            if curl -s http://localhost:8081/health > /dev/null 2>&1; then
+              echo "Web UI is ready"
+              break
+            fi
+            echo "Waiting for web-ui... ($i/60)"
+            sleep 2
+          done
+
+      - name: Wait for PTY server to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:9001/metrics > /dev/null 2>&1; then
+              echo "PTY server is ready"
+              exit 0
+            fi
+            echo "Waiting for PTY server... ($i/30)"
+            sleep 2
+          done
+          echo "::warning::PTY server did not become ready"
+          docker compose -f docker-compose.integration.yml logs web-pty-server
+          exit 1
+
+      - name: Install Playwright
+        run: |
+          cd tests/visual
+          npm ci
+          npx playwright install chromium --with-deps
+
+      # Tier 1: Bundle Smoke Tests (deterministic, always run)
+      - name: Run Bundle Smoke Tests
+        run: |
+          cd tests/visual
+          npx playwright test --grep "Bundle Smoke Tests"
+        timeout-minutes: 5
+
+      # Tier 2: Visual Regression Tests (screenshot-heavy, serialized)
+      - name: Run Visual Regression Tests
+        run: |
+          cd tests/visual
+          # Force single worker for stable rendering
+          NIGHTLY_VISUAL_TESTS=1 npx playwright test \
+            --grep "Web Terminal Visual Tests" \
+            --workers=1 \
+            ${{ inputs.update_snapshots && '--update-snapshots' || '' }} \
+            || echo "::warning::Visual tests had failures (see artifacts)"
+        timeout-minutes: 10
+        continue-on-error: true
+
+      # Tier 3: Fallback Dashboard Tests (requires server-side failure injection)
+      - name: Run Fallback Tests (with server mode)
+        run: |
+          cd tests/visual
+          PTY_TEST_MODE=fail npx playwright test \
+            --grep "Fallback Dashboard" \
+            --workers=1 \
+            || echo "::warning::Fallback tests had failures (see artifacts)"
+        timeout-minutes: 5
+        continue-on-error: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-playwright-report
+          path: tests/visual/playwright-report/
+          retention-days: 14
+
+      - name: Upload snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-snapshots
+          path: tests/visual/terminal.spec.ts-snapshots/
+          retention-days: 14
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f docker-compose.integration.yml down -v

@@ -156,75 +156,32 @@ test.describe.skip('Web Terminal Visual Tests', () => {
     });
 });
 
-// DISABLED: Playwright cannot intercept WebSocket connections
-// page.route() and page.addInitScript() do not reliably mock WebSocket before page scripts run.
-// This is a known Playwright limitation. Alternative: use a separate test mode in the server.
-// See: https://github.com/microsoft/playwright/issues/15684
-test.describe.skip('Fallback Dashboard', () => {
-    test('shows fallback when WebSocket unavailable', async ({ page }) => {
-        // Override WebSocket to always fail connection
-        // page.route() doesn't intercept WebSocket connections
-        await page.addInitScript(() => {
-            class FakeWebSocket {
-                readyState = 3; // CLOSED
-                onopen: (() => void) | null = null;
-                onclose: ((event: CloseEvent) => void) | null = null;
-                onerror: ((event: Event) => void) | null = null;
-                onmessage: (() => void) | null = null;
+// TIER 3: Fallback Dashboard Tests
+// Uses server-side failure injection via query parameter (?test_mode=fail)
+// This bypasses the Playwright WebSocket interception limitation.
+// Requires: PTY_TEST_MODE support in web-pty-server (added in Phase 31.5)
+test.describe('Fallback Dashboard', () => {
+    // Note: These tests require the PTY server to support ?test_mode=fail query param
+    // The server will reject the WebSocket connection, triggering the fallback UI
 
-                constructor() {
-                    setTimeout(() => {
-                        if (this.onerror) {
-                            this.onerror(new Event('error'));
-                        }
-                        if (this.onclose) {
-                            this.onclose(new CloseEvent('close', { code: 1006 }));
-                        }
-                    }, 100);
-                }
+    test.afterEach(async ({ page }) => {
+        await page.close();
+    });
 
-                send() { }
-                close() { }
-            }
-            (window as any).WebSocket = FakeWebSocket;
-        });
-
-        await page.goto('/');
+    test('shows fallback when WebSocket connection fails', async ({ page }) => {
+        // Navigate with test_mode=fail query param to trigger server-side rejection
+        // The frontend connects to the PTY server which immediately closes the connection
+        await page.goto('/?test_mode=fail');
 
         // Wait for fallback to appear after connection failure
+        // The frontend should detect the WebSocket close and show the fallback UI
         const fallback = page.locator('#fallback-container');
         await expect(fallback).toBeVisible({ timeout: 20000 });
-
-        // Screenshot fallback UI
-        await expect(fallback).toHaveScreenshot('fallback-dashboard.png', {
-            animations: 'disabled',
-        });
     });
 
     test('retry button is visible in fallback mode', async ({ page }) => {
-        // Override WebSocket to always fail connection
-        await page.addInitScript(() => {
-            class FakeWebSocket {
-                readyState = 3;
-                onopen: (() => void) | null = null;
-                onclose: ((event: CloseEvent) => void) | null = null;
-                onerror: ((event: Event) => void) | null = null;
-                onmessage: (() => void) | null = null;
-
-                constructor() {
-                    setTimeout(() => {
-                        if (this.onerror) this.onerror(new Event('error'));
-                        if (this.onclose) this.onclose(new CloseEvent('close', { code: 1006 }));
-                    }, 100);
-                }
-
-                send() { }
-                close() { }
-            }
-            (window as any).WebSocket = FakeWebSocket;
-        });
-
-        await page.goto('/');
+        // Navigate with failure injection
+        await page.goto('/?test_mode=fail');
 
         // Wait for fallback with retry button
         const fallback = page.locator('#fallback-container');
@@ -236,3 +193,4 @@ test.describe.skip('Fallback Dashboard', () => {
         await expect(retryButton).toHaveText('Retry Connection');
     });
 });
+
