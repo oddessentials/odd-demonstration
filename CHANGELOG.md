@@ -1,3 +1,42 @@
+# [2.0.0](https://github.com/oddessentials/odd-demonstration/compare/v1.4.0...v2.0.0) (2025-12-26)
+
+
+### Bug Fixes
+
+* **compose:** add restart policy for RabbitMQ race condition ([73f2668](https://github.com/oddessentials/odd-demonstration/commit/73f266807834b9d58d854544965b83dcea310ff2))
+* **docker:** resolve Dockerfile parse error in mock-builder stage ([127a276](https://github.com/oddessentials/odd-demonstration/commit/127a276c4d5c6814ee6dee9f8a45bfd839cab8b7))
+* **docker:** visual test failures ([7a529d8](https://github.com/oddessentials/odd-demonstration/commit/7a529d840715cacdcb3078da1fbca48fd32279b8))
+* increase integration budget to 180s, skip flaky visual tests ([fde985e](https://github.com/oddessentials/odd-demonstration/commit/fde985e101f47b5ac9b8f5b9495ee58f6fee306a))
+* re-enable behavioral tests, add timeout sync check ([a3a0440](https://github.com/oddessentials/odd-demonstration/commit/a3a04406e5934471c93e51cd4da04255ef24bf50))
+* **web-pty-server:** add --help handling to mock TUI binary ([43b33c0](https://github.com/oddessentials/odd-demonstration/commit/43b33c039ba82fc07c47cdc561c586f4541fb685))
+* **web-pty:** fix P1 WebSocket auth and document reconnect behavior ([13cc3c7](https://github.com/oddessentials/odd-demonstration/commit/13cc3c71344b2c3158fc5c70e40b4f3ecc2cc17f))
+
+
+### Documentation
+
+* update for Web Terminal modernization (Phase 20) ([0e3ba9d](https://github.com/oddessentials/odd-demonstration/commit/0e3ba9d56e543e1aa53e42f5305c6b7f50adc816))
+
+
+### Features
+
+* **ci:** add visual regression tests with automatic cluster setup ([efb4e25](https://github.com/oddessentials/odd-demonstration/commit/efb4e253f07a65991716a0909fc24481f377c1ba))
+* **integration:** add server mode, Prometheus/Grafana, and I7 parity invariant ([417d4bf](https://github.com/oddessentials/odd-demonstration/commit/417d4bfae27e156b6111f0e28c3bf28c8e4f6af1))
+* **tui:** add Server Mode for container deployment (W11) ([fa0f006](https://github.com/oddessentials/odd-demonstration/commit/fa0f00626c9b918f1f6d44d89471ed339b666d5a))
+* **web-pty-server:** add PTY broker for xterm.js terminal mirroring ([8af3f5e](https://github.com/oddessentials/odd-demonstration/commit/8af3f5e8e32eb9efe349e736fba0e37390913d65))
+* **web-pty:** implement Phase 7 PTY state preservation (steps 3-7) ([2fbfdd3](https://github.com/oddessentials/odd-demonstration/commit/2fbfdd36752d6bb69b48e8c3d876554627ea46b6))
+* **web-pty:** implement state machine and config for PTY preservation ([ac380de](https://github.com/oddessentials/odd-demonstration/commit/ac380de4b90972aa824bfde7bd468bae97580cb1))
+* **web-pty:** multi-stage Dockerfile with real/mock TUI modes ([f6460aa](https://github.com/oddessentials/odd-demonstration/commit/f6460aaa07f84c27abc846987eef713de3e55209))
+* **web-terminal:** add xterm.js PTY-based terminal mirror ([8c1365d](https://github.com/oddessentials/odd-demonstration/commit/8c1365df4ff5a67b5da4ac8b0fe5ff68b7832a56))
+* **web-ui:** add keyboard hints, fix terminal sizing, copy contracts for U key ([a087435](https://github.com/oddessentials/odd-demonstration/commit/a08743522dd6eaeb05ecf7c14b403f30667be9d1))
+
+
+### BREAKING CHANGES
+
+* Web Dashboard replaced with PTY-streaming Web Terminal.
+The single-page glassmorphic UI is removed in favor of xterm.js mirroring
+the native TUI via WebSocket. API remains unchanged but UI is fundamentally
+different - no more Add Task form or UI Launcher modal in the web interface.
+
 # [1.4.0](https://github.com/oddessentials/odd-demonstration/compare/v1.3.0...v1.4.0) (2025-12-26)
 
 
