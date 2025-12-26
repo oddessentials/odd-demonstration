@@ -27,6 +27,7 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | V3 | read-model coverage ≥ 18% | `check-coverage.py read-model` | ✅ CI |
 | V4 | TUI lib coverage ≥ 31% | `check-coverage.py tui` (tarpaulin --lib --exclude-files) | ✅ CI |
 | V5 | Gateway coverage ≥ 80% | `vitest --coverage` | ✅ CI |
+| V6 | web-pty-server coverage ≥ 70% | `check-coverage.py web-pty-server` (tarpaulin --lib) | ✅ CI |
 | I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
 | I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
 | I3 | Integration harness self-contained | Docker Compose only | ⏳ Blocked (needs Docker Hub images) |
@@ -75,6 +76,7 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 | Read Model (Go) | 18% | 25% | Infrastructure-heavy; HTTP handlers and middleware tested |
 | TUI (Rust lib) | 31% | 32% | Lib-only; `--exclude-files main.rs` needed because `--lib` still measures bin |
 | Gateway (TypeScript) | 80% | 85% | Core logic in lib/ modules maintains 100% coverage |
+| web-pty-server (Rust) | 70% | 80% | PTY broker; session/protocol/auth modules well-tested |
 
 > [!NOTE]
 > **Go Service Architecture Tradeoff**: The `metrics-engine` and `read-model` packages are infrastructure-heavy,
