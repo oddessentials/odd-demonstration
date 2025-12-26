@@ -499,6 +499,33 @@ jobs:
           cargo test --locked
 
   # ============================================================
+  # Web UI Build (Docker) - Catches missing COPY inputs and npm ci failures
+  # Runs on PRs touching web terminal code
+  # ============================================================
+  web-ui-build:
+    name: Web UI Build (Docker)
+    runs-on: ubuntu-latest
+    needs: [paths-filter]
+    # Run when web terminal files change
+    if: needs.paths-filter.outputs.web_terminal == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build web-ui Docker image
+        run: |
+          cd src/interfaces/web
+          docker build -t web-ui-test .
+          
+      - name: Verify bundle exists in image
+        run: |
+          docker run --rm web-ui-test ls -la /usr/share/nginx/html/
+          docker run --rm web-ui-test ls /usr/share/nginx/html/bundle.js
+          docker run --rm web-ui-test ls /usr/share/nginx/html/bundle.css
+          docker run --rm web-ui-test ls /usr/share/nginx/html/index.html
+
+  # ============================================================
   # Windows Script Verification (X1 cross-platform proof)
   # ============================================================
   windows-verify:
