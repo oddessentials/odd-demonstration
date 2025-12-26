@@ -186,6 +186,9 @@ services:
       dockerfile: src/services/web-pty-server/Dockerfile
       target: real
     networks: [odto-integ-net]
+    ports:
+      - "9000:9000"  # WebSocket
+      - "9001:9001"  # Metrics
     depends_on:
       read-model:
         condition: service_started
