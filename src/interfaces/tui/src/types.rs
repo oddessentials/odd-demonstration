@@ -288,7 +288,9 @@ impl App {
         }
 
         // Fetch alerts from Prometheus with retry logic
-        let alerts_url = "http://localhost:9090/api/v1/alerts";
+        let prometheus_url = std::env::var("PROMETHEUS_URL")
+            .unwrap_or_else(|_| "http://localhost:9090".to_string());
+        let alerts_url = format!("{}/api/v1/alerts", prometheus_url);
         match reqwest::blocking::Client::new()
             .get(alerts_url)
             .timeout(std::time::Duration::from_secs(2))

@@ -73,6 +73,42 @@ services:
       retries: 15
       start_period: 10s
 
+  # Prometheus - Metrics and alerting (for TUI dashboard alerts)
+  prometheus:
+    container_name: odto-integ-prometheus
+    image: prom/prometheus:latest
+    networks: [odto-integ-net]
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Grafana - Observability dashboards
+  grafana:
+    container_name: odto-integ-grafana
+    image: grafana/grafana:latest
+    networks: [odto-integ-net]
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
   # ============================================================
   # Application Services (harness-level health checks only)
   # Readiness is proven by integration harness via HTTP probes
@@ -161,6 +197,7 @@ services:
       - PTY_METRICS_PORT=9001
       - READ_MODEL_URL=http://odto-integ-read-model:8080
       - GATEWAY_URL=http://odto-integ-gateway:3000
+      - PROMETHEUS_URL=http://odto-integ-prometheus:9090
     # Readiness: web-ui nginx proxies to this service
 
   # Web UI - nginx serving static + proxying WebSocket (built locally)

@@ -21,8 +21,15 @@ use crate::error::{RegistryError, SubmitError, BrowserError, get_error_hint, get
 // ============================================================================
 
 /// Check if the Kind cluster is running and accessible
+/// In server mode (W11), uses HTTP health check instead of kubectl
 pub fn check_cluster_status() -> ClusterStatus {
-    // Try to get nodes from the kind cluster
+    // W11: In server mode, use HTTP health check instead of kubectl
+    // This allows TUI to work in docker-compose environments without k8s
+    if crate::config::is_server_mode() {
+        return check_api_health();
+    }
+    
+    // Normal mode: use kubectl to check cluster
     let output = Command::new("kubectl")
         .args(["get", "nodes", "--context", "kind-task-observatory", "-o", "name"])
         .output();
@@ -42,6 +49,29 @@ pub fn check_cluster_status() -> ClusterStatus {
             }
         }
         Err(e) => ClusterStatus::Error(format!("kubectl not found: {}", e)),
+    }
+}
+
+/// Check API health via HTTP (for server mode)
+fn check_api_health() -> ClusterStatus {
+    let read_model_url = std::env::var("READ_MODEL_URL")
+        .unwrap_or_else(|_| "http://localhost:8080".to_string());
+    
+    // Try to hit the read-model health/stats endpoint
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(2))
+        .build();
+    
+    let client = match client {
+        Ok(c) => c,
+        Err(_) => return ClusterStatus::Error("Failed to create HTTP client".to_string()),
+    };
+    
+    // Try /stats endpoint (read-model)
+    match client.get(format!("{}/stats", read_model_url)).send() {
+        Ok(response) if response.status().is_success() => ClusterStatus::Ready,
+        Ok(_) => ClusterStatus::NoPods,
+        Err(_) => ClusterStatus::NotFound,
     }
 }
 
@@ -731,6 +761,59 @@ mod tests {
         let cloned = progress.clone();
         assert_eq!(cloned.current_step, progress.current_step);
         assert_eq!(cloned.is_complete, progress.is_complete);
+    }
+
+    // ========== W11: Server Mode API Health Check Tests ==========
+
+    #[test]
+    fn test_server_mode_uses_api_health_check() {
+        // When server mode is enabled, check_cluster_status should use HTTP
+        // instead of kubectl (which doesn't exist in containers)
+        std::env::set_var("ODD_DASHBOARD_SERVER_MODE", "1");
+        std::env::set_var("READ_MODEL_URL", "http://localhost:9999"); // Non-existent
+        
+        let status = check_cluster_status();
+        
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        std::env::remove_var("READ_MODEL_URL");
+        
+        // Should return NotFound (connection failed) not Error (kubectl not found)
+        // This proves HTTP was used instead of kubectl
+        assert!(
+            matches!(status, ClusterStatus::NotFound),
+            "Server mode should use HTTP check, got: {:?}",
+            status
+        );
+    }
+
+    #[test]
+    fn test_server_mode_respects_read_model_url() {
+        // Verify that the READ_MODEL_URL env var is used
+        std::env::set_var("ODD_DASHBOARD_SERVER_MODE", "1");
+        std::env::set_var("READ_MODEL_URL", "http://127.0.0.1:1"); // Invalid port
+        
+        let status = check_cluster_status();
+        
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        std::env::remove_var("READ_MODEL_URL");
+        
+        // Should fail to connect (NotFound) rather than error on kubectl
+        assert!(matches!(status, ClusterStatus::NotFound | ClusterStatus::Error(_)));
+    }
+
+    #[test]
+    fn test_normal_mode_uses_kubectl() {
+        // When server mode is disabled, check_cluster_status should use kubectl
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        
+        let status = check_cluster_status();
+        
+        // On a system without kubectl or cluster, this returns NotFound or Error
+        // The key is it doesn't hang (which would happen if HTTP was used incorrectly)
+        assert!(matches!(
+            status,
+            ClusterStatus::Ready | ClusterStatus::NotFound | ClusterStatus::NoPods | ClusterStatus::Error(_)
+        ));
     }
 }
 

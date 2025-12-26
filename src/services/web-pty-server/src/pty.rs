@@ -66,6 +66,10 @@ pub fn spawn_pty(
     // Pass through API URLs
     cmd.env("READ_MODEL_URL", &config.read_model_url);
     cmd.env("GATEWAY_URL", &config.gateway_url);
+    // Pass PROMETHEUS_URL if set in environment
+    if let Ok(prom_url) = std::env::var("PROMETHEUS_URL") {
+        cmd.env("PROMETHEUS_URL", prom_url);
+    }
     
     // Spawn child process
     let mut child = pair.slave

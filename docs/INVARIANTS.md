@@ -35,6 +35,7 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | I4 | Integration runtime <120s | `integration-harness.ps1` timeout | ⏳ Blocked (needs Docker Hub images) |
 | I5 | Artifact capture every run | Guarded `finally` block | ⏳ Blocked (needs Docker Hub images) |
 | I6 | Victory gate: 3 green + nightly | — | 📝 Governance-Only |
+| I7 | K8s/Compose service parity | `validate-compose-k8s-parity.ps1` | ✅ CI |
 | A1 | Hermetic Bazel builds | Bazel `--lockfile_mode=error` | ✅ CI |
 | A2 | No manual intervention | — | 📝 Documented-Only |
 | A3 | Single test entrypoint | `run-all-tests.ps1` | ✅ CI |
@@ -104,6 +105,7 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 | I4 | Integration runtime <120s (wall-clock) | `integration-harness.ps1` exits 1 on breach |
 | I5 | Artifact capture on every run | Guarded capture in `finally` block |
 | I6 | Victory gate: 3 green PRs + 1 nightly | 📝 Governance-only |
+| I7 | K8s and Docker Compose have same services | `validate-compose-k8s-parity.ps1` |
 
 > [!NOTE]
 > **I6 is intentionally governance-only**: The victory gate requires human judgment for flake detection
