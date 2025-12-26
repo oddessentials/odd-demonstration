@@ -80,7 +80,7 @@ impl Config {
                 .unwrap_or(9001),
             tui_binary_path: env::var("PTY_TUI_BINARY")
                 .unwrap_or_else(|_| "odd-dashboard".to_string()),
-            auth_token: env::var("PTY_AUTH_TOKEN").ok(),
+            auth_token: env::var("PTY_AUTH_TOKEN").ok().filter(|s| !s.is_empty()),
             read_only: env::var("PTY_READ_ONLY")
                 .map(|v| v == "true" || v == "1")
                 .unwrap_or(false),
