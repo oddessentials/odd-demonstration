@@ -201,6 +201,8 @@ services:
       - READ_MODEL_URL=http://odto-integ-read-model:8080
       - GATEWAY_URL=http://odto-integ-gateway:3000
       - PROMETHEUS_URL=http://odto-integ-prometheus:9090
+      # Integration tests run rapid sessions - increase limit to prevent exhaustion
+      - PTY_PER_IP_CAP=30
     # Readiness: web-ui nginx proxies to this service
 
   # Web UI - nginx serving static + proxying WebSocket (built locally)

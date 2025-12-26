@@ -222,6 +222,13 @@ function connect() {
         params.set('auth', CONFIG.authToken);
     }
 
+    // Pass through test_mode from page URL for server-side failure injection
+    // This enables deterministic testing of fallback UI without WebSocket mocking
+    const pageParams = new URLSearchParams(window.location.search);
+    if (pageParams.has('test_mode')) {
+        params.set('test_mode', pageParams.get('test_mode'));
+    }
+
     if (params.toString()) {
         url += `?${params.toString()}`;
     }
@@ -328,6 +335,12 @@ function handleMessage(msg) {
                 sessionStorage.removeItem('pty_session');
                 sessionStorage.removeItem('pty_token');
                 scheduleReconnect();
+            } else if (msg.code === 'INTERNAL_ERROR') {
+                // Server error or test mode rejection - show fallback
+                // This handles: test_mode=fail, PTY spawn failures, etc.
+                console.log('Server rejected connection, showing fallback');
+                intentionalClose = true; // Prevent reconnect attempts
+                showFallback();
             }
             break;
     }

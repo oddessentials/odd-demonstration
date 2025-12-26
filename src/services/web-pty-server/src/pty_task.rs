@@ -260,6 +260,7 @@ impl std::error::Error for PtyTaskError {}
 mod tests {
     use super::*;
     use std::time::Duration;
+    use crate::config::TestMode;
     
     fn test_config() -> Config {
         Config {
@@ -278,6 +279,7 @@ mod tests {
             token_ttl: Duration::from_secs(300),
             ring_max_bytes: 1_048_576,
             ring_max_frames: 1000,
+            test_mode: TestMode::None,
         }
     }
     

@@ -11,7 +11,7 @@ pub mod ring;
 pub mod pty_task;
 
 // Re-exports for convenience
-pub use config::Config;
+pub use config::{Config, TestMode};
 pub use session::{SessionManager, PtySession, SessionError, SessionState, SessionMetrics, CleanupStats};
 pub use protocol::{ClientMessage, ServerMessage, error_codes, input_class};
 pub use auth::{authenticate, AuthResult, AuthError, parse_reconnect_params, parse_auth_param};

@@ -135,6 +135,7 @@ pub fn parse_auth_param(query: Option<&str>) -> Option<String> {
 mod tests {
     use super::*;
     use std::time::Duration;
+    use crate::config::TestMode;
     
     fn config_with_token(token: Option<&str>) -> Config {
         Config {
@@ -153,6 +154,7 @@ mod tests {
             token_ttl: Duration::from_secs(300),
             ring_max_bytes: 1_048_576,
             ring_max_frames: 1000,
+            test_mode: TestMode::None,
         }
     }
     
