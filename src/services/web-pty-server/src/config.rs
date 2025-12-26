@@ -27,12 +27,21 @@ pub struct Config {
     pub global_cap: usize,
     /// Grace period after disconnect before reaping
     pub disconnect_grace: Duration,
-    /// Maximum output queue size in bytes
+    /// Maximum output queue size in bytes (legacy, for backpressure)
     pub max_output_queue_bytes: usize,
     /// Read Model URL for fallback stats
     pub read_model_url: String,
     /// Gateway URL 
     pub gateway_url: String,
+    
+    // === PTY State Preservation (Phase 7) ===
+    
+    /// Reconnect token TTL (single-use, rotated on success)
+    pub token_ttl: Duration,
+    /// Ring buffer max bytes (for replay on reconnect)
+    pub ring_max_bytes: usize,
+    /// Ring buffer max frames (whichever limit hits first)
+    pub ring_max_frames: usize,
 }
 
 impl Config {
@@ -81,6 +90,22 @@ impl Config {
                 .unwrap_or_else(|_| "http://read-model:8080".to_string()),
             gateway_url: env::var("GATEWAY_URL")
                 .unwrap_or_else(|_| "http://gateway:3000".to_string()),
+            
+            // PTY State Preservation (Phase 7)
+            token_ttl: Duration::from_secs(
+                env::var("PTY_TOKEN_TTL_SECS")
+                    .ok()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(300), // 5 minutes
+            ),
+            ring_max_bytes: env::var("PTY_RING_MAX_BYTES")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(1_048_576), // 1MB
+            ring_max_frames: env::var("PTY_RING_MAX_FRAMES")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(1000),
         };
         
         config
@@ -99,6 +124,12 @@ impl Config {
             self.disconnect_grace.as_secs(),
             self.max_output_queue_bytes,
             self.read_only
+        );
+        info!(
+            "PTY ring: token_ttl={}s, ring_bytes={}B, ring_frames={}",
+            self.token_ttl.as_secs(),
+            self.ring_max_bytes,
+            self.ring_max_frames
         );
         // Note: auth_token intentionally NOT logged
         if self.auth_token.is_some() {
@@ -128,6 +159,9 @@ mod tests {
         env::remove_var("PTY_READ_ONLY");
         env::remove_var("PTY_PER_IP_CAP");
         env::remove_var("PTY_GLOBAL_CAP");
+        env::remove_var("PTY_TOKEN_TTL_SECS");
+        env::remove_var("PTY_RING_MAX_BYTES");
+        env::remove_var("PTY_RING_MAX_FRAMES");
         
         let config = Config::from_env();
         
@@ -139,6 +173,11 @@ mod tests {
         assert_eq!(config.disconnect_grace, Duration::from_secs(30));
         assert_eq!(config.max_output_queue_bytes, 1_048_576);
         assert!(!config.read_only);
+        
+        // Phase 7: PTY state preservation defaults
+        assert_eq!(config.token_ttl, Duration::from_secs(300)); // 5 min
+        assert_eq!(config.ring_max_bytes, 1_048_576); // 1MB
+        assert_eq!(config.ring_max_frames, 1000);
     }
     
     #[test]

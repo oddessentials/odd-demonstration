@@ -11,8 +11,49 @@ use tokio::sync::mpsc;
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
-
 use crate::config::Config;
+
+// ============================================================
+// Session State Machine (Phase 7: PTY State Preservation)
+// ============================================================
+
+/// Session state for lifecycle management
+/// 
+/// State transitions:
+/// - Connected → Disconnected: WebSocket close
+/// - Disconnected → Connected: Successful reconnect with valid token
+/// - Disconnected → Idle: Grace period expires
+/// - Idle → Reaping: Idle timeout expires
+/// - Reaping → (removed): Session cleaned up
+/// - Disconnected/Idle → ERROR: Reconnect fails with "session expired"
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionState {
+    /// Client is actively connected via WebSocket
+    Connected,
+    /// Client disconnected, within grace period for reconnect
+    Disconnected { since: Instant },
+    /// Grace period expired, waiting for idle timeout
+    Idle { since: Instant },
+    /// Session is being cleaned up (reject all operations)
+    Reaping,
+}
+
+impl SessionState {
+    /// Check if state allows reconnection
+    pub fn can_reconnect(&self) -> bool {
+        matches!(self, SessionState::Disconnected { .. })
+    }
+    
+    /// Check if state allows input
+    pub fn can_accept_input(&self) -> bool {
+        matches!(self, SessionState::Connected)
+    }
+    
+    /// Check if state is terminal (should be cleaned up)
+    pub fn is_reaping(&self) -> bool {
+        matches!(self, SessionState::Reaping)
+    }
+}
 
 /// A PTY session with reconnect token
 #[derive(Debug)]
@@ -21,16 +62,16 @@ pub struct PtySession {
     pub session_id: Uuid,
     /// Single-use reconnect token (rotated on successful reconnect)
     pub reconnect_token: String,
+    /// When token was issued (for TTL expiry)
+    pub token_issued_at: Instant,
     /// When session was created
     pub created_at: Instant,
     /// Last activity timestamp
     pub last_seen: Instant,
     /// Client IP address
     pub client_ip: IpAddr,
-    /// Whether client is currently connected
-    pub connected: bool,
-    /// When client disconnected (for grace period)
-    pub disconnected_at: Option<Instant>,
+    /// Session state machine (Phase 7)
+    pub state: SessionState,
     /// Output queue for buffering PTY output
     pub output_queue: VecDeque<Vec<u8>>,
     /// Total bytes in output queue
@@ -43,6 +84,10 @@ pub struct PtySession {
     pub input_tx: Option<mpsc::Sender<Vec<u8>>>,
     /// Channel to receive output from PTY
     pub output_rx: Option<mpsc::Receiver<Vec<u8>>>,
+    /// Last known terminal columns (for resize on reconnect)
+    pub last_cols: u16,
+    /// Last known terminal rows (for resize on reconnect)
+    pub last_rows: u16,
 }
 
 impl PtySession {
@@ -138,17 +183,19 @@ impl SessionManager {
         let session = PtySession {
             session_id,
             reconnect_token: reconnect_token.clone(),
+            token_issued_at: Instant::now(),
             created_at: Instant::now(),
             last_seen: Instant::now(),
             client_ip,
-            connected: true,
-            disconnected_at: None,
+            state: SessionState::Connected,
             output_queue: VecDeque::new(),
             output_queue_bytes: 0,
             output_drops: 0,
             notice_times: HashMap::new(),
             input_tx: None,
             output_rx: None,
+            last_cols: 80,  // Default size, updated on first resize
+            last_rows: 24,
         };
         
         self.sessions.insert(session_id, session);
@@ -159,6 +206,11 @@ impl SessionManager {
     }
     
     /// Attempt to reconnect to an existing session (R2: token validation + rotation)
+    /// 
+    /// # State Machine
+    /// - Only allows reconnect from `Disconnected` state
+    /// - Rejects if in `Idle` or `Reaping` (session expired)
+    /// - Validates token and TTL before allowing reconnect
     pub fn reconnect_session(
         &mut self,
         session_id: Uuid,
@@ -166,11 +218,33 @@ impl SessionManager {
         client_ip: IpAddr,
     ) -> Result<String, SessionError> {
         let session = self.sessions.get_mut(&session_id)
-            .ok_or(SessionError::SessionNotFound)?;
+            // Return same error for "not found" and "bad token" to avoid leaking existence
+            .ok_or(SessionError::InvalidToken)?;
         
-        // Validate token
+        // Check state machine - only Disconnected allows reconnect
+        match session.state {
+            SessionState::Connected => {
+                warn!("Reconnect attempted for already-connected session {}", session_id);
+                return Err(SessionError::InvalidToken);
+            }
+            SessionState::Disconnected { .. } => {
+                // OK - can reconnect
+            }
+            SessionState::Idle { .. } | SessionState::Reaping => {
+                warn!("Reconnect attempted for expired session {}", session_id);
+                return Err(SessionError::SessionExpired);
+            }
+        }
+        
+        // Validate token (same error as "not found" to avoid leaking)
         if session.reconnect_token != token {
             warn!("Invalid reconnect token for session {}", session_id);
+            return Err(SessionError::InvalidToken);
+        }
+        
+        // Check token TTL
+        if session.token_issued_at.elapsed() > self.config.token_ttl {
+            warn!("Expired reconnect token for session {}", session_id);
             return Err(SessionError::InvalidToken);
         }
         
@@ -180,22 +254,21 @@ impl SessionManager {
             return Err(SessionError::IpMismatch);
         }
         
-        // Rotate token (R2: single-use)
+        // Rotate token (R2: single-use) and reset TTL
         let new_token = session.rotate_token();
-        session.connected = true;
-        session.disconnected_at = None;
+        session.token_issued_at = Instant::now();
+        session.state = SessionState::Connected;
         session.last_seen = Instant::now();
         
         info!("Reconnected session {} (token rotated)", session_id);
         Ok(new_token)
     }
     
-    /// Mark session as disconnected
+    /// Mark session as disconnected (transitions to Disconnected state)
     pub fn disconnect_session(&mut self, session_id: Uuid) {
         if let Some(session) = self.sessions.get_mut(&session_id) {
-            session.connected = false;
-            session.disconnected_at = Some(Instant::now());
-            debug!("Session {} disconnected", session_id);
+            session.state = SessionState::Disconnected { since: Instant::now() };
+            debug!("Session {} → Disconnected", session_id);
         }
     }
     
@@ -204,29 +277,54 @@ impl SessionManager {
         self.sessions.get_mut(&session_id)
     }
     
-    /// Cleanup idle and disconnected sessions (R3)
+    /// Cleanup idle and disconnected sessions (R3) - State machine version
+    /// 
+    /// State transitions:
+    /// - Disconnected + grace expired → Idle
+    /// - Idle + idle timeout → Reaping (then removed)
     pub fn cleanup(&mut self) -> CleanupStats {
         let now = Instant::now();
         let mut stats = CleanupStats::default();
+        let mut to_transition: Vec<(Uuid, SessionState)> = Vec::new();
+        let mut to_remove: Vec<Uuid> = Vec::new();
         
-        // Collect sessions to remove
-        let to_remove: Vec<Uuid> = self.sessions.iter()
-            .filter(|(_, s)| {
-                // Remove if idle too long
-                if now.duration_since(s.last_seen) > self.config.idle_timeout {
-                    return true;
-                }
-                // Remove if disconnected past grace period
-                if let Some(disconnected) = s.disconnected_at {
-                    if now.duration_since(disconnected) > self.config.disconnect_grace {
-                        return true;
+        // First pass: determine state transitions and removals
+        for (id, s) in self.sessions.iter() {
+            match s.state {
+                SessionState::Connected => {
+                    // Check for idle timeout (no activity)
+                    if now.duration_since(s.last_seen) > self.config.idle_timeout {
+                        to_transition.push((*id, SessionState::Reaping));
                     }
                 }
-                false
-            })
-            .map(|(id, _)| *id)
-            .collect();
+                SessionState::Disconnected { since } => {
+                    // Check for grace period expiry
+                    if now.duration_since(since) > self.config.disconnect_grace {
+                        to_transition.push((*id, SessionState::Idle { since: now }));
+                    }
+                }
+                SessionState::Idle { since } => {
+                    // Check for idle timeout
+                    if now.duration_since(since) > self.config.idle_timeout {
+                        to_transition.push((*id, SessionState::Reaping));
+                    }
+                }
+                SessionState::Reaping => {
+                    // Ready for removal
+                    to_remove.push(*id);
+                }
+            }
+        }
         
+        // Apply state transitions
+        for (id, new_state) in to_transition {
+            if let Some(session) = self.sessions.get_mut(&id) {
+                debug!("Session {} → {:?}", id, new_state);
+                session.state = new_state;
+            }
+        }
+        
+        // Remove reaping sessions
         for session_id in to_remove {
             if let Some(session) = self.sessions.remove(&session_id) {
                 // Decrement IP count
@@ -271,6 +369,7 @@ pub enum SessionError {
     SessionNotFound,
     InvalidToken,
     IpMismatch,
+    SessionExpired,  // Phase 7: session past grace/idle timeout
     PtySpawnFailed(String),
 }
 
@@ -282,6 +381,7 @@ impl std::fmt::Display for SessionError {
             Self::SessionNotFound => write!(f, "Session not found"),
             Self::InvalidToken => write!(f, "Invalid reconnect token"),
             Self::IpMismatch => write!(f, "Client IP does not match session"),
+            Self::SessionExpired => write!(f, "Session expired"),
             Self::PtySpawnFailed(e) => write!(f, "Failed to spawn PTY: {}", e),
         }
     }
@@ -323,6 +423,9 @@ mod tests {
             max_output_queue_bytes: 1024,
             read_model_url: "http://localhost:8080".to_string(),
             gateway_url: "http://localhost:3000".to_string(),
+            token_ttl: Duration::from_secs(300),
+            ring_max_bytes: 1_048_576,
+            ring_max_frames: 1000,
         }
     }
     
@@ -341,7 +444,7 @@ mod tests {
         assert_eq!(manager.sessions.len(), 1);
         
         let session = manager.get_session(session_id).unwrap();
-        assert!(session.connected);
+        assert_eq!(session.state, SessionState::Connected);
         assert_eq!(session.client_ip, test_ip());
     }
     
@@ -477,8 +580,14 @@ mod tests {
         // Wait for idle timeout
         std::thread::sleep(Duration::from_millis(10));
         
-        let stats = manager.cleanup();
-        assert_eq!(stats.removed, 1);
+        // Phase 7 state machine: Connected (idle) → Reaping (first cleanup)
+        let stats1 = manager.cleanup();
+        assert_eq!(stats1.removed, 0); // Not removed yet, just transitioned to Reaping
+        assert!(manager.get_session(session_id).is_some()); // Still exists
+        
+        // Reaping → removed (second cleanup)
+        let stats2 = manager.cleanup();
+        assert_eq!(stats2.removed, 1);
         assert!(manager.get_session(session_id).is_none());
     }
     

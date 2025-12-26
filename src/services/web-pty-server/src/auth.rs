@@ -150,6 +150,9 @@ mod tests {
             max_output_queue_bytes: 1024,
             read_model_url: "http://localhost:8080".to_string(),
             gateway_url: "http://localhost:3000".to_string(),
+            token_ttl: Duration::from_secs(300),
+            ring_max_bytes: 1_048_576,
+            ring_max_frames: 1000,
         }
     }
     
