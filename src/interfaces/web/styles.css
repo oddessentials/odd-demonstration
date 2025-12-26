@@ -1,0 +1,220 @@
+/* ODTO Web Terminal Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    background: #0f0c29;
+    font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+/* Terminal Container */
+#terminal-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+}
+
+#terminal {
+    width: 100%;
+    height: 100%;
+}
+
+/* xterm.js overrides for better visuals */
+.xterm {
+    padding: 4px;
+}
+
+.xterm-viewport {
+    background: transparent !important;
+}
+
+.xterm-screen {
+    background: rgba(15, 12, 41, 0.95);
+    border-radius: 8px;
+}
+
+/* Fallback Container (R10) */
+#fallback-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+}
+
+.fallback-content {
+    max-width: 600px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fallback-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.warning-icon {
+    font-size: 2.5rem;
+}
+
+.fallback-header h1 {
+    font-size: 1.5rem;
+    color: #ffd700;
+}
+
+.fallback-message {
+    color: #ccc;
+    margin-bottom: 1.5rem;
+}
+
+.fallback-stats {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-loading {
+    color: #888;
+    font-style: italic;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #00ff88;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.fallback-actions {
+    margin-bottom: 1.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+    color: #0f0c29;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.fallback-instructions {
+    text-align: left;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.fallback-instructions h3 {
+    font-size: 0.9rem;
+    color: #00d4ff;
+    margin-bottom: 0.5rem;
+}
+
+.fallback-instructions p {
+    font-size: 0.85rem;
+    color: #aaa;
+    margin-bottom: 0.5rem;
+}
+
+.fallback-instructions code {
+    display: block;
+    background: rgba(0, 255, 136, 0.1);
+    color: #00ff88;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+/* Connection status overlay */
+.connection-status {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 1000;
+}
+
+.connection-status.connected {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.connection-status.disconnected {
+    background: rgba(255, 71, 87, 0.2);
+    color: #ff4757;
+}
+
+.connection-status.connecting {
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.status-dot.pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}

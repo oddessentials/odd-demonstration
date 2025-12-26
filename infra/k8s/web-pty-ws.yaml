@@ -1,0 +1,93 @@
+# Web PTY WebSocket Deployment
+# R1: Split deployment - HTTP can roll independently without killing PTY sessions
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-pty-ws
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: web-pty-ws
+  template:
+    metadata:
+      labels:
+        service: web-pty-ws
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "9001"
+    spec:
+      containers:
+      - name: pty-server
+        image: web-pty-server:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 9000
+          name: ws
+        - containerPort: 9001
+          name: metrics
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: metrics
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: metrics
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        env:
+        # Auth token from secret (R5: never logged)
+        - name: PTY_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: pty-secrets
+              key: auth-token
+              optional: true
+        # Resource limits (R3: configurable via env)
+        - name: PTY_IDLE_TIMEOUT_SECS
+          value: "1800"
+        - name: PTY_PER_IP_CAP
+          value: "5"
+        - name: PTY_GLOBAL_CAP
+          value: "50"
+        - name: PTY_DISCONNECT_GRACE_SECS
+          value: "30"
+        - name: PTY_MAX_OUTPUT_QUEUE_BYTES
+          value: "1048576"
+        # TUI binary path
+        - name: PTY_TUI_BINARY
+          value: "/app/odd-dashboard"
+        # API URLs
+        - name: READ_MODEL_URL
+          value: "http://read-model:8080"
+        - name: GATEWAY_URL
+          value: "http://gateway:3000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-pty-ws
+spec:
+  selector:
+    service: web-pty-ws
+  ports:
+  - port: 9000
+    targetPort: 9000
+    name: ws
+  - port: 9001
+    targetPort: 9001
+    name: metrics
+---
+# Optional: PTY secrets for auth token
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pty-secrets
+type: Opaque
+stringData:
+  # Generate with: openssl rand -base64 32
+  auth-token: ""  # Empty = auth disabled

@@ -142,7 +142,7 @@ After startup, access services via port-forwards:
 
 | Service            | URL                         | Credentials               |
 | ------------------ | --------------------------- | ------------------------- |
-| **Web Dashboard**  | http://localhost:8081       | -                         |
+| **Web Terminal**   | http://localhost:8081       | -                         |
 | **Gateway API**    | http://localhost:3000       | -                         |
 | ↳ API Docs         | http://localhost:3000/docs  | -                         |
 | **Read Model API** | http://localhost:8080/stats | -                         |
@@ -216,9 +216,12 @@ Terminal dashboard with:
 | `N` | New Task |
 | `U` | UI Launcher |
 
-### Web Dashboard
+### Web Terminal
 
-Glassmorphic UI with loading animation, stats, alerts, and job tables.
+xterm.js-based terminal that mirrors the TUI via WebSocket PTY streaming. Features:
+- Identical rendering to native terminal
+- Session reconnect on refresh
+- Fallback dashboard when terminal unavailable
 
 ---
 
