@@ -1,3 +1,18 @@
+## [3.0.2](https://github.com/oddessentials/odd-demonstration/compare/v3.0.1...v3.0.2) (2025-12-26)
+
+
+### Bug Fixes
+
+* **ci:** add preflight check for Bazel mirror asset existence ([089e20e](https://github.com/oddessentials/odd-demonstration/commit/089e20e40eeb9f99e071297cd0d5e6082c131ff1))
+* **ci:** apply --config=ci to ALL bazel commands with BCR guard ([4281d61](https://github.com/oddessentials/odd-demonstration/commit/4281d6172eed49da56113578f2b982b896f62210))
+* **ci:** correct SHA verification to hash actual Bazel binary ([60df0d7](https://github.com/oddessentials/odd-demonstration/commit/60df0d70827c1c1b4d850c04e768c7fbbcebc602))
+* **ci:** eliminate Bazel download dependency on releases.bazel.build ([177eb8e](https://github.com/oddessentials/odd-demonstration/commit/177eb8e5a0595859b60c0b0acda7c19ccd1890ee))
+* **ci:** improve SHA verification diagnostics and cache search ([43b61de](https://github.com/oddessentials/odd-demonstration/commit/43b61de7e769b4eb357d5e21e1c490716a5ec04f))
+* **ci:** replace bazel mod deps with lockfile-unchanged check ([6442f3a](https://github.com/oddessentials/odd-demonstration/commit/6442f3a3363671372464037b99c935ba9ceac529))
+* **ci:** update SHA256 to match official Bazel 7.1.0 binary ([f63546c](https://github.com/oddessentials/odd-demonstration/commit/f63546ce1ab7332580b4c5d23812cb9cbab7d22e))
+* **ci:** use BAZELISK_FORMAT_URL for flat GitHub Release paths ([7356ea0](https://github.com/oddessentials/odd-demonstration/commit/7356ea0cadc086993e8c69a634e2fe736480f47c))
+* **ci:** use GitHub BCR mirror to avoid bcr.bazel.build TLS issues ([3cc441f](https://github.com/oddessentials/odd-demonstration/commit/3cc441f04ae8a38abbcd781da7aa2620e5ff074e))
+
 ## [3.0.1](https://github.com/oddessentials/odd-demonstration/compare/v3.0.0...v3.0.1) (2025-12-26)
 
 
