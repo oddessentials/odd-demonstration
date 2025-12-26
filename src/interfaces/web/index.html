@@ -13,8 +13,15 @@
 <body>
     <!-- Terminal container (xterm.js) -->
     <div id="terminal-container">
-        <div class="connection-status" id="connection-status">Connecting...</div>
         <div id="terminal"></div>
+        <div id="keyboard-hints" class="keyboard-hints">
+            <span class="hint"><kbd>Q</kbd> Quit</span>
+            <span class="hint"><kbd>R</kbd> Refresh</span>
+            <span class="hint"><kbd>N</kbd> New Task</span>
+            <span class="hint"><kbd>U</kbd> Open UIs</span>
+            <span class="hint"><kbd>L</kbd> Launch Cluster</span>
+        </div>
+        <div class="connection-status" id="connection-status">Connecting...</div>
     </div>
 
     <!-- Fallback dashboard (R10: minimal degraded mode) -->

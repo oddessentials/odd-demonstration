@@ -142,6 +142,9 @@ FROM runtime-base AS real
 # Copy real TUI binary
 COPY --from=tui-builder /app/target/release/odd-dashboard /app/
 
+# Copy contracts folder for UI registry (U key feature)
+COPY contracts/ /app/contracts/
+
 CMD ["/app/web-pty-server"]
 
 # ============================================================

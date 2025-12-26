@@ -108,7 +108,13 @@ pub fn check_pods_status() -> ClusterStatus {
 // ============================================================================
 
 /// Find the project root by searching for marker files
+/// In server mode (W11), returns /app since contracts are copied there at build time
 pub fn find_project_root() -> Option<std::path::PathBuf> {
+    // W11: In server mode, contracts folder is copied to /app/contracts
+    if crate::config::is_server_mode() {
+        return Some(std::path::PathBuf::from("/app"));
+    }
+    
     let markers = ["README.md", "scripts", "infra", "src"];
     
     // Try current directory first
@@ -374,6 +380,7 @@ pub fn run_setup_script(progress: Arc<Mutex<SetupProgress>>) {
 
 /// Load UI registry from contracts/ui-registry.json with explicit error categories
 pub fn load_ui_registry() -> Result<UiRegistry, RegistryError> {
+
     let registry_path = find_project_root()
         .ok_or_else(|| RegistryError::NotFound("Could not find project root".to_string()))?
         .join("contracts")

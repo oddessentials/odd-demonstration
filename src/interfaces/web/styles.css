@@ -6,7 +6,8 @@
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     height: 100%;
     background: #0f0c29;
     font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
@@ -14,20 +15,20 @@ html, body {
     overflow: hidden;
 }
 
-/* Terminal Container */
+/* Terminal Container - flex column layout for proper sizing */
 #terminal-container {
     width: 100%;
     height: 100%;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
     padding: 8px;
     background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
 }
 
 #terminal {
-    width: 100%;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
+    /* Required for flexbox to allow shrinking */
 }
 
 /* xterm.js overrides for better visuals */
@@ -215,6 +216,43 @@ html, body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Keyboard hints footer */
+.keyboard-hints {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+
+.keyboard-hints .hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #888;
+    font-size: 0.75rem;
+}
+
+.keyboard-hints kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    color: #00ff88;
 }
