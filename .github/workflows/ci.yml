@@ -345,7 +345,7 @@ jobs:
       - name: Run integration harness
         shell: pwsh
         run: ./scripts/integration-harness.ps1
-        timeout-minutes: 3
+        timeout-minutes: 5
 
       - name: Echo gate decision
         if: always()

@@ -18,8 +18,17 @@ const WS_URL = 'ws://localhost:9000';
 const METRICS_URL = 'http://localhost:9001/metrics';
 
 test.describe('PTY State Preservation', () => {
-    // SKIP: These tests have race conditions with session limits in CI
-    test.describe.skip('Session State Machine', () => {
+    // Session state tests - need proper cleanup to avoid session limit issues
+    test.describe('Session State Machine', () => {
+        test.afterEach(async ({ page }) => {
+            // Close WebSocket connection to free up session slot
+            await page.evaluate(() => {
+                // @ts-ignore
+                if (window.ws) window.ws.close();
+            });
+            await page.close();
+        });
+
         test('new connection starts in Connected state', async ({ page }) => {
             await page.goto('/');
 
@@ -57,6 +66,14 @@ test.describe('PTY State Preservation', () => {
     });
 
     test.describe('Replay Protocol', () => {
+        test.afterEach(async ({ page }) => {
+            await page.evaluate(() => {
+                // @ts-ignore
+                if (window.ws) window.ws.close();
+            });
+            await page.close();
+        });
+
         test('output messages include seq field', async ({ page }) => {
             const messages: any[] = [];
 
@@ -107,6 +124,14 @@ test.describe('PTY State Preservation', () => {
     });
 
     test.describe('Connection Status', () => {
+        test.afterEach(async ({ page }) => {
+            await page.evaluate(() => {
+                // @ts-ignore
+                if (window.ws) window.ws.close();
+            });
+            await page.close();
+        });
+
         test('shows Connected status on successful WS connection', async ({ page }) => {
             await page.goto('/');
 
@@ -125,8 +150,8 @@ test.describe('PTY State Preservation', () => {
         });
     });
 
-    // SKIP: These tests have race conditions with session limits in CI
-    test.describe.skip('Metrics Endpoint', () => {
+    // Metrics tests - standalone, no session cleanup needed
+    test.describe('Metrics Endpoint', () => {
         test('/metrics returns session state counts', async () => {
             const response = await fetch(METRICS_URL);
             expect(response.ok).toBe(true);
