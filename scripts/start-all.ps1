@@ -166,13 +166,16 @@ function Build-DockerImages {
     Write-Progress-Step -Step "images" -Status "starting" -Message "Building Docker images..."
     
     # Define images with their VERSION file paths
+    # Context must match the COPY paths in each Dockerfile:
+    #   - Gateway/Processor: Dockerfiles use service-relative paths (e.g., COPY package.json)
+    #   - Web-pty-server: Dockerfile uses repo-root paths (e.g., COPY src/services/...)
     $images = @(
-        @{ Name = "gateway"; Dockerfile = "src/services/gateway/Dockerfile"; Context = "."; VersionFile = "src/services/gateway/VERSION" }
-        @{ Name = "processor"; Dockerfile = "src/services/processor/Dockerfile"; Context = "."; VersionFile = "src/services/processor/VERSION" }
+        @{ Name = "gateway"; Dockerfile = "src/services/gateway/Dockerfile"; Context = "src/services/gateway"; VersionFile = "src/services/gateway/VERSION" }
+        @{ Name = "processor"; Dockerfile = "src/services/processor/Dockerfile"; Context = "src/services/processor"; VersionFile = "src/services/processor/VERSION" }
         @{ Name = "metrics-engine"; Dockerfile = "src/services/metrics-engine/Dockerfile"; Context = "src/services/metrics-engine"; VersionFile = "src/services/metrics-engine/VERSION" }
         @{ Name = "read-model"; Dockerfile = "src/services/read-model/Dockerfile"; Context = "src/services/read-model"; VersionFile = "src/services/read-model/VERSION" }
         @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web"; VersionFile = $null }
-        @{ Name = "web-pty-server"; Dockerfile = "src/services/web-pty-server/Dockerfile"; Context = "src/services/web-pty-server"; VersionFile = "src/services/web-pty-server/VERSION" }
+        @{ Name = "web-pty-server"; Dockerfile = "src/services/web-pty-server/Dockerfile"; Context = "."; VersionFile = "src/services/web-pty-server/VERSION" }
     )
     
     $failedImages = @()

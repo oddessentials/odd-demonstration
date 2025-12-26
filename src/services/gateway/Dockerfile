@@ -2,10 +2,10 @@
 # Multi-stage build for Node.js Gateway service
 #
 # BUILD CONTEXTS:
-# - start-all.ps1: Uses repo root (.) as context, contracts/ found at root
-# - CI builds: CI copies contracts/ before build
-# - Manual local builds from service dir: Copy contracts first:
-#     cp -r ../../contracts ./contracts && docker build -t odto-gateway:local .
+# - start-all.ps1 and CI: Use service directory (src/services/gateway/) as context
+#   contracts/ must exist in service directory (synced by pre-commit or CI copy step)
+# - Manual local builds from service dir work directly if contracts/ exists
+
 
 # ============================================================
 # Build Stage - Compile TypeScript
