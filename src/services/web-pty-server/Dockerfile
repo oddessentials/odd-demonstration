@@ -82,13 +82,14 @@ RUN touch src/main.rs src/lib.rs && cargo build --release
 # ============================================================
 FROM debian:bookworm-slim AS mock-builder
 
-RUN mkdir -p /app && echo '#!/bin/bash
-echo "ODTO Mock Terminal - Press Ctrl+C to exit"
-echo "Mode: Integration Test (mock)"
-while true; do
-  sleep 1
-  echo "[$(date +%H:%M:%S)] Heartbeat"
-done' > /app/odd-dashboard && chmod +x /app/odd-dashboard
+RUN mkdir -p /app && printf '%s\n' \
+    '#!/bin/bash' \
+    'echo "ODTO Mock Terminal - Press Ctrl+C to exit"' \
+    'echo "Mode: Integration Test (mock)"' \
+    'while true; do' \
+    '  sleep 1' \
+    '  echo "[$(date +%H:%M:%S)] Heartbeat"' \
+    'done' > /app/odd-dashboard && chmod +x /app/odd-dashboard
 
 # ============================================================
 # Stage 4: Runtime (select real or mock based on ARG)
