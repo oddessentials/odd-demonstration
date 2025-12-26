@@ -72,13 +72,12 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 
 | Service | Min Threshold | Warn Threshold | Notes |
 |---------|---------------|----------------|-------|
-| Processor (Python) | 80% | 85% | Target achieved |
-| Metrics Engine (Go) | 10% | 15% | Infrastructure-heavy main; business logic in validator (80%+) |
-| Metrics Engine Validator (Go) | 80% | 85% | Core validation logic |
-| Read Model (Go) | 18% | 25% | Infrastructure-heavy; HTTP handlers and middleware tested |
-| TUI (Rust lib) | 31% | 32% | Lib-only; `--exclude-files main.rs` needed because `--lib` still measures bin |
-| Gateway (TypeScript) | 80% | 85% | Core logic in lib/ modules maintains 100% coverage |
-| web-pty-server (Rust) | 80% | 85% | PTY broker; 81% achieved with 35 unit tests |
+| Processor (Python) | 80% | 85% | Target achieved with mocked unit tests |
+| Metrics Engine (Go) | 10% | 15% | Infrastructure-heavy main package. Business logic is in validator subpackage (80%+). |
+| Read Model (Go) | 18% | 25% | Infrastructure-heavy main package. HTTP handlers and middleware are tested. |
+| TUI (Rust lib) | 31% | 32% | Lib coverage only. --exclude-files needed because tarpaulin --lib still measures main.rs. Event loop/rendering code in bin is not unit-testable. |
+| Gateway (TypeScript) | 80% | 85% | TypeScript service with refactored lib/ modules. Core logic (validators, builders, config) maintains 100% coverage. |
+| web-pty-server (Rust) | 80% | 85% | Rust PTY broker. Session, protocol, auth, and config modules well-tested. 81% achieved. |
 | Visual Tests (Playwright) | — | — | Screenshot comparison; requires running cluster |
 
 > [!NOTE]
