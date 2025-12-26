@@ -1,9 +1,5 @@
-# CI configuration - use GitHub raw BCR mirror to avoid TLS issues with bcr.bazel.build
-# The official BCR is mirrored on GitHub at bazelbuild/bazel-central-registry
-build:ci --registry=https://raw.githubusercontent.com/bazelbuild/bazel-central-registry/main/
-
-# Lockfile is enforced (unchanged)
-build --lockfile_mode=error
+# Lockfile enforcement - prevents accidental MODULE.bazel changes
+common --lockfile_mode=error
 
 # Performance flags for CI
 build:ci --curses=no
