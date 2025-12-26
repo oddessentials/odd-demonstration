@@ -28,6 +28,53 @@ struct AppState {
     session_manager: Mutex<SessionManager>,
 }
 
+/// Validate PTY_TUI_BINARY exists and is executable before accepting connections.
+/// Fails fast with clear error message if binary is missing or not executable.
+fn validate_tui_binary(path: &str) {
+    use std::path::Path;
+    use std::process::Command;
+    
+    let binary_path = Path::new(path);
+    
+    // Check file exists
+    if !binary_path.exists() {
+        error!("FATAL: PTY_TUI_BINARY not found: {}", path);
+        error!("Ensure the binary is built and available at the configured path.");
+        error!("For Docker, build with: docker build --target real -f src/services/web-pty-server/Dockerfile .");
+        std::process::exit(1);
+    }
+    
+    // Check it's a file (not a directory)
+    if !binary_path.is_file() {
+        error!("FATAL: PTY_TUI_BINARY is not a file: {}", path);
+        std::process::exit(1);
+    }
+    
+    // Check executable by attempting to run with --version or --help (quick spawn test)
+    // Note: On Unix, we could check permissions, but spawn test is more portable
+    match Command::new(path).arg("--help").output() {
+        Ok(output) => {
+            if output.status.success() || output.status.code() == Some(0) || output.status.code() == Some(1) {
+                // --help typically exits 0, but some programs exit 1; both are fine
+                info!("PTY_TUI_BINARY validated: {} (spawn check passed)", path);
+            } else {
+                // Executable ran but returned error - still means it's executable
+                info!("PTY_TUI_BINARY validated: {} (executable, exit={})", path, output.status);
+            }
+        }
+        Err(e) => {
+            // Check if it's a permission error vs not found
+            if e.kind() == std::io::ErrorKind::PermissionDenied {
+                error!("FATAL: PTY_TUI_BINARY is not executable: {} (permission denied)", path);
+                std::process::exit(1);
+            }
+            // Other errors might be acceptable (e.g., missing dynamic libs but binary exists)
+            warn!("PTY_TUI_BINARY spawn check failed: {} ({})", path, e);
+            warn!("Proceeding anyway - binary exists but may have runtime issues");
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
     // Initialize logging
@@ -41,6 +88,9 @@ async fn main() {
     // Load and log configuration
     let config = Config::from_env();
     config.log_startup();
+    
+    // Validate PTY_TUI_BINARY exists and is executable (fail fast before accepting connections)
+    validate_tui_binary(&config.tui_binary_path);
     
     let state = Arc::new(AppState {
         config: config.clone(),

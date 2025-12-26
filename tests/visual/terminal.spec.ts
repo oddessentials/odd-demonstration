@@ -14,7 +14,7 @@ test.describe('Web Terminal Visual Tests', () => {
 
         // Wait for WebSocket connection (connection status indicator)
         await page.waitForSelector('.connection-status.connected', {
-            timeout: 30000,
+            timeout: 15000,
             state: 'visible'
         });
 
@@ -122,7 +122,7 @@ test.describe('Fallback Dashboard', () => {
 
         // Wait for terminal to connect
         await page.waitForSelector('.connection-status.connected', {
-            timeout: 30000
+            timeout: 15000
         });
 
         // Terminal should be visible now

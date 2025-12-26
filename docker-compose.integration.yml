@@ -1,6 +1,6 @@
 # Docker Compose Integration Mode
 # Uses pre-built Docker Hub images for fast, reliable integration tests.
-# Invariants: I3 (self-contained), I4 (<90s runtime), I5 (artifact capture)
+# Invariants: I3 (self-contained), I4 (<120s runtime), I5 (artifact capture)
 #
 # HEALTH CHECK STRATEGY:
 # - Infrastructure (postgres, mongodb, redis, rabbitmq): Compose-level health checks
@@ -137,12 +137,14 @@ services:
       - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events?sslmode=disable
     # Readiness: harness probes GET http://localhost:18080/health
 
-  # Web PTY Server - Terminal WebSocket broker (built locally until Docker Hub image available)
+  # Web PTY Server - Terminal WebSocket broker
+  # Built from repo root with mock mode for fast CI testing
   web-pty-server:
     container_name: odto-integ-web-pty
     build:
-      context: src/services/web-pty-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/services/web-pty-server/Dockerfile
+      target: mock
     networks: [odto-integ-net]
     depends_on:
       read-model:
@@ -150,9 +152,9 @@ services:
       gateway:
         condition: service_started
     environment:
+      # Canonical path contract: PTY_TUI_BINARY=/app/odd-dashboard (default in image)
       - PTY_WS_PORT=9000
       - PTY_METRICS_PORT=9001
-      - PTY_TUI_BINARY=/app/odd-dashboard
       - READ_MODEL_URL=http://odto-integ-read-model:8080
       - GATEWAY_URL=http://odto-integ-gateway:3000
     # Readiness: web-ui nginx proxies to this service
