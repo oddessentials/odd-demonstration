@@ -88,6 +88,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # PREFLIGHT: Validate GitHub Release asset exists before invoking Bazelisk
+      - name: Verify Bazel mirror asset exists
+        run: |
+          BAZEL_VERSION=$(cat .bazelversion | tr -d '[:space:]')
+          ASSET_URL="https://github.com/oddessentials/odd-demonstration/releases/download/bazel-binaries-v1/bazel-${BAZEL_VERSION}-linux-x86_64"
+          echo "Checking asset: $ASSET_URL"
+          
+          HTTP_CODE=$(curl -sL -o /dev/null -w "%{http_code}" --head "$ASSET_URL" || echo "000")
+          
+          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "302" ]; then
+            echo "::error::PREREQUISITE MISSING: Bazel mirror asset not found (HTTP $HTTP_CODE)"
+            echo ""
+            echo "The GitHub Release asset does not exist. To fix:"
+            echo "  1. Download bazel-${BAZEL_VERSION}-linux-x86_64 from:"
+            echo "     https://github.com/bazelbuild/bazel/releases/tag/${BAZEL_VERSION}"
+            echo "  2. Create GitHub Release 'bazel-binaries-v1' at:"
+            echo "     https://github.com/oddessentials/odd-demonstration/releases/new"
+            echo "  3. Upload the binary as a release asset"
+            exit 1
+          fi
+          echo "✓ Mirror asset verified (HTTP $HTTP_CODE)"
+
       # Cache for speed (not the guarantee - mirror is the guarantee)
       - name: Cache Bazelisk binaries
         uses: actions/cache@v4
@@ -111,10 +133,8 @@ jobs:
           # Enable debug to capture download URLs
           export BAZELISK_DEBUG=1
           echo "=== Bazelisk debug output ===" 
-          bazel version 2>&1 | tee bazelisk_debug.log || true
+          bazel version 2>&1 | tee bazelisk_debug.log
           echo "=== End debug output ==="
-          # Show what version was resolved
-          bazel version
           echo "✓ Bazel resolved successfully"
 
       # HARD ENFORCEMENT: Verify SHA256 of the downloaded Bazel binary (not the launcher)
