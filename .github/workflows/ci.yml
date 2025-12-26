@@ -109,7 +109,11 @@ jobs:
         run: |
           # Enable debug to capture download URLs
           export BAZELISK_DEBUG=1
-          bazel version 2>&1 | tee bazelisk_debug.log
+          echo "=== Bazelisk debug output ===" 
+          bazel version 2>&1 | tee bazelisk_debug.log || true
+          echo "=== End debug output ==="
+          # Show what version was resolved
+          bazel version
           echo "✓ Bazel resolved successfully"
 
       # HARD ENFORCEMENT: Verify SHA256 of the downloaded Bazel binary (not the launcher)
@@ -120,16 +124,37 @@ jobs:
           BINARY_NAME="bazel-${BAZEL_VERSION}-linux-x86_64"
           echo "Looking for: $BINARY_NAME"
           
-          # Locate the actual downloaded binary in Bazelisk cache (exact filename match)
-          BAZEL_BINARY=$(find ~/.cache/bazelisk ~/.bazelisk -name "$BINARY_NAME" -type f 2>/dev/null | head -1)
+          # Debug: show all cache locations and their contents
+          echo "=== Searching cache locations ==="
+          echo "~/.cache/bazelisk:"
+          find ~/.cache/bazelisk -type f 2>/dev/null | head -20 || echo "(empty or not found)"
+          echo "~/.bazelisk:"
+          find ~/.bazelisk -type f 2>/dev/null | head -20 || echo "(empty or not found)"
+          
+          # Bazelisk stores downloads in: ~/.cache/bazelisk/downloads/sha256/<hash>/file
+          # or older format: ~/.cache/bazelisk/downloads/<org>/<filename>
+          # Search for any file containing the version number
+          BAZEL_BINARY=$(find ~/.cache/bazelisk ~/.bazelisk -type f \( -name "$BINARY_NAME" -o -name "bazel-$BAZEL_VERSION*" -o -name "bazel" \) 2>/dev/null | while read f; do
+            # Skip if it's a small wrapper script (< 1MB = definitely not Bazel binary)
+            if [ $(stat -c%s "$f" 2>/dev/null || echo 0) -gt 1000000 ]; then
+              echo "$f"
+              break
+            fi
+          done)
           
           if [ -z "$BAZEL_BINARY" ] || [ ! -f "$BAZEL_BINARY" ]; then
-            echo "::error::Cannot locate $BINARY_NAME in Bazelisk cache"
-            echo "Cache contents:"
-            find ~/.cache/bazelisk ~/.bazelisk -type f 2>/dev/null || true
+            echo "::error::Cannot locate Bazel $BAZEL_VERSION binary in Bazelisk cache"
+            echo "This likely means:"
+            echo "  1. GitHub Release 'bazel-binaries-v1' does not exist, OR"
+            echo "  2. The binary was not uploaded to the release, OR"
+            echo "  3. BAZELISK_BASE_URL is misconfigured"
+            echo ""
+            echo "=== Bazelisk debug log ==="
+            cat bazelisk_debug.log || echo "(no log)"
             exit 1
           fi
           echo "Found binary: $BAZEL_BINARY"
+          echo "Binary size: $(stat -c%s "$BAZEL_BINARY") bytes"
           
           # Extract expected SHA (ignore comments, match exact filename)
           EXPECTED_SHA=$(grep -v '^#' tools/bazel/SHA256SUMS | grep "$BINARY_NAME" | awk '{print $1}')
