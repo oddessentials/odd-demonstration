@@ -12,6 +12,19 @@ import { test, expect } from '@playwright/test';
  * These tests verify the bundle is correctly served and the page loads without errors.
  */
 test.describe('Bundle Smoke Tests', () => {
+    // Close WebSocket connections to free session slots (prevents limit exhaustion)
+    test.afterEach(async ({ page }) => {
+        try {
+            await page.evaluate(() => {
+                // @ts-ignore - __odtoWs is exposed by terminal.js for test cleanup
+                if (window.__odtoWs) window.__odtoWs.close(1000, 'test cleanup');
+            });
+        } catch {
+            // Page may be closed or navigated away
+        }
+        await page.close();
+    });
+
     test('no HTTP errors on page load', async ({ page }) => {
         const errors: string[] = [];
         page.on('response', (res) => {

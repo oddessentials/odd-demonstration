@@ -170,7 +170,8 @@ function restoreTerminalSnapshot() {
                 lastSeq = snapshot.lastSeq || null;
 
                 // Restore terminal content BEFORE any server data
-                if (snapshot.content && serializeAddon) {
+                // Note: restore uses terminal.write(), doesn't need SerializeAddon
+                if (snapshot.content) {
                     terminal.reset();
                     terminal.resize(snapshot.cols || 80, snapshot.rows || 24);
                     terminal.write(snapshot.content);
@@ -229,6 +230,8 @@ function connect() {
 
     try {
         ws = new WebSocket(url);
+        // Expose for test cleanup (ESM modules don't expose to window)
+        window.__odtoWs = ws;
     } catch (e) {
         console.error('WebSocket creation failed:', e);
         showFallback();
