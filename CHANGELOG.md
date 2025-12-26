@@ -1,3 +1,10 @@
+## [3.0.1](https://github.com/oddessentials/odd-demonstration/compare/v3.0.0...v3.0.1) (2025-12-26)
+
+
+### Bug Fixes
+
+* new snapshots ([9c2667a](https://github.com/oddessentials/odd-demonstration/commit/9c2667aca8b0b4249e5561316f37916ef6dfc35c))
+
 # [3.0.0](https://github.com/oddessentials/odd-demonstration/compare/v2.0.1...v3.0.0) (2025-12-26)
 
 
