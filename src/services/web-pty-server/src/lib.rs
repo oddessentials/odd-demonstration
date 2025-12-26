@@ -12,5 +12,5 @@ pub mod pty;
 pub use config::Config;
 pub use session::{SessionManager, PtySession, SessionError, SessionMetrics, CleanupStats};
 pub use protocol::{ClientMessage, ServerMessage, error_codes, input_class};
-pub use auth::{authenticate, AuthResult, AuthError, parse_reconnect_params};
+pub use auth::{authenticate, AuthResult, AuthError, parse_reconnect_params, parse_auth_param};
 pub use pty::{spawn_pty, PtyHandle, PtySpawnError};

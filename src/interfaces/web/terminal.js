@@ -72,7 +72,7 @@ function initTerminal() {
     // Open terminal in container
     const container = document.getElementById('terminal');
     terminal.open(container);
-    
+
     // Fit to container
     setTimeout(() => fitAddon.fit(), 0);
 
@@ -115,21 +115,27 @@ function handleResize() {
 function connect() {
     // Build URL with reconnect params if available
     let url = CONFIG.wsUrl;
+    const params = new URLSearchParams();
+
     if (sessionId && reconnectToken) {
-        url += `?session=${sessionId}&token=${encodeURIComponent(reconnectToken)}`;
+        params.set('session', sessionId);
+        params.set('token', reconnectToken);
+    }
+
+    // Pass auth token via query string (R5)
+    // NOTE: Browser WebSocket API doesn't support custom headers
+    if (CONFIG.authToken) {
+        params.set('auth', CONFIG.authToken);
+    }
+
+    if (params.toString()) {
+        url += `?${params.toString()}`;
     }
 
     updateConnectionStatus('connecting');
 
     try {
-        // Create WebSocket with auth header if configured (R5)
-        if (CONFIG.authToken) {
-            ws = new WebSocket(url, [], {
-                headers: { 'Authorization': `Bearer ${CONFIG.authToken}` }
-            });
-        } else {
-            ws = new WebSocket(url);
-        }
+        ws = new WebSocket(url);
     } catch (e) {
         console.error('WebSocket creation failed:', e);
         showFallback();
@@ -141,7 +147,7 @@ function connect() {
         reconnectAttempts = 0;
         updateConnectionStatus('connected');
         showTerminal();
-        
+
         // Send initial resize
         setTimeout(() => {
             if (fitAddon) {
@@ -167,7 +173,7 @@ function connect() {
     ws.onclose = (event) => {
         console.log('WebSocket closed:', event.code, event.reason);
         updateConnectionStatus('disconnected');
-        
+
         if (!intentionalClose) {
             scheduleReconnect();
         }
@@ -196,20 +202,20 @@ function handleMessage(msg) {
                 // Ignore storage errors
             }
             break;
-            
+
         case 'output':
             terminal.write(msg.data);
             break;
-            
+
         case 'notice':
             // Show notice in terminal (R4: read-only mode)
             terminal.write(`\r\n\x1b[33m${msg.message}\x1b[0m\r\n`);
             break;
-            
+
         case 'pong':
             // Keepalive response, ignore
             break;
-            
+
         case 'error':
             console.error('Server error:', msg.code, msg.message);
             if (msg.code === 'GLOBAL_CAP' || msg.code === 'PER_IP_CAP') {
@@ -236,10 +242,10 @@ function scheduleReconnect() {
         CONFIG.reconnectMaxDelay
     );
     reconnectAttempts++;
-    
+
     console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
     updateConnectionStatus('connecting');
-    
+
     setTimeout(() => {
         if (!intentionalClose) {
             connect();
@@ -257,15 +263,15 @@ function updateConnectionStatus(status) {
         indicator.className = 'connection-status';
         document.body.appendChild(indicator);
     }
-    
+
     indicator.className = `connection-status ${status}`;
-    
+
     const labels = {
         connected: 'Connected',
         disconnected: 'Disconnected',
         connecting: 'Connecting...',
     };
-    
+
     indicator.innerHTML = `
         <span class="status-dot ${status === 'connecting' ? 'pulse' : ''}"></span>
         <span>${labels[status]}</span>
@@ -286,7 +292,7 @@ function showTerminal() {
 function showFallback() {
     document.getElementById('terminal-container').style.display = 'none';
     document.getElementById('fallback-container').style.display = 'flex';
-    
+
     // Load stats via HTTP
     loadFallbackStats();
 }
@@ -296,13 +302,13 @@ function showFallback() {
  */
 async function loadFallbackStats() {
     const statsContainer = document.getElementById('fallback-stats');
-    
+
     try {
         const response = await fetch(CONFIG.statsUrl);
         if (!response.ok) throw new Error('Stats unavailable');
-        
+
         const stats = await response.json();
-        
+
         statsContainer.innerHTML = `
             <div class="stat-grid">
                 <div class="stat-item">
@@ -346,9 +352,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
         // Ignore storage errors
     }
-    
+
     initTerminal();
-    
+
     // Setup retry button
     document.getElementById('retry-button')?.addEventListener('click', retryConnection);
 });

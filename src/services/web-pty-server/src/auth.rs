@@ -32,32 +32,40 @@ pub enum AuthError {
 /// # Arguments
 /// * `config` - Server configuration (contains auth_token)
 /// * `auth_header` - Value of Authorization header (if present)
+/// * `auth_query` - Value of auth query param (if present) - for browser WebSocket compatibility
 /// 
 /// # Returns
 /// * `AuthResult` indicating success or failure reason
 /// 
 /// # Security
 /// The auth token is NEVER logged, even at debug level.
-pub fn authenticate(config: &Config, auth_header: Option<&str>) -> AuthResult {
+/// Query string auth is supported because browser WebSocket API doesn't support custom headers.
+pub fn authenticate(config: &Config, auth_header: Option<&str>, auth_query: Option<&str>) -> AuthResult {
     // If no token configured, auth is disabled
     let expected_token = match &config.auth_token {
         Some(t) => t,
         None => return AuthResult::NoAuthRequired,
     };
     
-    // Extract Bearer token from header
-    let provided_token = match auth_header {
-        Some(header) => {
-            if let Some(token) = header.strip_prefix("Bearer ") {
-                token.trim()
-            } else {
-                // Log attempt without revealing token content
-                warn!("Auth failed: malformed Authorization header");
-                return AuthResult::Failed(AuthError::InvalidToken);
-            }
+    // Try to get token from header first, then query string
+    let provided_token = if let Some(header) = auth_header {
+        if let Some(token) = header.strip_prefix("Bearer ") {
+            Some(token.trim())
+        } else {
+            // Log attempt without revealing token content
+            warn!("Auth failed: malformed Authorization header");
+            return AuthResult::Failed(AuthError::InvalidToken);
         }
+    } else if let Some(query_token) = auth_query {
+        Some(query_token)
+    } else {
+        None
+    };
+    
+    let provided_token = match provided_token {
+        Some(t) => t,
         None => {
-            warn!("Auth failed: missing Authorization header");
+            warn!("Auth failed: no token in header or query string");
             return AuthResult::Failed(AuthError::MissingToken);
         }
     };
@@ -102,6 +110,27 @@ pub fn parse_reconnect_params(query: Option<&str>) -> Option<(String, String)> {
     }
 }
 
+/// Extract auth token from query string
+/// 
+/// # Arguments
+/// * `query` - Query string (e.g., "auth=secret123&session=abc")
+/// 
+/// # Returns
+/// * `Option<String>` - auth token if present
+pub fn parse_auth_param(query: Option<&str>) -> Option<String> {
+    let query = query?;
+    
+    for pair in query.split('&') {
+        if let Some((key, value)) = pair.split_once('=') {
+            if key == "auth" {
+                return Some(value.to_string());
+            }
+        }
+    }
+    
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,43 +156,66 @@ mod tests {
     #[test]
     fn test_auth_disabled_when_no_token_configured() {
         let config = config_with_token(None);
-        let result = authenticate(&config, None);
+        let result = authenticate(&config, None, None);
         assert_eq!(result, AuthResult::NoAuthRequired);
     }
     
     #[test]
     fn test_auth_success_with_valid_token() {
         let config = config_with_token(Some("secret123"));
-        let result = authenticate(&config, Some("Bearer secret123"));
+        let result = authenticate(&config, Some("Bearer secret123"), None);
         assert_eq!(result, AuthResult::Authenticated);
     }
     
     #[test]
-    fn test_auth_failure_missing_header() {
+    fn test_auth_success_with_query_token() {
         let config = config_with_token(Some("secret123"));
-        let result = authenticate(&config, None);
+        let result = authenticate(&config, None, Some("secret123"));
+        assert_eq!(result, AuthResult::Authenticated);
+    }
+    
+    #[test]
+    fn test_auth_header_takes_precedence() {
+        let config = config_with_token(Some("secret123"));
+        // Header token is correct, query is wrong - should succeed
+        let result = authenticate(&config, Some("Bearer secret123"), Some("wrong"));
+        assert_eq!(result, AuthResult::Authenticated);
+    }
+    
+    #[test]
+    fn test_auth_failure_missing_both() {
+        let config = config_with_token(Some("secret123"));
+        let result = authenticate(&config, None, None);
         assert_eq!(result, AuthResult::Failed(AuthError::MissingToken));
     }
     
     #[test]
     fn test_auth_failure_invalid_token() {
         let config = config_with_token(Some("secret123"));
-        let result = authenticate(&config, Some("Bearer wrongtoken"));
+        let result = authenticate(&config, Some("Bearer wrongtoken"), None);
         assert_eq!(result, AuthResult::Failed(AuthError::InvalidToken));
     }
     
     #[test]
     fn test_auth_failure_malformed_header() {
         let config = config_with_token(Some("secret123"));
-        let result = authenticate(&config, Some("Basic secret123"));
+        let result = authenticate(&config, Some("Basic secret123"), None);
         assert_eq!(result, AuthResult::Failed(AuthError::InvalidToken));
     }
     
     #[test]
     fn test_auth_with_whitespace() {
         let config = config_with_token(Some("secret123"));
-        let result = authenticate(&config, Some("Bearer   secret123  "));
+        let result = authenticate(&config, Some("Bearer   secret123  "), None);
         assert_eq!(result, AuthResult::Authenticated);
+    }
+    
+    #[test]
+    fn test_parse_auth_param() {
+        assert_eq!(parse_auth_param(Some("auth=secret123")), Some("secret123".to_string()));
+        assert_eq!(parse_auth_param(Some("session=abc&auth=secret123&token=xyz")), Some("secret123".to_string()));
+        assert_eq!(parse_auth_param(Some("session=abc")), None);
+        assert_eq!(parse_auth_param(None), None);
     }
     
     #[test]

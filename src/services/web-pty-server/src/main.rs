@@ -18,7 +18,7 @@ use uuid::Uuid;
 
 use web_pty_server::{
     Config, SessionManager, ClientMessage, ServerMessage, error_codes,
-    authenticate, AuthResult, parse_reconnect_params,
+    authenticate, AuthResult, parse_reconnect_params, parse_auth_param,
     spawn_pty, protocol,
 };
 
@@ -122,8 +122,11 @@ async fn handle_connection(
     
     let ws_stream = accept_hdr_async(stream, callback).await?;
     
-    // Authenticate (R5)
-    let auth_result = authenticate(&state.config, auth_header.as_deref());
+    // Extract auth token from query string (browser WebSocket compat)
+    let auth_query = parse_auth_param(query_string.as_deref());
+    
+    // Authenticate (R5) - checks header first, then query string
+    let auth_result = authenticate(&state.config, auth_header.as_deref(), auth_query.as_deref());
     if let AuthResult::Failed(err) = auth_result {
         // Send error and close
         let (mut write, _read) = ws_stream.split();
@@ -211,7 +214,10 @@ async fn handle_connection(
     let json = serde_json::to_string(&session_msg)?;
     ws_write.send(Message::Text(json)).await?;
     
-    // Spawn PTY
+    // Spawn PTY for this connection
+    // NOTE: Currently spawns fresh PTY on each connection (including reconnects).
+    // Session tokens provide continuity for authentication, but PTY state is not preserved.
+    // TODO: Implement PTY output buffering to preserve state across reconnects.
     let pty_result = spawn_pty(&state.config, 80, 24);
     let pty_handle = match pty_result {
         Ok(h) => h,
