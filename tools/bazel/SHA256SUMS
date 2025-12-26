@@ -1,0 +1,4 @@
+# Bazel 7.1.0 checksums for GitHub-hosted mirror
+# Source: https://github.com/bazelbuild/bazel/releases/tag/7.1.0
+# Verify before publishing: sha256sum bazel-7.1.0-linux-x86_64
+e50c0f01e0ebe172e5e7ad2d0c4ccbab3c7f85bcaf1d6e2df22ca842a8ed2b8a  bazel-7.1.0-linux-x86_64

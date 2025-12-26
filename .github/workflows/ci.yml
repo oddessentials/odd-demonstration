@@ -78,25 +78,78 @@ jobs:
   # ============================================================
   bazel:
     name: Bazel Build & Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # SCOPED: Linux-only (mirror coverage)
+    env:
+      # Force Bazelisk to use GitHub-hosted mirror (trailing slash required)
+      BAZELISK_BASE_URL: https://github.com/oddessentials/odd-demonstration/releases/download/bazel-binaries-v1/
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Cache for speed (not the guarantee - mirror is the guarantee)
+      - name: Cache Bazelisk binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/bazelisk
+            ~/.bazelisk
+          key: bazelisk-${{ runner.os }}-${{ hashFiles('.bazelversion') }}
+
       - name: Set up Bazelisk
         uses: bazel-contrib/setup-bazel@0.9.0
         with:
-          # Use .bazelversion file to determine Bazel version
           use-bazelisk: true
-          # Enable disk cache for faster builds
           disk-cache: ${{ github.workflow }}
-          # Enable repository cache
           repository-cache: true
-          # Generate external cache key based on lockfiles
           external-cache: true
 
-      # Fast-fail: Ensure lockfile is up-to-date before any resolution
+      # Force Bazelisk resolution and capture debug output for mirror enforcement
+      - name: Resolve Bazel binary (preflight)
+        run: |
+          # Enable debug to capture download URLs
+          export BAZELISK_DEBUG=1
+          bazel version 2>&1 | tee bazelisk_debug.log
+          echo "✓ Bazel resolved successfully"
+
+      # HARD ENFORCEMENT: Verify SHA256 of the EXACT binary that will execute
+      - name: Verify Bazel binary integrity (SHA256)
+        run: |
+          # Resolve the actual binary via symlink chain
+          BAZEL_LAUNCHER=$(which bazel)
+          BAZEL_REAL=$(readlink -f "$BAZEL_LAUNCHER")
+          echo "Bazel launcher: $BAZEL_LAUNCHER"
+          echo "Resolved binary: $BAZEL_REAL"
+          
+          # Verify we found an executable
+          if [ ! -x "$BAZEL_REAL" ]; then
+            echo "::error::Cannot resolve Bazel binary - readlink failed"
+            exit 1
+          fi
+          
+          # Compute and verify checksum
+          EXPECTED_SHA=$(grep 'linux-x86_64' tools/bazel/SHA256SUMS | awk '{print $1}')
+          ACTUAL_SHA=$(sha256sum "$BAZEL_REAL" | awk '{print $1}')
+          echo "Expected: $EXPECTED_SHA"
+          echo "Actual:   $ACTUAL_SHA"
+          
+          if [ "$EXPECTED_SHA" != "$ACTUAL_SHA" ]; then
+            echo "::error::Bazel binary checksum MISMATCH - integrity violation"
+            exit 1
+          fi
+          echo "✓ Bazel binary integrity verified"
+
+      # HARD ENFORCEMENT: Fail if network used releases.bazel.build
+      - name: Enforce mirror-only (no releases.bazel.build)
+        run: |
+          if grep -q "releases.bazel.build" bazelisk_debug.log 2>/dev/null; then
+            echo "::error::EXTERNAL FALLBACK DETECTED - releases.bazel.build was used"
+            cat bazelisk_debug.log
+            exit 1
+          fi
+          echo "✓ Mirror-only enforcement passed (no external downloads)"
+
+      # Lockfile enforcement (unchanged - strict)
       - name: Verify MODULE.bazel.lock is current
         run: bazel mod deps --lockfile_mode=error
 
