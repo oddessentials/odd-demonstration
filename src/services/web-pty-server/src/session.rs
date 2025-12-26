@@ -345,19 +345,23 @@ impl SessionManager {
     
     /// Get metrics for monitoring
     pub fn get_metrics(&self) -> SessionMetrics {
-        let mut total_output_bytes = 0;
-        let mut total_drops = 0;
+        let mut metrics = SessionMetrics::default();
+        metrics.active_sessions = self.sessions.len();
         
         for session in self.sessions.values() {
-            total_output_bytes += session.output_queue_bytes;
-            total_drops += session.output_drops;
+            metrics.total_output_queue_bytes += session.output_queue_bytes;
+            metrics.total_output_drops += session.output_drops;
+            
+            // Phase 7: count by state
+            match session.state {
+                SessionState::Connected => metrics.connected_count += 1,
+                SessionState::Disconnected { .. } => metrics.disconnected_count += 1,
+                SessionState::Idle { .. } => metrics.idle_count += 1,
+                SessionState::Reaping => metrics.reaping_count += 1,
+            }
         }
         
-        SessionMetrics {
-            active_sessions: self.sessions.len(),
-            total_output_queue_bytes: total_output_bytes,
-            total_output_drops: total_drops,
-        }
+        metrics
     }
 }
 
@@ -402,6 +406,11 @@ pub struct SessionMetrics {
     pub active_sessions: usize,
     pub total_output_queue_bytes: usize,
     pub total_output_drops: u64,
+    // Phase 7: state breakdown
+    pub connected_count: usize,
+    pub disconnected_count: usize,
+    pub idle_count: usize,
+    pub reaping_count: usize,
 }
 
 #[cfg(test)]

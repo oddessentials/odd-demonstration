@@ -14,6 +14,16 @@ pub enum ClientMessage {
     Resize { cols: u16, rows: u16 },
     /// Ping for keepalive (optional, pong is automatic)
     Ping,
+    /// Reconnect to existing session (Phase 7)
+    Reconnect {
+        /// Session ID to reconnect to
+        session: String,
+        /// Reconnect token (single-use)
+        token: String,
+        /// Last sequence number received (for watermark-based replay)
+        #[serde(skip_serializing_if = "Option::is_none")]
+        last_seq: Option<u64>,
+    },
 }
 
 /// Messages sent from server to client
@@ -33,15 +43,51 @@ pub enum ServerMessage {
         session_id: String,
         #[serde(rename = "reconnectToken")]
         reconnect_token: String,
+        /// Last known terminal size (for resize on reconnect)
+        #[serde(skip_serializing_if = "Option::is_none")]
+        restore_size: Option<TerminalSize>,
     },
-    /// Terminal output data
-    Output { data: String },
+    /// Terminal output data (with sequence number for watermarking)
+    Output { 
+        data: String,
+        /// Monotonic sequence number for replay watermarking (Phase 7)
+        #[serde(skip_serializing_if = "Option::is_none")]
+        seq: Option<u64>,
+    },
     /// Error message
     Error { message: String, code: String },
     /// Pong response to client ping
     Pong,
     /// Read-only mode notice (R4)
     Notice { message: String },
+    
+    // === Phase 7: Replay Protocol ===
+    
+    /// Begin replay sequence (sent before replaying buffered output)
+    #[serde(rename = "replay_begin")]
+    ReplayBegin {
+        /// First sequence number in replay
+        from_seq: u64,
+    },
+    /// End replay sequence (live output resumes after this)
+    #[serde(rename = "replay_end")]
+    ReplayEnd {
+        /// Last sequence number in replay
+        last_seq: u64,
+    },
+    /// Buffer truncated notice (during replay)
+    #[serde(rename = "buffer_truncated")]
+    BufferTruncated {
+        /// Number of frames that were dropped
+        frames_dropped: u64,
+    },
+}
+
+/// Terminal size for reconnect restore
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerminalSize {
+    pub cols: u16,
+    pub rows: u16,
 }
 
 /// Error codes for protocol errors
@@ -146,11 +192,39 @@ mod tests {
     fn test_server_message_serialize_output() {
         let msg = ServerMessage::Output {
             data: "\x1b[32mHello\x1b[0m".to_string(),
+            seq: None,
         };
         let json = serde_json::to_string(&msg).unwrap();
         
         assert!(json.contains(r#""type":"output""#));
         assert!(json.contains(r#""data":""#));
+        // seq should not be serialized when None
+        assert!(!json.contains("seq"));
+    }
+    
+    #[test]
+    fn test_server_message_output_with_seq() {
+        let msg = ServerMessage::Output {
+            data: "test".to_string(),
+            seq: Some(42),
+        };
+        let json = serde_json::to_string(&msg).unwrap();
+        
+        assert!(json.contains(r#""seq":42"#));
+    }
+    
+    #[test]
+    fn test_replay_begin_end_messages() {
+        let begin = ServerMessage::ReplayBegin { from_seq: 10 };
+        let end = ServerMessage::ReplayEnd { last_seq: 20 };
+        
+        let begin_json = serde_json::to_string(&begin).unwrap();
+        let end_json = serde_json::to_string(&end).unwrap();
+        
+        assert!(begin_json.contains(r#""type":"replay_begin""#));
+        assert!(begin_json.contains(r#""from_seq":10"#));
+        assert!(end_json.contains(r#""type":"replay_end""#));
+        assert!(end_json.contains(r#""last_seq":20"#));
     }
     
     #[test]

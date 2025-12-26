@@ -23,12 +23,14 @@ const CONFIG = {
 // State
 let terminal = null;
 let fitAddon = null;
+let serializeAddon = null; // Phase 7: For client-only terminal snapshots
 let ws = null;
 let sessionId = null;
 let reconnectToken = null;
 let reconnectAttempts = 0;
 let intentionalClose = false;
 let resizeTimeout = null;
+let lastSeq = null; // Phase 7: Last received sequence number for replay watermark
 
 /**
  * Initialize the terminal
@@ -69,6 +71,12 @@ function initTerminal() {
     terminal.loadAddon(fitAddon);
     terminal.loadAddon(new WebLinksAddon.WebLinksAddon());
 
+    // Phase 7: SerializeAddon for client-only terminal snapshots
+    if (typeof SerializeAddon !== 'undefined') {
+        serializeAddon = new SerializeAddon.SerializeAddon();
+        terminal.loadAddon(serializeAddon);
+    }
+
     // Open terminal in container
     const container = document.getElementById('terminal');
     terminal.open(container);
@@ -79,6 +87,9 @@ function initTerminal() {
     // Handle resize (R8: debounced)
     window.addEventListener('resize', handleResize);
 
+    // Phase 7: Save terminal snapshot before unload
+    window.addEventListener('beforeunload', saveTerminalSnapshot);
+
     // Handle input
     terminal.onData((data) => {
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -86,8 +97,63 @@ function initTerminal() {
         }
     });
 
+    // Phase 7: Restore terminal snapshot if available (before connecting)
+    restoreTerminalSnapshot();
+
     // Connect to WebSocket
     connect();
+}
+
+/**
+ * Phase 7: Save terminal state to sessionStorage for restore on refresh
+ */
+function saveTerminalSnapshot() {
+    if (serializeAddon && sessionId) {
+        try {
+            const snapshot = {
+                content: serializeAddon.serialize(),
+                cols: terminal.cols,
+                rows: terminal.rows,
+                cursorX: terminal.buffer.active.cursorX,
+                cursorY: terminal.buffer.active.cursorY,
+                lastSeq: lastSeq,
+                sessionId: sessionId,
+                reconnectToken: reconnectToken,
+            };
+            sessionStorage.setItem('pty_snapshot', JSON.stringify(snapshot));
+        } catch (e) {
+            console.warn('Failed to save terminal snapshot:', e);
+        }
+    }
+}
+
+/**
+ * Phase 7: Restore terminal state from sessionStorage BEFORE server replay
+ */
+function restoreTerminalSnapshot() {
+    try {
+        const stored = sessionStorage.getItem('pty_snapshot');
+        if (stored) {
+            const snapshot = JSON.parse(stored);
+            // Only restore if this is a reconnect to the same session
+            if (snapshot.sessionId && snapshot.reconnectToken) {
+                // Restore session state
+                sessionId = snapshot.sessionId;
+                reconnectToken = snapshot.reconnectToken;
+                lastSeq = snapshot.lastSeq || null;
+
+                // Restore terminal content BEFORE any server data
+                if (snapshot.content && serializeAddon) {
+                    terminal.reset();
+                    terminal.resize(snapshot.cols || 80, snapshot.rows || 24);
+                    terminal.write(snapshot.content);
+                    console.log('Restored terminal snapshot:', snapshot.cols, 'x', snapshot.rows);
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to restore terminal snapshot:', e);
+    }
 }
 
 /**

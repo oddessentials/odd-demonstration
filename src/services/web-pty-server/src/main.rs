@@ -204,6 +204,7 @@ async fn handle_connection(
         ServerMessage::Reconnected {
             session_id: session_id.to_string(),
             reconnect_token: reconnect_token.clone(),
+            restore_size: None, // TODO: Add terminal size restoration
         }
     } else {
         ServerMessage::Session {
@@ -306,6 +307,12 @@ async fn handle_connection(
                                 let json = serde_json::to_string(&msg)?;
                                 ws_write.send(Message::Text(json)).await?;
                             }
+                            Ok(ClientMessage::Reconnect { session, token: _, last_seq }) => {
+                                // Phase 7: Reconnect is handled at connection setup, not here.
+                                // This message type exists for clients that want to reconnect
+                                // within an existing WebSocket connection (not implemented yet).
+                                debug!("Ignoring in-session reconnect: {} (last_seq: {:?})", session, last_seq);
+                            }
                             Err(e) => {
                                 warn!("Invalid client message: {}", e);
                             }
@@ -350,7 +357,7 @@ async fn handle_connection(
                     let data = std::mem::take(&mut coalesce_buffer);
                     // Convert to string (assuming UTF-8, but handle invalid gracefully)
                     let text = String::from_utf8_lossy(&data).to_string();
-                    let msg = ServerMessage::Output { data: text };
+                    let msg = ServerMessage::Output { data: text, seq: None };
                     let json = serde_json::to_string(&msg)?;
                     if let Err(e) = ws_write.send(Message::Text(json)).await {
                         error!("Failed to send output: {}", e);
@@ -425,6 +432,18 @@ async fn run_metrics_server(addr: SocketAddr, state: Arc<AppState>) {
                                 "# HELP pty_sessions_active Active PTY sessions\n\
                                  # TYPE pty_sessions_active gauge\n\
                                  pty_sessions_active {}\n\
+                                 # HELP pty_sessions_connected Connected sessions (Phase 7)\n\
+                                 # TYPE pty_sessions_connected gauge\n\
+                                 pty_sessions_connected {}\n\
+                                 # HELP pty_sessions_disconnected Disconnected sessions in grace period (Phase 7)\n\
+                                 # TYPE pty_sessions_disconnected gauge\n\
+                                 pty_sessions_disconnected {}\n\
+                                 # HELP pty_sessions_idle Idle sessions awaiting cleanup (Phase 7)\n\
+                                 # TYPE pty_sessions_idle gauge\n\
+                                 pty_sessions_idle {}\n\
+                                 # HELP pty_sessions_reaping Sessions being reaped (Phase 7)\n\
+                                 # TYPE pty_sessions_reaping gauge\n\
+                                 pty_sessions_reaping {}\n\
                                  # HELP pty_output_queue_bytes_total Total bytes in output queues\n\
                                  # TYPE pty_output_queue_bytes_total gauge\n\
                                  pty_output_queue_bytes_total {}\n\
@@ -432,6 +451,10 @@ async fn run_metrics_server(addr: SocketAddr, state: Arc<AppState>) {
                                  # TYPE pty_output_drops_total counter\n\
                                  pty_output_drops_total {}\n",
                                 metrics.active_sessions,
+                                metrics.connected_count,
+                                metrics.disconnected_count,
+                                metrics.idle_count,
+                                metrics.reaping_count,
                                 metrics.total_output_queue_bytes,
                                 metrics.total_output_drops
                             );
