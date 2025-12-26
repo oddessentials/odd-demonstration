@@ -217,17 +217,17 @@ jobs:
             echo "✓ No download needed (cache hit)"
           fi
 
-      # Lockfile enforcement (unchanged - strict)
+      # Lockfile enforcement - uses GitHub BCR mirror via --config=ci
       - name: Verify MODULE.bazel.lock is current
-        run: bazel mod deps --lockfile_mode=error
+        run: bazel mod deps --config=ci
 
       # Graph isolation: Ensure no heavy deps leak into default build
       # This check becomes enforcing once @pip_heavy is defined
       - name: Check for @pip_heavy leakage
         run: |
           # Check if @pip_heavy exists first
-          if bazel query '@pip_heavy//...' 2>/dev/null | head -1 > /dev/null; then
-            LEAKS=$(bazel query 'deps(//...) intersect @pip_heavy//...' 2>/dev/null || echo "")
+          if bazel query '@pip_heavy//...' --config=ci 2>/dev/null | head -1 > /dev/null; then
+            LEAKS=$(bazel query 'deps(//...) intersect @pip_heavy//...' --config=ci 2>/dev/null || echo "")
             if [ -n "$LEAKS" ]; then
               echo "ERROR: @pip_heavy dependencies leaked into default build graph:"
               echo "$LEAKS"
@@ -240,7 +240,7 @@ jobs:
 
       - name: Build all targets (excluding heavy)
         timeout-minutes: 30
-        run: bazel build //... --curses=no --show_progress --verbose_failures --build_tag_filters=-heavy
+        run: bazel build //... --config=ci --verbose_failures --build_tag_filters=-heavy
 
       - name: Upload test logs on failure
         if: failure()
