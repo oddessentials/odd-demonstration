@@ -50,6 +50,16 @@ git commit -m "test: update visual snapshots"
 | `shows fallback when WebSocket unavailable` | Fallback dashboard UI |
 | `retry button reconnects` | Reconnection flow works |
 
+### PTY State Preservation Tests
+
+| Test | What it verifies |
+|------|------------------|
+| `new connection starts in Connected state` | Session state machine initialization |
+| `session transitions to Disconnected` | Clean disconnect handling |
+| `output messages include seq field` | Replay protocol wire format |
+| `session message includes reconnect token` | Token-based reconnection flow |
+| `/metrics returns session state counts` | Observability endpoint contract |
+
 ## CI Integration
 
 Visual tests run in the `visual-regression` job, triggered by:

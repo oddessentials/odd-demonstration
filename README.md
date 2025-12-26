@@ -15,6 +15,10 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 ![TUI%20Lib](https://img.shields.io/badge/TUI%20Lib-31%25-yellow)
 ![PTY%20Server](https://img.shields.io/badge/PTY%20Server-80%25-brightgreen)
 
+**Behavioral Tests:**
+
+[![TUI Visual Tests](https://img.shields.io/badge/TUI%20Visual-Passing-blue)](./tests/visual/)
+
 ## 🚀 Quick Start
 
 ### Option 1: TUI Launcher (Recommended)
