@@ -1,0 +1,13 @@
+# Lockfile enforcement
+common --lockfile_mode=error
+
+# CI configuration - use GitHub raw BCR mirror to avoid bcr.bazel.build TLS issues
+# 'common' applies to ALL Bazel commands (build, query, mod, fetch, etc.)
+common:ci --registry=https://raw.githubusercontent.com/bazelbuild/bazel-central-registry/main/
+
+# Performance flags for CI builds
+build:ci --curses=no
+build:ci --show_progress
+
+# Import user-specific settings if they exist (optional)
+try-import %workspace%/user.bazelrc
