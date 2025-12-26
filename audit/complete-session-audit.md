@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-12-26
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-21
+**Phases Completed:** 0-31.5
 
 ---
 
@@ -47,6 +47,18 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 19 | Docker Hub Pre-Built Images | ✅ Complete |
 | Phase 20 | Web Terminal Modernization | ✅ Complete |
 | Phase 21 | PTY State Preservation | ✅ Complete |
+| Phase 22 | Server Mode (W11) & In-Container Operation | ✅ Complete |
+| Phase 23 | I7 Parity Invariant & Compose/K8s Validation | ✅ Complete |
+| Phase 24 | Integration Budget Adjustment (I4: 180s) | ✅ Complete |
+| Phase 25 | Visual Test Initial Stabilization | ✅ Complete |
+| Phase 26 | WebSocket Cleanup (Double-Handle Pattern) | ✅ Complete |
+| Phase 27 | Ratatui Compatibility (arboard v2.1 pin) | ✅ Complete |
+| Phase 28 | Container Fidelity & Stale Image Detection | ✅ Complete |
+| Phase 29 | PTY State Preservation (Waterford Replay) | ✅ Complete |
+| Phase 30 | WebSocket Proxy Fix (Nginx /ws) | ✅ Complete |
+| Phase 31 | Visual Test Suite Stabilization | ✅ Complete |
+| Phase 31.4 | Container Contract & Per-IP Cap Tuning | ✅ Complete |
+| Phase 31.5 | Visual Test Strategy & Failure Injection | ✅ Complete |
 
 ---
 
@@ -689,6 +701,63 @@ Replaced the glassmorphic Web Dashboard with an xterm.js-based terminal that mir
 
 ---
 
+## Phase 31.5: Visual Test Strategy & Server-Side Failure Injection (2025-12-26)
+
+### Objective
+Implement a tiered visual test strategy and server-side failure injection to enable deterministic fallback UI testing without relying on Playwright's unreliable WebSocket mocking.
+
+### Background
+- `PTY_PER_IP_CAP=30` in `docker-compose.integration.yml` is an operational tuning parameter (not an invariant)
+- 6 skipped snapshot tests across 2 describe blocks needed responsible restoration
+
+### Tiered Test Strategy
+
+| Tier | Tests | Location | Trigger |
+|------|-------|----------|---------|
+| 1 (CI) | Bundle Smoke Tests (5) | ci.yml | Every PR |
+| 2 (Nightly) | Web Terminal Visual Tests (4) | nightly.yml | Daily 3 AM UTC |
+| 3 (Fallback) | Fallback Dashboard (2) | nightly.yml | Daily, with failure injection |
+
+### Server-Side Failure Injection
+
+Added `TestMode` enum to web-pty-server for deterministic testing:
+
+| Mode | Env Value | Query Param | Behavior |
+|------|-----------|-------------|----------|
+| None | (default) | - | Normal operation |
+| FailConnection | `fail` | `?test_mode=fail` | Reject all connections |
+| DelayConnection | `delay:N` | - | Delay by N ms |
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `.github/workflows/nightly.yml` | Nightly visual test workflow with serialized workers |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `src/services/web-pty-server/src/config.rs` | Added `TestMode` enum, env parsing |
+| `src/services/web-pty-server/src/main.rs` | Added failure injection in `handle_connection` |
+| `src/services/web-pty-server/src/lib.rs` | Exported `TestMode` |
+| `src/services/web-pty-server/src/*.rs` | Updated test configs with `test_mode` field |
+| `src/interfaces/web/terminal.js` | Added `test_mode` query param passthrough, `INTERNAL_ERROR` handling |
+| `tests/visual/terminal.spec.ts` | Re-enabled Fallback Dashboard tests with server injection |
+
+### Test Results
+| Component | Tests |
+|-----------|-------|
+| web-pty-server (Rust) | 47 pass |
+| Playwright (Tier 1 + 3) | 7 pass |
+
+### Key Design Decisions
+- **Server-side injection** over Playwright WebSocket mocking (unreliable)
+- **Query param override** allows per-request failure without server restart
+- **Frontend passthrough** makes tests self-contained and race-free
+- **Nightly-only visual tests** until TUI rendering stability proven
+
+---
+
 ## Session Complete ✓
 
-All 20 implementation phases completed successfully.
+All 31.5 implementation phases completed successfully.
+

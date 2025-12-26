@@ -1,7 +1,7 @@
 # Distributed Task Observatory - Session Summary
 
 **Last Updated:** 2025-12-26
-**Phases Completed:** 0-21 (Phase 7: PTY State Preservation)
+**Phases Completed:** 0-31.5 (Phase 31.5: Visual Test Strategy & Failure Injection)
 
 ## Objective
 
@@ -24,7 +24,7 @@ Implement a complete, production-grade distributed task processing system demons
 | Read Model | Go | net/http, go-redis, lib/pq |
 | Web Terminal | Rust/JS | web-pty-server, xterm.js |
 | TUI | Rust | ratatui 0.24 (modular architecture) |
-| Tests | TypeScript | Vitest (strict mode) |
+| Tests | TypeScript | Vitest (strict mode), Playwright |
 
 ### Infrastructure
 - **Message Bus:** RabbitMQ 3.12
@@ -42,7 +42,7 @@ Implement a complete, production-grade distributed task processing system demons
 
 ### One-Click Startup
 - TUI launcher mode with cluster detection
-- **Guided Prerequisites Setup** - Automatic detection with clipboard copy (NEW)
+- **Guided Prerequisites Setup** - Automatic detection with clipboard copy
 - `scripts/start-all.ps1` automation script
 - Parallel Docker builds
 - Automatic port-forwarding
@@ -76,6 +76,7 @@ Implement a complete, production-grade distributed task processing system demons
 - **Visual Regression Tests** - Playwright screenshot tests, CI-triggered on web terminal changes
 - **PTY State Preservation** (Phase 21) - Session state machine, ring buffer, replay protocol, 47 unit tests
 - **PTY Server Coverage** - 81% (47 unit tests)
+- **Tiered Visual Test Strategy** (Phase 31.5) - Nightly workflow, server-side failure injection, deterministic fallback testing
 
 ## Quick Start
 
