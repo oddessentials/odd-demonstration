@@ -14,7 +14,7 @@
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "echo ${nextRelease.version} > src/interfaces/tui/VERSION && sed -i 's/^version = \"[^\"]*\"/version = \"${nextRelease.version}\"/' src/interfaces/tui/Cargo.toml && cd src/interfaces/tui && cargo update --workspace && cd ../../../packages/npm-shim && npm version ${nextRelease.version} --no-git-tag-version --allow-same-version"
+                "prepareCmd": "echo ${nextRelease.version} > src/interfaces/tui/VERSION && sed -i 's/^version = \"[^\"]*\"/version = \"${nextRelease.version}\"/' src/interfaces/tui/Cargo.toml && cd src/interfaces/tui && cargo generate-lockfile && cd ../../../packages/npm-shim && npm version ${nextRelease.version} --no-git-tag-version --allow-same-version && cd ../.. && npm version ${nextRelease.version} --no-git-tag-version --allow-same-version && cd src/services/gateway && npm version ${nextRelease.version} --no-git-tag-version --allow-same-version"
             }
         ],
         [
@@ -25,7 +25,9 @@
                     "src/interfaces/tui/VERSION",
                     "src/interfaces/tui/Cargo.toml",
                     "src/interfaces/tui/Cargo.lock",
-                    "packages/npm-shim/package.json"
+                    "packages/npm-shim/package.json",
+                    "package.json",
+                    "src/services/gateway/package.json"
                 ],
                 "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
             }

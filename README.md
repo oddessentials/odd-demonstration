@@ -8,12 +8,12 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 
 **Test Coverage:**
 
-![Gateway](https://img.shields.io/badge/Gateway-87%25-brightgreen)
-![Processor](https://img.shields.io/badge/Processor-88%25-brightgreen)
-![Metrics%20Engine](https://img.shields.io/badge/Metrics%20Engine-10%25-yellow)
-![Read%20Model](https://img.shields.io/badge/Read%20Model-18%25-yellow)
-![TUI](https://img.shields.io/badge/TUI%20Lib-32%25-yellowgreen)
-![PTY%20Server](https://img.shields.io/badge/PTY%20Server-81%25-brightgreen)
+![Gateway](https://img.shields.io/badge/Gateway-80%25-brightgreen)
+![Processor](https://img.shields.io/badge/Processor-80%25-brightgreen)
+![Metrics%20Engine](https://img.shields.io/badge/Metrics%20Engine-10%25-orange)
+![Read%20Model](https://img.shields.io/badge/Read%20Model-18%25-orange)
+![TUI%20Lib](https://img.shields.io/badge/TUI%20Lib-31%25-yellow)
+![PTY%20Server](https://img.shields.io/badge/PTY%20Server-80%25-brightgreen)
 
 ## 🚀 Quick Start
 

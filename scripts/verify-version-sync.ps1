@@ -44,6 +44,30 @@ if (Test-Path $NpmPkg) {
     }
 }
 
+# 3. Root package.json
+$RootPkg = Join-Path $Root "package.json"
+if (Test-Path $RootPkg) {
+    $Checked++
+    $pkg = Get-Content $RootPkg | ConvertFrom-Json
+    if ($pkg.version -ne $Authoritative) {
+        $Errors += "root package.json: $($pkg.version) (expected $Authoritative)"
+    } else {
+        Write-Host "  [OK] root package.json: $($pkg.version)" -ForegroundColor Green
+    }
+}
+
+# 4. Gateway package.json
+$GatewayPkg = Join-Path $Root "src/services/gateway/package.json"
+if (Test-Path $GatewayPkg) {
+    $Checked++
+    $pkg = Get-Content $GatewayPkg | ConvertFrom-Json
+    if ($pkg.version -ne $Authoritative) {
+        $Errors += "gateway package.json: $($pkg.version) (expected $Authoritative)"
+    } else {
+        Write-Host "  [OK] gateway package.json: $($pkg.version)" -ForegroundColor Green
+    }
+}
+
 # Summary
 Write-Host ""
 Write-Host "Checked $Checked version sources" -ForegroundColor Cyan
@@ -57,3 +81,4 @@ if ($Errors.Count -gt 0) {
 
 Write-Host "[OK] All version sources match: $Authoritative" -ForegroundColor Green
 exit 0
+

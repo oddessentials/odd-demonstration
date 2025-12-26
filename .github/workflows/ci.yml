@@ -459,6 +459,9 @@ jobs:
       - name: Audit workflow isolation
         shell: pwsh
         run: ./scripts/audit-workflows.ps1
+        
+      - name: Verify coverage docs sync
+        run: python scripts/sync-coverage-docs.py --check
 
   # ============================================================
   # TUI Build (Rust) - Catches API breaking changes in dependencies
