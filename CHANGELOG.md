@@ -1,3 +1,15 @@
+# [1.4.0](https://github.com/oddessentials/odd-demonstration/compare/v1.3.0...v1.4.0) (2025-12-26)
+
+
+### Bug Fixes
+
+* **integration:** complete harness fixes for all proof paths ([2a92f89](https://github.com/oddessentials/odd-demonstration/commit/2a92f898843b5a2929c4727e4b68e601c5010fd9))
+
+
+### Features
+
+* **docker:** fix Gateway health check and compose SSL config ([fe153dc](https://github.com/oddessentials/odd-demonstration/commit/fe153dcdc18b897daa22e05948d08aa0b52c711a))
+
 # [1.3.0](https://github.com/oddessentials/odd-demonstration/compare/v1.2.1...v1.3.0) (2025-12-25)
 
 
