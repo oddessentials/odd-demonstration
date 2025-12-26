@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/oddessentials/odd-demonstration/compare/v2.0.0...v2.0.1) (2025-12-26)
+
+
+### Bug Fixes
+
+* **governance:** sync package.json versions and add coverage docs automation ([51910ce](https://github.com/oddessentials/odd-demonstration/commit/51910ce7bdd7d3b0885737a7619effbd34ed2985))
+
 # [2.0.0](https://github.com/oddessentials/odd-demonstration/compare/v1.4.0...v2.0.0) (2025-12-26)
 
 
