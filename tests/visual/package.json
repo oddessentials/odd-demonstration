@@ -1,0 +1,14 @@
+{
+    "name": "odd-visual-tests",
+    "version": "1.0.0",
+    "description": "Visual regression tests for ODTO Web Terminal",
+    "scripts": {
+        "test": "playwright test",
+        "test:update": "playwright test --update-snapshots",
+        "test:headed": "playwright test --headed",
+        "test:ui": "playwright test --ui"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.40.0"
+    }
+}

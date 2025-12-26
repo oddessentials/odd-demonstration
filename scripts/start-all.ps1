@@ -172,6 +172,7 @@ function Build-DockerImages {
         @{ Name = "metrics-engine"; Dockerfile = "src/services/metrics-engine/Dockerfile"; Context = "src/services/metrics-engine"; VersionFile = "src/services/metrics-engine/VERSION" }
         @{ Name = "read-model"; Dockerfile = "src/services/read-model/Dockerfile"; Context = "src/services/read-model"; VersionFile = "src/services/read-model/VERSION" }
         @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web"; VersionFile = $null }
+        @{ Name = "web-pty-server"; Dockerfile = "src/services/web-pty-server/Dockerfile"; Context = "src/services/web-pty-server"; VersionFile = "src/services/web-pty-server/VERSION" }
     )
     
     $failedImages = @()
@@ -220,7 +221,7 @@ function Import-ImagesToKind {
     param([string]$KindPath = "kind")
     
     $clusterName = "task-observatory"
-    $images = @("gateway", "processor", "metrics-engine", "read-model", "web-ui")
+    $images = @("gateway", "processor", "metrics-engine", "read-model", "web-ui", "web-pty-server")
     
     Write-Progress-Step -Step "load" -Status "starting" -Message "Loading images into Kind cluster..."
     
@@ -308,7 +309,7 @@ function Start-PortForwards {
     $forwards = @(
         @{ Service = "gateway"; LocalPort = 3000; RemotePort = 3000 }
         @{ Service = "read-model"; LocalPort = 8080; RemotePort = 8080 }
-        @{ Service = "web-ui"; LocalPort = 8081; RemotePort = 80 }
+        @{ Service = "web-ui-http"; LocalPort = 8081; RemotePort = 80 }  # R11: Single access URL
         @{ Service = "rabbitmq"; LocalPort = 15672; RemotePort = 15672 }
         @{ Service = "grafana"; LocalPort = 3002; RemotePort = 3000 }
         @{ Service = "prometheus"; LocalPort = 9090; RemotePort = 9090 }
@@ -347,7 +348,7 @@ function Test-Connectivity {
     $endpoints = @(
         @{ Name = "Gateway"; Url = "http://localhost:3000/healthz" }
         @{ Name = "Read Model"; Url = "http://localhost:8080/health" }
-        @{ Name = "Web UI"; Url = "http://localhost:8081" }
+        @{ Name = "Web Terminal"; Url = "http://localhost:8081/health" }
     )
     
     $allOk = $true

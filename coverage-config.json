@@ -32,6 +32,13 @@
             "warn": 85,
             "tool": "vitest",
             "note": "TypeScript service with refactored lib/ modules. Core logic (validators, builders, config) maintains 100% coverage."
+        },
+        "web-pty-server": {
+            "min": 80,
+            "warn": 85,
+            "tool": "cargo-tarpaulin",
+            "measurement": "--lib",
+            "note": "Rust PTY broker. Session, protocol, auth, and config modules well-tested. 81% achieved."
         }
     },
     "ratchet": {

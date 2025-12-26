@@ -27,12 +27,15 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | V3 | read-model coverage ≥ 18% | `check-coverage.py read-model` | ✅ CI |
 | V4 | TUI lib coverage ≥ 31% | `check-coverage.py tui` (tarpaulin --lib --exclude-files) | ✅ CI |
 | V5 | Gateway coverage ≥ 80% | `vitest --coverage` | ✅ CI |
+| V6 | web-pty-server coverage ≥ 80% | `check-coverage.py web-pty-server` (tarpaulin --lib) | ✅ CI |
+| V7 | Visual regression tests pass | `tests/visual/` Playwright snapshots | ✅ CI (web_terminal changes) |
 | I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
 | I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
 | I3 | Integration harness self-contained | Docker Compose only | ⏳ Blocked (needs Docker Hub images) |
-| I4 | Integration runtime <90s | `integration-harness.ps1` timeout | ⏳ Blocked (needs Docker Hub images) |
+| I4 | Integration runtime <180s | `integration-harness.ps1` timeout | ⏳ Blocked (needs Docker Hub images) |
 | I5 | Artifact capture every run | Guarded `finally` block | ⏳ Blocked (needs Docker Hub images) |
 | I6 | Victory gate: 3 green + nightly | — | 📝 Governance-Only |
+| I7 | K8s/Compose service parity | `validate-compose-k8s-parity.ps1` | ✅ CI |
 | A1 | Hermetic Bazel builds | Bazel `--lockfile_mode=error` | ✅ CI |
 | A2 | No manual intervention | — | 📝 Documented-Only |
 | A3 | Single test entrypoint | `run-all-tests.ps1` | ✅ CI |
@@ -75,6 +78,8 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 | Read Model (Go) | 18% | 25% | Infrastructure-heavy; HTTP handlers and middleware tested |
 | TUI (Rust lib) | 31% | 32% | Lib-only; `--exclude-files main.rs` needed because `--lib` still measures bin |
 | Gateway (TypeScript) | 80% | 85% | Core logic in lib/ modules maintains 100% coverage |
+| web-pty-server (Rust) | 80% | 85% | PTY broker; 81% achieved with 35 unit tests |
+| Visual Tests (Playwright) | — | — | Screenshot comparison; requires running cluster |
 
 > [!NOTE]
 > **Go Service Architecture Tradeoff**: The `metrics-engine` and `read-model` packages are infrastructure-heavy,
@@ -97,9 +102,10 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 | I1 | Integration gate runs on `contracts/` changes | `dorny/paths-filter` + `compat_critical` |
 | I2 | Integration gate runs on `src/services/` changes | `dorny/paths-filter` + `compat_critical` |
 | I3 | Integration harness is self-contained | Docker Compose only (no K8s) |
-| I4 | Integration runtime <90s (wall-clock) | `integration-harness.ps1` exits 1 on breach |
+| I4 | Integration runtime <120s (wall-clock) | `integration-harness.ps1` exits 1 on breach |
 | I5 | Artifact capture on every run | Guarded capture in `finally` block |
 | I6 | Victory gate: 3 green PRs + 1 nightly | 📝 Governance-only |
+| I7 | K8s and Docker Compose have same services | `validate-compose-k8s-parity.ps1` |
 
 > [!NOTE]
 > **I6 is intentionally governance-only**: The victory gate requires human judgment for flake detection

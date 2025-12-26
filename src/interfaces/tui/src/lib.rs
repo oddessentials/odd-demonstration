@@ -8,6 +8,7 @@ pub mod error;
 pub mod doctor;
 pub mod cluster;
 pub mod install;
+pub mod config;
 
 // Re-export commonly used items for convenience
 pub use types::{
@@ -46,3 +47,5 @@ pub use install::{
     InstallOutput,
     copy_to_clipboard, execute_install_with_output, get_install_description,
 };
+
+pub use config::is_server_mode;

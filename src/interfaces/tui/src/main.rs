@@ -805,18 +805,34 @@ fn main() -> Result<(), Box<dyn Error>> {
                     f.render_widget(table, main_chunks[2]);
 
                     // Help bar with version
-                    let help = Paragraph::new(Line::from(vec![
-                        Span::styled(" Q", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-                        Span::raw(" Quit  "),
-                        Span::styled("R", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-                        Span::raw(" Refresh  "),
-                        Span::styled("N", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-                        Span::raw(" New Task  "),
-                        Span::styled("U", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                        Span::raw(" UIs"),
-                        Span::raw("  │  "),
-                        Span::styled(format!("v{}", APP_VERSION), Style::default().fg(Color::DarkGray)),
-                    ]));
+                    let help_text = if app.server_mode {
+                        // W11: Prominent server mode warning banner
+                        Line::from(vec![
+                            Span::styled("⚠️ SERVER MODE ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                            Span::styled("Prereq checks bypassed ", Style::default().fg(Color::Yellow)),
+                            Span::raw(" │ "),
+                            Span::styled(" Q", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                            Span::raw(" Quit "),
+                            Span::styled("R", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                            Span::raw(" Refresh "),
+                            Span::styled("N", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                            Span::raw(" New Task"),
+                        ])
+                    } else {
+                        Line::from(vec![
+                            Span::styled(" Q", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                            Span::raw(" Quit  "),
+                            Span::styled("R", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                            Span::raw(" Refresh  "),
+                            Span::styled("N", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                            Span::raw(" New Task  "),
+                            Span::styled("U", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                            Span::raw(" UIs"),
+                            Span::raw("  │  "),
+                            Span::styled(format!("v{}", APP_VERSION), Style::default().fg(Color::DarkGray)),
+                        ])
+                    };
+                    let help = Paragraph::new(help_text);
                     f.render_widget(help, main_chunks[3]);
                 })?;
             }

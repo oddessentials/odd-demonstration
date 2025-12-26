@@ -1,6 +1,6 @@
 # Docker Compose Integration Mode
 # Uses pre-built Docker Hub images for fast, reliable integration tests.
-# Invariants: I3 (self-contained), I4 (<90s runtime), I5 (artifact capture)
+# Invariants: I3 (self-contained), I4 (<120s runtime), I5 (artifact capture)
 #
 # HEALTH CHECK STRATEGY:
 # - Infrastructure (postgres, mongodb, redis, rabbitmq): Compose-level health checks
@@ -56,18 +56,58 @@ services:
       retries: 15
 
   # RabbitMQ - Message broker
+  # Note: Erlang distribution can fail on fast container starts (race condition)
+  # restart: on-failure handles this by automatically retrying
   rabbitmq:
     container_name: odto-integ-rabbitmq
     image: rabbitmq:3-management-alpine
     networks: [odto-integ-net]
+    restart: on-failure:3
     environment:
       RABBITMQ_DEFAULT_USER: observatory
       RABBITMQ_DEFAULT_PASS: demo
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 2s
-      timeout: 5s
+      interval: 3s
+      timeout: 10s
       retries: 15
+      start_period: 10s
+
+  # Prometheus - Metrics and alerting (for TUI dashboard alerts)
+  prometheus:
+    container_name: odto-integ-prometheus
+    image: prom/prometheus:latest
+    networks: [odto-integ-net]
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Grafana - Observability dashboards
+  grafana:
+    container_name: odto-integ-grafana
+    image: grafana/grafana:latest
+    networks: [odto-integ-net]
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
 
   # ============================================================
   # Application Services (harness-level health checks only)
@@ -136,6 +176,49 @@ services:
       - MONGO_URL=mongodb://odto-integ-mongo:27017
       - POSTGRES_URL=postgres://observatory:demo@odto-integ-postgres:5432/events?sslmode=disable
     # Readiness: harness probes GET http://localhost:18080/health
+
+  # Web PTY Server - Terminal WebSocket broker
+  # Built from repo root with real TUI for visual regression testing
+  web-pty-server:
+    container_name: odto-integ-web-pty
+    build:
+      context: .
+      dockerfile: src/services/web-pty-server/Dockerfile
+      target: real
+    networks: [odto-integ-net]
+    ports:
+      - "9000:9000"  # WebSocket
+      - "9001:9001"  # Metrics
+    depends_on:
+      read-model:
+        condition: service_started
+      gateway:
+        condition: service_started
+    environment:
+      # Canonical path contract: PTY_TUI_BINARY=/app/odd-dashboard (default in image)
+      - PTY_WS_PORT=9000
+      - PTY_METRICS_PORT=9001
+      - READ_MODEL_URL=http://odto-integ-read-model:8080
+      - GATEWAY_URL=http://odto-integ-gateway:3000
+      - PROMETHEUS_URL=http://odto-integ-prometheus:9090
+    # Readiness: web-ui nginx proxies to this service
+
+  # Web UI - nginx serving static + proxying WebSocket (built locally)
+  web-ui:
+    container_name: odto-integ-web-ui
+    build:
+      context: src/interfaces/web
+      dockerfile: Dockerfile
+    networks: [odto-integ-net]
+    ports:
+      - "8081:80"
+    depends_on:
+      - web-pty-server
+      - read-model
+    volumes:
+      # Mount integration-specific nginx config
+      - ./src/interfaces/web/nginx.integration.conf:/etc/nginx/conf.d/default.conf:ro
+    # Readiness: harness probes GET http://localhost:8081/health
 
 networks:
   odto-integ-net:

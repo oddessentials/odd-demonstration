@@ -308,7 +308,14 @@ pub fn check_all_prerequisites() -> Vec<Prerequisite> {
 }
 
 /// Check if any prerequisites are missing
+/// 
+/// In server mode (W11: Container Contract), this returns `false` immediately
+/// without spawning any subprocesses for Docker/kubectl/kind/pwsh detection.
 pub fn has_missing_prerequisites() -> bool {
+    // W11: Server mode bypass - no command probing in containers
+    if crate::config::is_server_mode() {
+        return false;
+    }
     check_all_prerequisites()
         .iter()
         .any(|p| matches!(p.status, PrereqStatus::Missing))
@@ -527,6 +534,45 @@ mod tests {
         } else {
             assert_eq!(count, 0, "has_missing is false but count is {}", count);
         }
+    }
+
+    // ========== W11: Server Mode Guardrail Tests ==========
+
+    #[test]
+    fn test_server_mode_bypasses_prereq_check() {
+        std::env::set_var("ODD_DASHBOARD_SERVER_MODE", "1");
+        let result = has_missing_prerequisites();
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        assert!(!result, "Server mode must always report no missing prereqs");
+    }
+
+    #[test]
+    fn test_server_mode_never_spawns_commands_even_with_empty_path() {
+        // Critical guardrail: if check_all_prerequisites() were called,
+        // an empty PATH would cause command lookups to fail or hang.
+        // Server mode must bypass completely - no subprocess spawning.
+        let original_path = std::env::var("PATH").ok();
+        std::env::set_var("ODD_DASHBOARD_SERVER_MODE", "1");
+        std::env::set_var("PATH", "");
+        
+        let result = has_missing_prerequisites();
+        
+        // Restore environment
+        if let Some(path) = original_path {
+            std::env::set_var("PATH", path);
+        }
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        
+        // If this returns successfully with false, no commands were probed
+        assert!(!result, "Server mode must return false without probing PATH");
+    }
+
+    #[test]
+    fn test_server_mode_is_explicit_opt_in() {
+        // Ensure server mode requires explicit flag - not a heuristic
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        let is_enabled = crate::config::is_server_mode();
+        assert!(!is_enabled, "Server mode must be disabled by default");
     }
 }
 

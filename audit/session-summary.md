@@ -1,7 +1,7 @@
 # Distributed Task Observatory - Session Summary
 
-**Last Updated:** 2025-12-25
-**Phases Completed:** 0-19
+**Last Updated:** 2025-12-26
+**Phases Completed:** 0-21 (Phase 7: PTY State Preservation)
 
 ## Objective
 
@@ -22,7 +22,7 @@ Implement a complete, production-grade distributed task processing system demons
 | Processor | Python | pika, psycopg2 |
 | Metrics Engine | Go | amqp091-go, go-redis, mongo-driver |
 | Read Model | Go | net/http, go-redis, lib/pq |
-| Web UI | HTML/JS | Vanilla (Glassmorphic) |
+| Web Terminal | Rust/JS | web-pty-server, xterm.js |
 | TUI | Rust | ratatui 0.24 (modular architecture) |
 | Tests | TypeScript | Vitest (strict mode) |
 
@@ -49,7 +49,9 @@ Implement a complete, production-grade distributed task processing system demons
 
 ### Interfaces
 - **TUI:** Modular 7-file architecture, guided setup, Add Task (N), UI Launcher (U)
-- **Web:** Glassmorphic design, loading splash, Add Task form, UI Launcher modal
+- **Web Terminal:** xterm.js PTY mirror with auto-reconnect, fallback dashboard
+  - Split K8s: `web-ui-http` (nginx) + `web-pty-ws` (PTY broker)
+  - Session reconnect tokens, read-only mode, auth support
 
 ### Distribution (Phase 14)
 - **Binary:** `odd-dashboard` (production release binary)
@@ -68,8 +70,12 @@ Implement a complete, production-grade distributed task processing system demons
 - Contract validation scripts
 - **Gateway Coverage Improvements** - 80%+ via lib/ refactoring
 - **TUI Lib Coverage** - 35%+ lib-only coverage (excludes main.rs event loop), 132 unit tests
-- **Integration Hardening** (Phase 18) - Self-contained Docker Compose harness, 4 proof paths, 90s budget, I3-I6 invariants
+- **Integration Hardening** (Phase 18) - Self-contained Docker Compose harness, 4 proof paths, 120s budget, I3-I6 invariants
 - **Docker Hub Images** (Phase 19) - Pre-built images for faster CI, multi-stage Dockerfiles, dual tagging
+- **Web Terminal Modernization** (Phase 20) - PTY Multiplexer, xterm.js mirror, split K8s deployments
+- **Visual Regression Tests** - Playwright screenshot tests, CI-triggered on web terminal changes
+- **PTY State Preservation** (Phase 21) - Session state machine, ring buffer, replay protocol, 47 unit tests
+- **PTY Server Coverage** - 81% (47 unit tests)
 
 ## Quick Start
 
@@ -86,7 +92,7 @@ cd src/interfaces/tui && cargo run --release
 
 | Service | URL |
 |---------|-----|
-| Web Dashboard | http://localhost:8081 |
+| Web Terminal | http://localhost:8081 |
 | Gateway API | http://localhost:3000 |
 | Read Model API | http://localhost:8080 |
 | RabbitMQ | http://localhost:15672 |

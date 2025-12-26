@@ -248,6 +248,9 @@ pub struct App {
     pub task_state: TaskCreationState,
     pub launcher_state: UiLauncherState,
     pub prereq_state: PrerequisiteSetupState,
+    /// W11: Server mode flag - bypasses prereq checks in containers
+    /// Renders prominent warning banner when true
+    pub server_mode: bool,
 }
 
 impl App {
@@ -265,6 +268,7 @@ impl App {
             task_state: TaskCreationState::default(),
             launcher_state: UiLauncherState::default(),
             prereq_state: PrerequisiteSetupState::default(),
+            server_mode: crate::config::is_server_mode(),
         }
     }
 
@@ -284,7 +288,9 @@ impl App {
         }
 
         // Fetch alerts from Prometheus with retry logic
-        let alerts_url = "http://localhost:9090/api/v1/alerts";
+        let prometheus_url = std::env::var("PROMETHEUS_URL")
+            .unwrap_or_else(|_| "http://localhost:9090".to_string());
+        let alerts_url = format!("{}/api/v1/alerts", prometheus_url);
         match reqwest::blocking::Client::new()
             .get(alerts_url)
             .timeout(std::time::Duration::from_secs(2))
