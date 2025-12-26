@@ -21,11 +21,17 @@ test.describe('PTY State Preservation', () => {
     // Session state tests - need proper cleanup to avoid session limit issues
     test.describe('Session State Machine', () => {
         test.afterEach(async ({ page }) => {
-            // Close WebSocket connection to free up session slot
-            await page.evaluate(() => {
-                // @ts-ignore
-                if (window.ws) window.ws.close();
-            });
+            // Deterministic teardown: close WebSocket to free session slot
+            try {
+                await page.evaluate(() => {
+                    // @ts-ignore - __odtoWs is exposed by terminal.js for test cleanup
+                    if (window.__odtoWs) window.__odtoWs.close(1000, 'test cleanup');
+                    // @ts-ignore - also check window.ws for compatibility
+                    if (window.ws) window.ws.close();
+                });
+            } catch {
+                // Page may be closed or navigated away
+            }
             await page.close();
         });
 
@@ -68,10 +74,17 @@ test.describe('PTY State Preservation', () => {
 
     test.describe('Replay Protocol', () => {
         test.afterEach(async ({ page }) => {
-            await page.evaluate(() => {
-                // @ts-ignore
-                if (window.ws) window.ws.close();
-            });
+            // Deterministic teardown: close WebSocket to free session slot
+            try {
+                await page.evaluate(() => {
+                    // @ts-ignore - __odtoWs is exposed by terminal.js for test cleanup
+                    if (window.__odtoWs) window.__odtoWs.close(1000, 'test cleanup');
+                    // @ts-ignore - also check window.ws for compatibility
+                    if (window.ws) window.ws.close();
+                });
+            } catch {
+                // Page may be closed or navigated away
+            }
             await page.close();
         });
 
@@ -126,10 +139,17 @@ test.describe('PTY State Preservation', () => {
 
     test.describe('Connection Status', () => {
         test.afterEach(async ({ page }) => {
-            await page.evaluate(() => {
-                // @ts-ignore
-                if (window.ws) window.ws.close();
-            });
+            // Deterministic teardown: close WebSocket to free session slot
+            try {
+                await page.evaluate(() => {
+                    // @ts-ignore - __odtoWs is exposed by terminal.js for test cleanup
+                    if (window.__odtoWs) window.__odtoWs.close(1000, 'test cleanup');
+                    // @ts-ignore - also check window.ws for compatibility
+                    if (window.ws) window.ws.close();
+                });
+            } catch {
+                // Page may be closed or navigated away
+            }
             await page.close();
         });
 
