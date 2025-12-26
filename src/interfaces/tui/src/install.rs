@@ -35,7 +35,7 @@ pub fn copy_to_clipboard(prereq_name: &str) -> Result<(), String> {
     let mut clipboard = Clipboard::new()
         .map_err(|e| format!("Failed to access clipboard: {}", e))?;
     
-    clipboard.set_text(&cmd)
+    clipboard.set_text(cmd)
         .map_err(|e| format!("Failed to copy to clipboard: {}", e))?;
     
     Ok(())

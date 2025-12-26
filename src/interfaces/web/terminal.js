@@ -7,7 +7,13 @@
  * - Auto-reconnect on disconnect (R6)
  * - Terminal resize handling (R8)
  * - Fallback dashboard when WS unavailable (R10)
+ * - Lazy-loaded optional addons (web-links, serialize)
  */
+
+// ESM imports (bundled by esbuild)
+import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import 'xterm/css/xterm.css';
 
 // Configuration
 const CONFIG = {
@@ -23,14 +29,42 @@ const CONFIG = {
 // State
 let terminal = null;
 let fitAddon = null;
-let serializeAddon = null; // Phase 7: For client-only terminal snapshots
+let serializeAddon = null;
 let ws = null;
 let sessionId = null;
 let reconnectToken = null;
 let reconnectAttempts = 0;
 let intentionalClose = false;
 let resizeTimeout = null;
-let lastSeq = null; // Phase 7: Last received sequence number for replay watermark
+let lastSeq = null;
+let sessionActive = false;
+let optionalAddonsLoaded = false;
+
+/**
+ * Lazy-load optional addons after session established.
+ * Race-safe: aborts if session disconnects during load.
+ */
+async function loadOptionalAddons() {
+    if (optionalAddonsLoaded || !sessionActive || !terminal) return;
+
+    try {
+        const [{ WebLinksAddon }, { SerializeAddon }] = await Promise.all([
+            import('xterm-addon-web-links'),
+            import('xterm-addon-serialize'),
+        ]);
+
+        // Guard: session may have disconnected during async load
+        if (!sessionActive || !terminal) return;
+
+        terminal.loadAddon(new WebLinksAddon());
+        serializeAddon = new SerializeAddon();
+        terminal.loadAddon(serializeAddon);
+        optionalAddonsLoaded = true;
+        console.log('Optional addons loaded');
+    } catch (e) {
+        console.warn('Failed to load optional addons:', e);
+    }
+}
 
 /**
  * Initialize the terminal
@@ -66,16 +100,9 @@ function initTerminal() {
         },
     });
 
-    // Load addons
-    fitAddon = new FitAddon.FitAddon();
+    // Load critical addon immediately
+    fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
-    terminal.loadAddon(new WebLinksAddon.WebLinksAddon());
-
-    // Phase 7: SerializeAddon for client-only terminal snapshots
-    if (typeof SerializeAddon !== 'undefined') {
-        serializeAddon = new SerializeAddon.SerializeAddon();
-        terminal.loadAddon(serializeAddon);
-    }
 
     // Open terminal in container
     const container = document.getElementById('terminal');
@@ -87,7 +114,7 @@ function initTerminal() {
     // Handle resize (R8: debounced)
     window.addEventListener('resize', handleResize);
 
-    // Phase 7: Save terminal snapshot before unload
+    // Save terminal snapshot before unload
     window.addEventListener('beforeunload', saveTerminalSnapshot);
 
     // Handle input
@@ -97,7 +124,7 @@ function initTerminal() {
         }
     });
 
-    // Phase 7: Restore terminal snapshot if available (before connecting)
+    // Restore terminal snapshot if available (before connecting)
     restoreTerminalSnapshot();
 
     // Connect to WebSocket
@@ -105,7 +132,7 @@ function initTerminal() {
 }
 
 /**
- * Phase 7: Save terminal state to sessionStorage for restore on refresh
+ * Save terminal state to sessionStorage for restore on refresh
  */
 function saveTerminalSnapshot() {
     if (serializeAddon && sessionId) {
@@ -128,7 +155,7 @@ function saveTerminalSnapshot() {
 }
 
 /**
- * Phase 7: Restore terminal state from sessionStorage BEFORE server replay
+ * Restore terminal state from sessionStorage BEFORE server replay
  */
 function restoreTerminalSnapshot() {
     try {
@@ -143,7 +170,8 @@ function restoreTerminalSnapshot() {
                 lastSeq = snapshot.lastSeq || null;
 
                 // Restore terminal content BEFORE any server data
-                if (snapshot.content && serializeAddon) {
+                // Note: restore uses terminal.write(), doesn't need SerializeAddon
+                if (snapshot.content) {
                     terminal.reset();
                     terminal.resize(snapshot.cols || 80, snapshot.rows || 24);
                     terminal.write(snapshot.content);
@@ -202,6 +230,8 @@ function connect() {
 
     try {
         ws = new WebSocket(url);
+        // Expose for test cleanup (ESM modules don't expose to window)
+        window.__odtoWs = ws;
     } catch (e) {
         console.error('WebSocket creation failed:', e);
         showFallback();
@@ -238,6 +268,7 @@ function connect() {
 
     ws.onclose = (event) => {
         console.log('WebSocket closed:', event.code, event.reason);
+        sessionActive = false;
         updateConnectionStatus('disconnected');
 
         if (!intentionalClose) {
@@ -259,6 +290,7 @@ function handleMessage(msg) {
         case 'reconnected':
             sessionId = msg.sessionId;
             reconnectToken = msg.reconnectToken;
+            sessionActive = true;
             console.log(`Session: ${sessionId} (${msg.type})`);
             // Store in sessionStorage for refresh
             try {
@@ -267,6 +299,8 @@ function handleMessage(msg) {
             } catch (e) {
                 // Ignore storage errors
             }
+            // Trigger lazy-load of optional addons
+            loadOptionalAddons();
             break;
 
         case 'output':
