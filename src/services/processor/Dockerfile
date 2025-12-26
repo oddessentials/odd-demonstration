@@ -1,10 +1,9 @@
 # src/services/processor/Dockerfile
 # Python Processor service
 #
-# BUILD CONTEXTS:
-# - start-all.ps1 and CI: Use service directory (src/services/processor/) as context
-#   contracts/ must exist in service directory (synced by pre-commit or CI copy step)
-# - Manual local builds from service dir work directly if contracts/ exists
+# BUILD CONTEXT: Repo root (.)
+# start-all.ps1 uses repo root context so contracts/ can be accessed.
+# All COPY paths must be repo-relative (e.g., src/services/processor/...)
 
 
 FROM python:3.11-slim
@@ -17,16 +16,16 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies first (cache layer)
-COPY requirements.txt ./
+COPY src/services/processor/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY main.py ./
-COPY schema_validator.py ./
-COPY schemas ./schemas/
+COPY src/services/processor/main.py ./
+COPY src/services/processor/schema_validator.py ./
+COPY src/services/processor/schemas ./schemas/
 
 # Copy VERSION file for runtime version reporting
-COPY VERSION ./VERSION
+COPY src/services/processor/VERSION ./VERSION
 
 # Bake contracts into image for I3 (self-contained) compliance
 COPY contracts ./contracts
