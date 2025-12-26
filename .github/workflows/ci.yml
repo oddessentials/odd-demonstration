@@ -80,8 +80,9 @@ jobs:
     name: Bazel Build & Test
     runs-on: ubuntu-latest  # SCOPED: Linux-only (mirror coverage)
     env:
-      # Force Bazelisk to use GitHub-hosted mirror (trailing slash required)
-      BAZELISK_BASE_URL: https://github.com/oddessentials/odd-demonstration/releases/download/bazel-binaries-v1/
+      # Force Bazelisk to use GitHub-hosted mirror
+      # FORMAT_URL gives full control - GitHub Releases uses flat paths (no version subdirectory)
+      BAZELISK_FORMAT_URL: https://github.com/oddessentials/odd-demonstration/releases/download/bazel-binaries-v1/bazel-%v-%o-%m
     
     steps:
       - name: Checkout code
