@@ -1,7 +1,11 @@
-# Lockfile enforcement - prevents accidental MODULE.bazel changes
+# Lockfile enforcement
 common --lockfile_mode=error
 
-# Performance flags for CI
+# CI configuration - use GitHub raw BCR mirror to avoid bcr.bazel.build TLS issues
+# 'common' applies to ALL Bazel commands (build, query, mod, fetch, etc.)
+common:ci --registry=https://raw.githubusercontent.com/bazelbuild/bazel-central-registry/main/
+
+# Performance flags for CI builds
 build:ci --curses=no
 build:ci --show_progress
 

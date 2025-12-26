@@ -232,9 +232,9 @@ jobs:
       # This check becomes enforcing once @pip_heavy is defined
       - name: Check for @pip_heavy leakage
         run: |
-          # Check if @pip_heavy exists first
-          if bazel query '@pip_heavy//...' 2>/dev/null | head -1 > /dev/null; then
-            LEAKS=$(bazel query 'deps(//...) intersect @pip_heavy//...' 2>/dev/null || echo "")
+          # Check if @pip_heavy exists first (use --config=ci for registry)
+          if bazel query '@pip_heavy//...' --config=ci 2>/dev/null | head -1 > /dev/null; then
+            LEAKS=$(bazel query 'deps(//...) intersect @pip_heavy//...' --config=ci 2>/dev/null || echo "")
             if [ -n "$LEAKS" ]; then
               echo "ERROR: @pip_heavy dependencies leaked into default build graph:"
               echo "$LEAKS"
@@ -247,7 +247,17 @@ jobs:
 
       - name: Build all targets (excluding heavy)
         timeout-minutes: 30
-        run: bazel build //... --curses=no --show_progress --verbose_failures --build_tag_filters=-heavy
+        run: |
+          # Use --config=ci for GitHub BCR mirror, capture output for BCR guard
+          bazel build //... --config=ci --verbose_failures --build_tag_filters=-heavy 2>&1 | tee bazel_build.log
+          
+          # HARD GUARD: Fail if bcr.bazel.build was accessed
+          if grep -q "bcr.bazel.build" bazel_build.log; then
+            echo "::error::BCR ACCESS DETECTED - registry override not working"
+            grep "bcr.bazel.build" bazel_build.log
+            exit 1
+          fi
+          echo "✓ Build completed without BCR access"
 
       - name: Upload test logs on failure
         if: failure()
