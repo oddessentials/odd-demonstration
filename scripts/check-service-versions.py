@@ -30,19 +30,29 @@ def validate_semver(version: str) -> bool:
 
 
 def get_service_versions(project_root: Path) -> dict[str, str]:
-    """Read VERSION files from all services."""
+    """Read VERSION files from all services and interfaces."""
     versions = {}
-    services_dir = project_root / "src" / "services"
     
-    for service_dir in services_dir.iterdir():
-        if service_dir.is_dir():
-            version_file = service_dir / "VERSION"
-            if version_file.exists():
-                version = version_file.read_text().strip()
-                if validate_semver(version):
-                    versions[service_dir.name] = version
-                else:
-                    print(f"  [ERROR] {service_dir.name}/VERSION has invalid SemVer: {version}")
+    # Scan both src/services/ and src/interfaces/ for VERSION files
+    scan_dirs = [
+        project_root / "src" / "services",
+        project_root / "src" / "interfaces",
+    ]
+    
+    for scan_dir in scan_dirs:
+        if not scan_dir.exists():
+            continue
+        for service_dir in scan_dir.iterdir():
+            if service_dir.is_dir():
+                version_file = service_dir / "VERSION"
+                if version_file.exists():
+                    version = version_file.read_text().strip()
+                    # Use directory name as key (e.g., "web" -> "web-ui" mapping handled by manifest dict)
+                    service_name = service_dir.name
+                    if validate_semver(version):
+                        versions[service_name] = version
+                    else:
+                        print(f"  [ERROR] {service_name}/VERSION has invalid SemVer: {version}")
     
     return versions
 
@@ -57,11 +67,14 @@ def check_k8s_manifests(project_root: Path, service_versions: dict[str, str]) ->
         return errors
     
     # Map of K8s file names to service names
+    # All services with VERSION files must be included here
     service_manifests = {
         "gateway.yaml": "gateway",
         "processor.yaml": "processor",
         "metrics-engine.yaml": "metrics-engine",
         "read-model.yaml": "read-model",
+        "web-pty-ws.yaml": "web-pty-server",
+        "web-ui-http.yaml": "web",  # Uses src/interfaces/web/VERSION
     }
     
     for manifest_name, service_name in service_manifests.items():

@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         service: web-pty-ws
+        app.kubernetes.io/version: "0.1.0"
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
@@ -20,7 +21,7 @@ spec:
     spec:
       containers:
       - name: pty-server
-        image: web-pty-server:latest
+        image: web-pty-server:0.1.0
         imagePullPolicy: Never
         ports:
         - containerPort: 9000

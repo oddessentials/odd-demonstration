@@ -10,7 +10,41 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$script:ProjectRoot = Split-Path -Parent $PSScriptRoot
+
+# ============================================================================
+# Hardened Root Resolution Pattern (v3.1.7)
+# Handles the "$PSScriptRoot Invocation Hazard" when spawned by foreign shells
+# ============================================================================
+
+# Primary: Resolve from actual script file path
+if ($PSScriptRoot) {
+    # Strip Windows extended path prefix (\\?\) if present - it breaks Split-Path
+    $scriptRoot = $PSScriptRoot -replace '^\\\\\?\\', ''
+    $script:ProjectRoot = Split-Path -Parent $scriptRoot
+} else {
+    # Secondary: Fall back to CWD and walk upward to find project root
+    # Note: Get-Location returns PathInfo, use .Path for string
+    $script:ProjectRoot = (Get-Location).Path
+    while ($script:ProjectRoot -and -not (Test-Path (Join-Path $script:ProjectRoot "infra"))) {
+        $parent = Split-Path -Parent $script:ProjectRoot
+        if ($parent -eq $script:ProjectRoot) { $script:ProjectRoot = $null; break }
+        $script:ProjectRoot = $parent
+    }
+}
+
+# Fail-fast guard: Validate project root contains the canonical marker
+if (-not $script:ProjectRoot -or -not (Test-Path (Join-Path $script:ProjectRoot "infra"))) {
+    # Output as JSON for TUI to capture
+    if ($OutputJson) {
+        Write-Output (@{ step = "prereqs"; status = "error"; message = "FATAL: Project root could not be resolved. PSScriptRoot='$PSScriptRoot' CWD='$(Get-Location)'" } | ConvertTo-Json -Compress)
+    }
+    Write-Host "FATAL: Project root could not be resolved." -ForegroundColor Red
+    Write-Host "  PSScriptRoot: '$PSScriptRoot'" -ForegroundColor Red
+    Write-Host "  CWD: '$(Get-Location)'" -ForegroundColor Red
+    Write-Host "  Resolved: '$script:ProjectRoot'" -ForegroundColor Red
+    Write-Host "  The 'infra/' directory was not found in any parent directory." -ForegroundColor Red
+    exit 1
+}
 
 # Colors for non-JSON output
 $Colors = @{
@@ -166,13 +200,16 @@ function Build-DockerImages {
     Write-Progress-Step -Step "images" -Status "starting" -Message "Building Docker images..."
     
     # Define images with their VERSION file paths
+    # Context must match the COPY paths in each Dockerfile:
+    #   - Gateway/Processor: Dockerfiles require repo root context for contracts/ directory
+    #   - Web-pty-server: Dockerfile uses repo-root paths (e.g., COPY src/services/...)
     $images = @(
         @{ Name = "gateway"; Dockerfile = "src/services/gateway/Dockerfile"; Context = "."; VersionFile = "src/services/gateway/VERSION" }
         @{ Name = "processor"; Dockerfile = "src/services/processor/Dockerfile"; Context = "."; VersionFile = "src/services/processor/VERSION" }
         @{ Name = "metrics-engine"; Dockerfile = "src/services/metrics-engine/Dockerfile"; Context = "src/services/metrics-engine"; VersionFile = "src/services/metrics-engine/VERSION" }
         @{ Name = "read-model"; Dockerfile = "src/services/read-model/Dockerfile"; Context = "src/services/read-model"; VersionFile = "src/services/read-model/VERSION" }
-        @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web"; VersionFile = $null }
-        @{ Name = "web-pty-server"; Dockerfile = "src/services/web-pty-server/Dockerfile"; Context = "src/services/web-pty-server"; VersionFile = "src/services/web-pty-server/VERSION" }
+        @{ Name = "web-ui"; Dockerfile = "src/interfaces/web/Dockerfile"; Context = "src/interfaces/web"; VersionFile = "src/interfaces/web/VERSION" }
+        @{ Name = "web-pty-server"; Dockerfile = "src/services/web-pty-server/Dockerfile"; Context = "."; VersionFile = "src/services/web-pty-server/VERSION" }
     )
     
     $failedImages = @()
@@ -182,13 +219,22 @@ function Build-DockerImages {
         $dockerfilePath = Join-Path $ProjectRoot $img.Dockerfile
         $contextPath = Join-Path $ProjectRoot $img.Context
         
-        # Read version from VERSION file, default to "latest" if not found
-        $version = "latest"
+        # Read version from VERSION file - FAIL FAST if missing (no :latest fallback)
+        $version = $null
         if ($img.VersionFile) {
             $versionFilePath = Join-Path $ProjectRoot $img.VersionFile
             if (Test-Path $versionFilePath) {
                 $version = (Get-Content $versionFilePath -Raw).Trim()
+            } else {
+                Write-Progress-Step -Step "images" -Status "error" -Message "VERSION file missing: $($img.VersionFile)"
+                Write-Host "FATAL: VERSION file not found: $versionFilePath" -ForegroundColor Red
+                Write-Host "  This likely indicates a broken project root resolution." -ForegroundColor Red
+                Write-Host "  Current ProjectRoot: $ProjectRoot" -ForegroundColor Red
+                return $false
             }
+        } else {
+            Write-Progress-Step -Step "images" -Status "error" -Message "Image $($img.Name) has no VersionFile configured"
+            return $false
         }
         
         $imageTag = "$($img.Name):$version"
@@ -221,14 +267,30 @@ function Import-ImagesToKind {
     param([string]$KindPath = "kind")
     
     $clusterName = "task-observatory"
-    $images = @("gateway", "processor", "metrics-engine", "read-model", "web-ui", "web-pty-server")
+    
+    # Version file mapping - authoritative source for all image versions
+    $versionFiles = @{
+        "gateway" = "src/services/gateway/VERSION"
+        "processor" = "src/services/processor/VERSION"
+        "metrics-engine" = "src/services/metrics-engine/VERSION"
+        "read-model" = "src/services/read-model/VERSION"
+        "web-ui" = "src/interfaces/web/VERSION"
+        "web-pty-server" = "src/services/web-pty-server/VERSION"
+    }
     
     Write-Progress-Step -Step "load" -Status "starting" -Message "Loading images into Kind cluster..."
     
-    foreach ($img in $images) {
-        # Get version from the build step, default to "latest"
-        $version = if ($script:ImageVersions -and $script:ImageVersions[$img]) { $script:ImageVersions[$img] } else { "latest" }
-        $imageTag = "${img}:${version}"
+    foreach ($imgName in $versionFiles.Keys) {
+        # Read version from VERSION file - FAIL FAST if missing (no :latest fallback)
+        $versionFilePath = Join-Path $ProjectRoot $versionFiles[$imgName]
+        if (-not (Test-Path $versionFilePath)) {
+            Write-Progress-Step -Step "load" -Status "error" -Message "VERSION file missing: $($versionFiles[$imgName])"
+            Write-Host "FATAL: VERSION file not found: $versionFilePath" -ForegroundColor Red
+            Write-Host "  Current ProjectRoot: $ProjectRoot" -ForegroundColor Red
+            return $false
+        }
+        $version = (Get-Content $versionFilePath -Raw).Trim()
+        $imageTag = "${imgName}:${version}"
         
         Write-Progress-Step -Step "load" -Status "starting" -Message "Loading $imageTag..."
         

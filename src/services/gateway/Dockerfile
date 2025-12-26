@@ -1,11 +1,10 @@
 # src/services/gateway/Dockerfile
 # Multi-stage build for Node.js Gateway service
 #
-# BUILD CONTEXTS:
-# - start-all.ps1: Uses repo root (.) as context, contracts/ found at root
-# - CI builds: CI copies contracts/ before build
-# - Manual local builds from service dir: Copy contracts first:
-#     cp -r ../../contracts ./contracts && docker build -t odto-gateway:local .
+# BUILD CONTEXT: Repo root (.)
+# start-all.ps1 uses repo root context so contracts/ can be accessed.
+# All COPY paths must be repo-relative (e.g., src/services/gateway/...)
+
 
 # ============================================================
 # Build Stage - Compile TypeScript
@@ -15,22 +14,22 @@ FROM node:20-slim AS builder
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY package.json package-lock.json ./
-COPY tsconfig.json ./
+COPY src/services/gateway/package.json src/services/gateway/package-lock.json ./
+COPY src/services/gateway/tsconfig.json ./
 
 # Install all dependencies (including devDeps for tsc)
 RUN npm ci
 
 # Copy source files
-COPY index.ts ./
-COPY lib ./lib/
+COPY src/services/gateway/index.ts ./
+COPY src/services/gateway/lib ./lib/
 
 # Compile TypeScript to JavaScript
 RUN npx tsc
 
 # Copy VERSION into dist/ where __dirname points at runtime
 # Gateway reads: path.join(__dirname, 'VERSION') -> /app/dist/VERSION
-COPY VERSION ./dist/VERSION
+COPY src/services/gateway/VERSION ./dist/VERSION
 
 # ============================================================
 # Runtime Stage - Minimal production image
@@ -43,7 +42,7 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 
 # Copy package files and install production deps only
-COPY package.json package-lock.json ./
+COPY src/services/gateway/package.json src/services/gateway/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # Bake contracts into image for I3 (self-contained) compliance

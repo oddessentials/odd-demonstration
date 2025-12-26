@@ -15,62 +15,32 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 ![TUI%20Lib](https://img.shields.io/badge/TUI%20Lib-31%25-yellow)
 ![PTY%20Server](https://img.shields.io/badge/PTY%20Server-80%25-brightgreen)
 
-## 🚀 Quick Start
+**Behavioral Tests:**
 
-### Option 1: TUI Launcher (Recommended)
+[![TUI Visual Tests](https://img.shields.io/badge/TUI%20Visual-Passing-blue)](./tests/visual/)
 
-The TUI automatically checks prerequisites and guides you through installation:
+## 🚀 Quick Start (5 minutes)
+
+Get the Distributed Task Observatory running locally with the fewest possible steps.
+
+### 1️⃣ Clone the repo
 
 ```bash
-cd src/interfaces/tui
-cargo run --release
+git clone https://github.com/oddessentials/odd-demonstration.git
+cd odd-demonstration
 ```
 
-**What happens:**
+### 2️⃣ Install the dashboard CLI
 
-1. ✅ Checks for Docker, PowerShell, kubectl, kind
-2. 📋 Shows missing tools with install commands
-3. 📎 Press **C** to copy install command to clipboard
-4. 🚀 Press **L** to launch the cluster
+Choose **one** option:
 
-### Option 2: Script (if prerequisites installed)
+**Binary (recommended):**
 
 ```bash
-# Windows (PowerShell)
-.\scripts\start-all.ps1
-
-# macOS/Linux
-pwsh ./scripts/start-all.ps1
-```
-
-### Prerequisites
-
-> 💡 **Tip:** The TUI will detect and help you install these!
-
-- **Docker Desktop** - [Install](https://docs.docker.com/desktop/)
-- **PowerShell Core** - `brew install powershell` (macOS) / `winget install Microsoft.PowerShell` (Windows)
-- **kubectl** - `brew install kubectl` or `winget install Kubernetes.kubectl`
-- **kind** - `brew install kind` or `winget install Kubernetes.kind`
-- **Rust** - [rustup.rs](https://rustup.rs) (only needed for building TUI from source)
-
----
-
-## 📦 Installation (Binary Release)
-
-> **Note:** v0.1.x are unsigned bootstrap releases. Your OS may show security prompts.
-> See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for checksum verification.
-
-### Quick Install
-
-**Linux/macOS:**
-
-```bash
+# macOS / Linux
 curl -fsSL https://raw.githubusercontent.com/oddessentials/odd-demonstration/main/install.sh | sh
-```
 
-**Windows (PowerShell):**
-
-```powershell
+# Windows (PowerShell)
 iwr -useb https://raw.githubusercontent.com/oddessentials/odd-demonstration/main/install.ps1 | iex
 ```
 
@@ -80,15 +50,120 @@ iwr -useb https://raw.githubusercontent.com/oddessentials/odd-demonstration/main
 npm install -g @oddessentials/odd-dashboard
 ```
 
-### Verify Installation
+### 3️⃣ Verify prerequisites
+
+```bash
+odd-dashboard doctor
+```
+
+This checks for Docker Desktop, PowerShell, kubectl, and kind, and tells you exactly what’s missing if anything isn’t installed.
+
+### 4️⃣ Start Docker Desktop
+
+Ensure Docker Desktop is running before continuing.
+
+### 5️⃣ Launch the system
+
+```bash
+odd-dashboard
+```
+
+That’s it. The TUI will guide you the rest of the way.
+
+➡️ **Next:** Press **L** in the TUI to launch the local cluster.
+
+---
+
+## 🧑‍💻 Developer Quick Start (Guided & Scripted)
+
+This section is for contributors or anyone running the system directly from source.
+
+### Option 1: Rust TUI Launcher (Recommended for dev)
+
+```bash
+cd src/interfaces/tui
+cargo run --release
+```
+
+**What the TUI does:**
+
+1. ✅ Checks Docker, PowerShell, kubectl, and kind
+2. 📋 Shows missing tools with install commands
+3. 📎 Press **C** to copy a command to your clipboard
+4. 🚀 Press **L** to launch the cluster
+
+> 💡 Rust is only required when building the TUI from source.
+
+---
+
+### Option 2: One-shot startup script
+
+Use this if all prerequisites are already installed.
+
+```bash
+# Windows
+.\scripts\start-all.ps1
+
+# macOS / Linux
+pwsh ./scripts/start-all.ps1
+```
+
+---
+
+## 🔧 Prerequisites
+
+> The TUI detects and helps you install all of these automatically.
+
+- **Docker Desktop** – container runtime
+- **PowerShell Core** – cross-platform scripting
+- **kubectl** – Kubernetes CLI
+- **kind** – local Kubernetes clusters
+- **Rust** – required only for building the TUI from source
+
+---
+
+## 📦 Installation Details
+
+> **Note:** currently releases are unsigned bootstrap builds.
+> See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for checksums.
+
+### Verify installation
 
 ```bash
 odd-dashboard --version
-# Shows version, commit, build time, and rustc version
-
 odd-dashboard doctor
-# Checks: Docker, PowerShell, kubectl, kind
 ```
+
+---
+
+## 🖥️ Interfaces (Quick Overview)
+
+### Rust TUI
+
+- Guided setup & diagnostics
+- One-key cluster launch
+- Real-time job and system stats
+- Alerts from Prometheus
+- Built-in UI launcher
+
+**Keyboard shortcuts:**
+
+| Key | Action         |
+| --- | -------------- |
+| `L` | Launch cluster |
+| `N` | New task       |
+| `U` | UI launcher    |
+| `R` | Refresh        |
+| `Q` | Quit           |
+
+---
+
+### Web Terminal
+
+- Browser-based terminal powered by xterm.js
+- Pixel-accurate TUI mirroring via PTY streaming
+- Session reconnect on refresh
+- Fallback dashboard when terminal is unavailable
 
 ### Supported Platforms
 
@@ -105,76 +180,82 @@ See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements an
 
 ## 🏗️ Architecture
 
-![Architecture diagram](./mermaid-diagram.svg)
-
-### Web Terminal Architecture
-
 ```mermaid
-flowchart LR
-    subgraph Browser
-        XT[xterm.js]
-    end
-    
-    subgraph "web-ui-http (nginx)"
-        STATIC[Static Files]
-        PROXY[/ws Proxy]
-        API["/api Proxy"]
-    end
-    
-    subgraph "web-pty-ws"
-        WS[WebSocket Server]
-        PTY[PTY Broker]
-        TUI[odd-dashboard]
-    end
-    
-    subgraph Backend
-        RM[Read Model]
-        GW[Gateway]
-    end
-    
-    XT <-->|WebSocket| PROXY
-    PROXY <--> WS
-    WS <--> PTY
-    PTY <--> TUI
-    XT -->|HTTP| STATIC
-    XT -->|fallback| API
-    API --> RM
-    TUI --> RM
-    TUI --> GW
-```
+flowchart TB
+subgraph Interfaces
+Browser["Browser (xterm.js)"]
+WebUI["web-ui-http (nginx)"]
+TUI["odd-dashboard TUI (Rust/ratatui)"]
+end
 
-### System Overview
+    subgraph EdgeServices["Edge & Access"]
+        WebPTY["web-pty-ws (Rust)"]
+        Gateway["Gateway API (Node.js)"]
+        ReadModel["Read Model API (Go)"]
+    end
 
-```
-┌─────────────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Web Terminal      │     │  Rust TUI   │     │   Gateway   │
-│  (xterm.js+nginx)   │     │  (ratatui)  │     │  (Node.js)  │
-│   ↓ WebSocket ↓     │     └──────┬──────┘     └──────┬──────┘
-│ ┌─────────────────┐ │            │                   │
-│ │  web-pty-ws     │ │            │                   │
-│ │  (PTY Broker)   │ │            │                   │
-│ └────────┬────────┘ │            │                   │
-└──────────┼──────────┘            │                   │
-           └───────────────────────┴─────────┬─────────┘
-                                             │
-                                      ┌──────▼──────┐
-                                      │ Read Model  │
-                                      │    (Go)     │
-                                      └──────┬──────┘
-                                             │
-       ┌─────────────────────────────────────┼─────────────────────────────┐
-       │                  │                  │          │                  │
-┌──────▼──────┐   ┌───────▼───────┐         │  ┌───────▼───────┐  ┌───────▼───────┐
-│   Redis     │   │   MongoDB     │         │  │  PostgreSQL   │  │   RabbitMQ    │
-│  (Cache)    │   │ (Event Store) │         │  │(Authoritative)│  │ (Event Spine) │
-└─────────────┘   └───────────────┘         │  └───────────────┘  └───────┬───────┘
-                                            │                             │
-                                     ┌──────┴─────────────────────────────┤
-                                     │                                    │
-                              ┌──────▼──────┐                     ┌───────▼───────┐
-                              │  Processor  │                     │ Metrics Engine│
-                              │  (Python)   │                     │     (Go)      │
-                              └─────────────┘                     └───────────────┘
+    subgraph CoreServices["Core Services"]
+        Processor["Processor (Python)"]
+        Metrics["Metrics Engine (Go)"]
+    end
+
+    subgraph Data["Data & Messaging"]
+        RabbitMQ["RabbitMQ (event spine)"]
+        Postgres["PostgreSQL (authoritative)"]
+        Mongo["MongoDB (event store)"]
+        Redis["Redis (cache)"]
+    end
+
+    subgraph Observability
+        Prometheus["Prometheus"]
+        Grafana["Grafana"]
+    end
+
+    subgraph Testing["Test Framework"]
+        Unit["Unit Tests\n(vitest / go test / pytest / cargo)"]
+        Contracts["Contract Validator\nscripts/validate-contracts.ps1"]
+        Smoke["Smoke Test\nscripts/smoke-test.ps1"]
+        Integration["Integration Gate/Harness\nscripts/integration-gate.ps1\nscripts/integration-harness.ps1"]
+        Visual["Playwright Visual Tests\ntests/visual"]
+    end
+
+    Browser --> WebUI
+    WebUI -- WebSocket --> WebPTY
+    WebPTY --> TUI
+    WebUI -- /api --> ReadModel
+    TUI --> Gateway
+    TUI --> ReadModel
+
+    Gateway --> RabbitMQ
+    Processor --> RabbitMQ
+    Metrics --> RabbitMQ
+
+    Processor --> Postgres
+    ReadModel --> Postgres
+
+    ReadModel --> Mongo
+    Metrics --> Mongo
+
+    ReadModel --> Redis
+    Metrics --> Redis
+
+    Prometheus --> Metrics
+    Grafana --> Prometheus
+
+    Unit -.-> Gateway
+    Unit -.-> Processor
+    Unit -.-> Metrics
+    Unit -.-> ReadModel
+    Unit -.-> WebPTY
+    Contracts -.-> Gateway
+    Contracts -.-> Processor
+    Smoke -.-> Gateway
+    Smoke -.-> ReadModel
+    Integration -.-> Gateway
+    Integration -.-> ReadModel
+    Integration -.-> Processor
+    Integration -.-> Metrics
+    Visual -.-> WebUI
 ```
 
 ---
@@ -190,7 +271,7 @@ After startup, access services via port-forwards:
 | ↳ API Docs         | http://localhost:3000/docs  | -                         |
 | **Read Model API** | http://localhost:8080/stats | -                         |
 | ↳ API Docs         | http://localhost:8080/docs  | -                         |
-| **RabbitMQ**       | http://localhost:15672      | guest / guest             |
+| **RabbitMQ**       | http://localhost:15672      | observatory / demo        |
 | **Grafana**        | http://localhost:3002       | admin / admin             |
 | **Prometheus**     | http://localhost:9090       | -                         |
 | **pgAdmin**        | http://localhost:5050       | admin@example.com / admin |
@@ -203,14 +284,17 @@ After startup, access services via port-forwards:
 
 Pre-built container images are published to Docker Hub for faster integration testing and CI reproducibility.
 
+[View on docker hub here](https://hub.docker.com/u/oddessentials)
+
 ### Available Images
 
-| Image | Base | Size | Purpose |
-|-------|------|------|---------|
-| `oddessentials/odto-gateway:latest` | node:20-slim | ~320 MB | API Gateway (Node.js/TypeScript) |
-| `oddessentials/odto-processor:latest` | python:3.11-slim | ~490 MB | Job Processor (Python) |
-| `oddessentials/odto-metrics-engine:latest` | distroless | ~23 MB | Metrics Aggregator (Go) |
-| `oddessentials/odto-read-model:latest` | distroless | ~20 MB | Query API (Go) |
+| Image                                      | Base             | Size    | Purpose                          |
+| ------------------------------------------ | ---------------- | ------- | -------------------------------- |
+| `oddessentials/odto-gateway:latest`        | node:20-slim     | ~320 MB | API Gateway (Node.js/TypeScript) |
+| `oddessentials/odto-processor:latest`      | python:3.11-slim | ~490 MB | Job Processor (Python)           |
+| `oddessentials/odto-metrics-engine:latest` | distroless       | ~23 MB  | Metrics Aggregator (Go)          |
+| `oddessentials/odto-read-model:latest`     | distroless       | ~20 MB  | Query API (Go)                   |
+| `oddessentials/odto-web-pty-server:latest` | rust:alpine      | ~50 MB  | PTY WebSocket Server (Rust)      |
 
 ### Usage
 
@@ -233,40 +317,10 @@ docker compose -f docker-compose.integration.yml up -d
 ### CI Integration
 
 Images are automatically built and pushed on every merge to `main`:
+
 - Security: Build/push only runs on `main`, never on PRs or forks
 - Contracts are baked into Gateway and Processor images for self-contained tests
 - Integration tests use these pre-built images for <90s runtime (I4 invariant)
-
-
-## 🖥️ Interfaces
-
-### Rust TUI
-
-Terminal dashboard with:
-
-- **Guided Setup** - Automatic prerequisite checking with clipboard copy
-- **Cluster Launcher** - One-key cluster startup
-- **Real-time Stats** - Jobs, completions, failures
-- **Alerts Panel** - Active Prometheus alerts
-- **UI Launcher** - Quick access to all web interfaces
-
-**Keyboard:**
-| Key | Action |
-|-----|--------|
-| `L` | Launch cluster (launcher mode) |
-| `Q` | Quit |
-| `R` | Refresh |
-| `N` | New Task |
-| `U` | UI Launcher |
-
-### Web Terminal
-
-xterm.js-based terminal that mirrors the TUI via WebSocket PTY streaming. Features:
-- Identical rendering to native terminal
-- Session reconnect on refresh
-- Fallback dashboard when terminal unavailable
-
----
 
 ## 🧪 Testing
 
@@ -326,11 +380,14 @@ odd-demonstration/
 │   │   ├── tui/         # Rust TUI (ratatui) with cluster launcher
 │   │   └── web/         # Glassmorphic web dashboard (Nginx)
 │   └── services/
-│       ├── gateway/     # Node.js - API ingress, schema validation
-│       ├── processor/   # Python - Job execution worker
+│       ├── gateway/         # Node.js - API ingress, schema validation
+│       ├── processor/       # Python - Job execution worker
 │       ├── metrics-engine/  # Go - Event aggregation, MongoDB writer
-│       └── read-model/      # Go - Query API (Postgres, MongoDB, Redis)
-├── tests/               # Integration test fixtures & determinism docs
+│       ├── read-model/      # Go - Query API (Postgres, MongoDB, Redis)
+│       └── web-pty-server/  # Rust - PTY WebSocket streaming
+├── tests/
+│   ├── visual/          # Playwright visual regression tests
+│   └── fixtures/        # Integration test fixtures
 ├── audit/               # Session artifacts & implementation walkthroughs
 └── MODULE.bazel         # Bazel workspace (polyglot build)
 ```
