@@ -155,7 +155,9 @@ See [`tests/DETERMINISM.md`](../tests/DETERMINISM.md) for test timing contracts:
 
 | ID | Invariant | Enforcement |
 |----|-----------|-------------|
-| B1 | All service Dockerfiles use **repo root** as build context | `start-all.ps1` sets `Context = "."` |
+| B1 | Build context must match Dockerfile COPY assumptions | `start-all.ps1` + CI build steps |
+| B1a | Local dev builds use **repo root** as build context | `start-all.ps1` sets `Context = "."` |
+| B1b | CI builds use **service-local** context with synced `contracts/` for cache efficiency | CI step `cp -r contracts` into service directories |
 | B2 | All `COPY` paths in Dockerfiles are **repo-relative** | Manual review on Dockerfile changes |
 | B3 | VERSION file missing = **hard failure** (no `:latest` fallback) | `start-all.ps1` fail-fast logic |
 | B4 | `$PSScriptRoot` empty = **detect and fallback** to marker-based discovery | Hardened Root Resolution Pattern |
@@ -166,9 +168,13 @@ See [`tests/DETERMINISM.md`](../tests/DETERMINISM.md) for test timing contracts:
 
 **The Solution (Enforced v3.1.7)**:
 
-1. **All builds use repo root context (`.`)**: `start-all.ps1` builds all images from the repository root.
+1. **Local dev builds use repo root context (`.`)**: `start-all.ps1` builds all images from the repository root.
 2. **All Dockerfiles use repo-relative COPY paths**: e.g., `COPY src/services/gateway/package.json ./`
 3. **No fallback to `:latest`**: Missing VERSION file = immediate failure with diagnostics.
+
+#### CI Service-Local Context (Intentional)
+
+CI builds may use a **service-local** build context to maximize cache hits, as long as the service directory receives a synchronized `contracts/` copy (e.g., the CI `cp -r contracts` step) so repo-relative `COPY contracts/...` assumptions remain true. This pattern is valid and intentional because it preserves Docker layer reuse while still meeting the repo-relative COPY contract.
 
 ### Dockerfile Path Convention
 
