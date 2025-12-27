@@ -33,6 +33,7 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 
 - 🗺️ [Blueprints & Design](contracts/blueprint.md)
 - 📐 [Invariants](docs/INVARIANTS.md)
+- ✅ [Feature Coverage](docs/FEATURES.md)
 
 **Diagrams**
 
@@ -161,7 +162,48 @@ flowchart LR
 
 ---
 
-## 🚀 Quick Start (5 minutes)
+## 🔧 Prerequisites
+
+> The TUI detects and helps you install all of these automatically.
+
+- **Docker Desktop** – container runtime
+- **PowerShell Core** – cross-platform scripting
+- **kubectl** – Kubernetes CLI
+- **kind** – local Kubernetes clusters
+- **Rust** – required only for building the TUI from source
+
+---
+
+## 📦 Installation Details
+
+> **Note:** currently releases are unsigned bootstrap builds.
+> See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for checksums.
+
+### Verify installation
+
+```bash
+odd-dashboard --version
+odd-dashboard doctor
+```
+
+---
+
+## Supported Platforms
+
+| OS      | Architecture  | Artifact                        |
+| ------- | ------------- | ------------------------------- |
+| Windows | x64           | `odd-dashboard-windows-x64.exe` |
+| macOS   | Intel         | `odd-dashboard-macos-x64`       |
+| macOS   | Apple Silicon | `odd-dashboard-macos-arm64`     |
+| Linux   | x64           | `odd-dashboard-linux-x64`       |
+| Linux   | ARM64         | `odd-dashboard-linux-arm64`     |
+
+**System Requirements:** 8GB RAM minimum (16GB recommended), 4+ CPU cores, 15GB disk.
+See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.
+
+---
+
+## 🚀 Quick Start
 
 Get the Distributed Task Observatory running locally with the fewest possible steps.
 
@@ -214,9 +256,18 @@ That’s it. The TUI will guide you the rest of the way.
 
 ➡️ **Next:** Press **L** in the TUI to launch the local cluster.
 
+**What the TUI does:**
+
+1. ✅ Checks Docker, PowerShell, kubectl, and kind
+2. 📋 Shows missing tools with install commands
+3. 📎 Press **C** to copy a command to your clipboard
+4. 🚀 Press **L** to launch the cluster
+
+> 💡 Rust is only required when building the TUI from source.
+
 ---
 
-## 🧑‍💻 Developer Quick Start (Guided & Scripted)
+## 🧑‍💻 Developer Guide
 
 This section is for contributors or anyone running the system directly from source.
 
@@ -226,15 +277,6 @@ This section is for contributors or anyone running the system directly from sour
 cd src/interfaces/tui
 cargo run --release
 ```
-
-**What the TUI does:**
-
-1. ✅ Checks Docker, PowerShell, kubectl, and kind
-2. 📋 Shows missing tools with install commands
-3. 📎 Press **C** to copy a command to your clipboard
-4. 🚀 Press **L** to launch the cluster
-
-> 💡 Rust is only required when building the TUI from source.
 
 ---
 
@@ -252,33 +294,27 @@ pwsh ./scripts/start-all.ps1
 
 ---
 
-## 🔧 Prerequisites
+## 🔗 Access Points
 
-> The TUI detects and helps you install all of these automatically.
+After startup, access services via port-forwards:
 
-- **Docker Desktop** – container runtime
-- **PowerShell Core** – cross-platform scripting
-- **kubectl** – Kubernetes CLI
-- **kind** – local Kubernetes clusters
-- **Rust** – required only for building the TUI from source
-
----
-
-## 📦 Installation Details
-
-> **Note:** currently releases are unsigned bootstrap builds.
-> See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for checksums.
-
-### Verify installation
-
-```bash
-odd-dashboard --version
-odd-dashboard doctor
-```
+| Service            | URL                         | Credentials               |
+| ------------------ | --------------------------- | ------------------------- |
+| **Web Terminal**   | http://localhost:8081       | -                         |
+| **Gateway API**    | http://localhost:3000       | -                         |
+| ↳ API Docs         | http://localhost:3000/docs  | -                         |
+| **Read Model API** | http://localhost:8080/stats | -                         |
+| ↳ API Docs         | http://localhost:8080/docs  | -                         |
+| **RabbitMQ**       | http://localhost:15672      | guest / guest             |
+| **Grafana**        | http://localhost:3002       | admin / admin             |
+| **Prometheus**     | http://localhost:9090       | -                         |
+| **pgAdmin**        | http://localhost:5050       | admin@example.com / admin |
+| **Mongo Express**  | http://localhost:8082       | admin / password123       |
+| **RedisInsight**   | http://localhost:8001       | -                         |
 
 ---
 
-## 🖥️ Interfaces (Quick Overview)
+## 🖥️ Custom Interfaces
 
 ### Rust TUI
 
@@ -307,85 +343,7 @@ odd-dashboard doctor
 - Session reconnect on refresh
 - Fallback dashboard when terminal is unavailable
 
-### Supported Platforms
-
-| OS      | Architecture  | Artifact                        |
-| ------- | ------------- | ------------------------------- |
-| Windows | x64           | `odd-dashboard-windows-x64.exe` |
-| macOS   | Intel         | `odd-dashboard-macos-x64`       |
-| macOS   | Apple Silicon | `odd-dashboard-macos-arm64`     |
-| Linux   | x64           | `odd-dashboard-linux-x64`       |
-| Linux   | ARM64         | `odd-dashboard-linux-arm64`     |
-
-**System Requirements:** 8GB RAM minimum (16GB recommended), 4+ CPU cores, 15GB disk.
-See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.
-
-## 🔗 Access Points
-
-After startup, access services via port-forwards:
-
-| Service            | URL                         | Credentials               |
-| ------------------ | --------------------------- | ------------------------- |
-| **Web Terminal**   | http://localhost:8081       | -                         |
-| **Gateway API**    | http://localhost:3000       | -                         |
-| ↳ API Docs         | http://localhost:3000/docs  | -                         |
-| **Read Model API** | http://localhost:8080/stats | -                         |
-| ↳ API Docs         | http://localhost:8080/docs  | -                         |
-| **RabbitMQ**       | http://localhost:15672      | guest / guest             |
-| **Grafana**        | http://localhost:3002       | admin / admin             |
-| **Prometheus**     | http://localhost:9090       | -                         |
-| **pgAdmin**        | http://localhost:5050       | admin@example.com / admin |
-| **Mongo Express**  | http://localhost:8082       | admin / password123       |
-| **RedisInsight**   | http://localhost:8001       | -                         |
-
 ---
-
-## 🐳 Docker Hub Images
-
-Pre-built container images are published to Docker Hub for faster integration testing and CI reproducibility.
-
-[View on docker hub here](https://hub.docker.com/u/oddessentials)
-
-### Available Images
-
-| Image                                      | Base             | Size    | Purpose                          |
-| ------------------------------------------ | ---------------- | ------- | -------------------------------- |
-| `oddessentials/odto-gateway:latest`        | node:20-slim     | ~320 MB | API Gateway (Node.js/TypeScript) |
-| `oddessentials/odto-processor:latest`      | python:3.11-slim | ~490 MB | Job Processor (Python)           |
-| `oddessentials/odto-metrics-engine:latest` | distroless       | ~23 MB  | Metrics Aggregator (Go)          |
-| `oddessentials/odto-read-model:latest`     | distroless       | ~20 MB  | Query API (Go)                   |
-| `oddessentials/odto-web-pty-server:latest` | debian:bookworm  | ~80 MB  | PTY WebSocket Server (Rust)      |
-| `oddessentials/odto-web-ui:latest`         | nginx:alpine     | ~25 MB  | Web Terminal Frontend (nginx)    |
-
-### Usage
-
-```bash
-# Pull latest images
-docker pull oddessentials/odto-gateway:latest
-docker pull oddessentials/odto-processor:latest
-docker pull oddessentials/odto-metrics-engine:latest
-docker pull oddessentials/odto-read-model:latest
-docker pull oddessentials/odto-web-pty-server:latest
-docker pull oddessentials/odto-web-ui:latest
-
-# Run integration tests with pre-built images
-docker compose -f docker-compose.integration.yml up -d
-```
-
-### Image Tagging
-
-- `:latest` — Current `main` branch build
-- `:sha-<commit>` — Exact commit traceability
-
-### CI Integration
-
-Images are automatically built and pushed on every merge to `main`:
-
-- Security: Build/push only runs on `main`, never on PRs or forks
-- Contracts are baked into Gateway and Processor images for self-contained tests
-- Core services use these pre-built images for <90s runtime (I4 invariant)
-
-> **Note:** Visual regression tests (`tests/visual/`) build `web-pty-server` locally with `target: real` to embed the actual TUI binary. This ensures PR changes to the TUI are tested before merge.
 
 ## 🧪 Testing
 
@@ -418,6 +376,53 @@ pwsh ./scripts/integration-gate.ps1
 | Metrics-Engine | `cd src/services/metrics-engine && go test -v`  |
 | Read-Model     | `cd src/services/read-model && go test -v`      |
 | TUI            | `cd src/interfaces/tui && cargo test`           |
+
+### 🐳 Docker Hub Images
+
+Pre-built container images are published to Docker Hub for faster integration testing and CI reproducibility.
+
+[View on docker hub here](https://hub.docker.com/u/oddessentials)
+
+#### Available Images
+
+| Image                                      | Base             | Size    | Purpose                          |
+| ------------------------------------------ | ---------------- | ------- | -------------------------------- |
+| `oddessentials/odto-gateway:latest`        | node:20-slim     | ~320 MB | API Gateway (Node.js/TypeScript) |
+| `oddessentials/odto-processor:latest`      | python:3.11-slim | ~490 MB | Job Processor (Python)           |
+| `oddessentials/odto-metrics-engine:latest` | distroless       | ~23 MB  | Metrics Aggregator (Go)          |
+| `oddessentials/odto-read-model:latest`     | distroless       | ~20 MB  | Query API (Go)                   |
+| `oddessentials/odto-web-pty-server:latest` | debian:bookworm  | ~80 MB  | PTY WebSocket Server (Rust)      |
+| `oddessentials/odto-web-ui:latest`         | nginx:alpine     | ~25 MB  | Web Terminal Frontend (nginx)    |
+
+#### Usage
+
+```bash
+# Pull latest images
+docker pull oddessentials/odto-gateway:latest
+docker pull oddessentials/odto-processor:latest
+docker pull oddessentials/odto-metrics-engine:latest
+docker pull oddessentials/odto-read-model:latest
+docker pull oddessentials/odto-web-pty-server:latest
+docker pull oddessentials/odto-web-ui:latest
+
+# Run integration tests with pre-built images
+docker compose -f docker-compose.integration.yml up -d
+```
+
+#### Image Tagging
+
+- `:latest` — Current `main` branch build
+- `:sha-<commit>` — Exact commit traceability
+
+#### CI Integration
+
+Images are automatically built and pushed on every merge to `main`:
+
+- Security: Build/push only runs on `main`, never on PRs or forks
+- Contracts are baked into Gateway and Processor images for self-contained tests
+- Core services use these pre-built images for <90s runtime (I4 invariant)
+
+> **Note:** Visual regression tests (`tests/visual/`) build `web-pty-server` locally with `target: real` to embed the actual TUI binary. This ensures PR changes to the TUI are tested before merge.
 
 ---
 
