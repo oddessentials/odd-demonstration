@@ -13,11 +13,13 @@ pub mod config;
 // Re-export commonly used items for convenience
 pub use types::{
     App, AppMode, ClusterStatus, PortForwardStatus, SetupProgress, 
+    ShutdownProgress, PortForwardRegistry,
     TaskCreationState, TaskCreationStatus, JobPayload,
     UiEntry, UiRegistry, UiLauncherState,
     Stats, Job, Alert, AlertLabels,
     Prerequisite, PrereqStatus, InstallAction, PrerequisiteSetupState,
     LOGO, SPINNER_FRAMES, LOADING_MESSAGES, APP_VERSION, MAX_ALERT_RETRIES,
+    CLUSTER_NAME, KUBECTL_CONTEXT,
 };
 
 pub use error::{
@@ -41,6 +43,7 @@ pub use cluster::{
     find_project_root, run_setup_script,
     load_ui_registry, open_browser,
     validate_job_type, submit_job,
+    start_port_forward_tracked, stop_port_forwards, delete_cluster, run_shutdown,
 };
 
 pub use install::{

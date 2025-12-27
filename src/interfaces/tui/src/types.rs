@@ -44,6 +44,16 @@ pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const MAX_ALERT_RETRIES: u8 = 3;
 
 // ============================================================================
+// Cluster Configuration Constants (Single Source of Truth)
+// ============================================================================
+
+/// Cluster name used by Kind - must match start-all.ps1 and all kubectl commands
+pub const CLUSTER_NAME: &str = "task-observatory";
+
+/// Kubectl context derived from cluster name - used for all kubectl operations
+pub const KUBECTL_CONTEXT: &str = "kind-task-observatory";
+
+// ============================================================================
 // Application State Types
 // ============================================================================
 
@@ -57,6 +67,7 @@ pub enum AppMode {
     TaskCreation,      // Task creation modal
     UiLauncher,        // UI launcher selection
     PrerequisiteSetup, // Guided prerequisite installation
+    ShutdownProgress,  // Cluster shutdown in progress (Ctrl+Q)
 }
 
 /// Cluster status after checking
@@ -91,6 +102,25 @@ pub struct SetupProgress {
     pub has_error: bool,
     pub log_lines: Vec<String>,
     pub start_time: Option<std::time::Instant>,  // For elapsed time tracking
+}
+
+/// Shutdown progress tracking (for Ctrl+Q)
+#[derive(Debug, Clone, Default)]
+pub struct ShutdownProgress {
+    pub current_step: String,           // e.g., "ports", "cluster"
+    pub message: String,                // Status message
+    pub is_complete: bool,
+    pub has_error: bool,
+    pub error_message: Option<String>,
+    pub start_time: Option<std::time::Instant>,
+}
+
+/// Port-forward process tracking for clean shutdown
+/// Stores PIDs of port-forward processes started by this TUI instance
+#[derive(Debug, Clone, Default)]
+pub struct PortForwardRegistry {
+    /// (service_name, PID) pairs for port-forwards started by this app
+    pub processes: Vec<(String, u32)>,
 }
 
 // ============================================================================
@@ -262,6 +292,10 @@ pub struct App {
     /// W11: Server mode flag - bypasses prereq checks in containers
     /// Renders prominent warning banner when true
     pub server_mode: bool,
+    /// Shutdown progress tracking (for Ctrl+Q)
+    pub shutdown_progress: Arc<Mutex<ShutdownProgress>>,
+    /// Port-forward PID registry for clean shutdown
+    pub port_forward_registry: Arc<Mutex<PortForwardRegistry>>,
 }
 
 impl App {
@@ -280,6 +314,8 @@ impl App {
             launcher_state: UiLauncherState::default(),
             prereq_state: PrerequisiteSetupState::default(),
             server_mode: crate::config::is_server_mode(),
+            shutdown_progress: Arc::new(Mutex::new(ShutdownProgress::default())),
+            port_forward_registry: Arc::new(Mutex::new(PortForwardRegistry::default())),
         }
     }
 
@@ -812,6 +848,124 @@ mod tests {
     fn test_max_alert_retries_reasonable() {
         assert!(MAX_ALERT_RETRIES >= 1);
         assert!(MAX_ALERT_RETRIES <= 10);
+    }
+
+    // ========== Cluster Constants Tests ==========
+
+    #[test]
+    fn test_cluster_name_constant() {
+        assert_eq!(CLUSTER_NAME, "task-observatory");
+    }
+
+    #[test]
+    fn test_kubectl_context_constant() {
+        assert_eq!(KUBECTL_CONTEXT, "kind-task-observatory");
+    }
+
+    #[test]
+    fn test_kubectl_context_derived_from_cluster_name() {
+        // Verify context follows the "kind-{cluster_name}" pattern
+        assert_eq!(KUBECTL_CONTEXT, format!("kind-{}", CLUSTER_NAME));
+    }
+
+    // ========== ShutdownProgress Tests ==========
+
+    #[test]
+    fn test_shutdown_progress_default() {
+        let progress = ShutdownProgress::default();
+        assert!(!progress.is_complete);
+        assert!(!progress.has_error);
+        assert!(progress.error_message.is_none());
+        assert!(progress.current_step.is_empty());
+        assert!(progress.message.is_empty());
+        assert!(progress.start_time.is_none());
+    }
+
+    #[test]
+    fn test_shutdown_progress_fields() {
+        let mut progress = ShutdownProgress::default();
+        progress.current_step = "cluster".to_string();
+        progress.message = "Deleting Kind cluster...".to_string();
+        progress.is_complete = true;
+        
+        assert_eq!(progress.current_step, "cluster");
+        assert!(progress.message.contains("Deleting"));
+        assert!(progress.is_complete);
+    }
+
+    #[test]
+    fn test_shutdown_progress_with_error() {
+        let mut progress = ShutdownProgress::default();
+        progress.has_error = true;
+        progress.error_message = Some("Failed to delete cluster".to_string());
+        
+        assert!(progress.has_error);
+        assert!(progress.error_message.is_some());
+        assert!(progress.error_message.unwrap().contains("Failed"));
+    }
+
+    #[test]
+    fn test_shutdown_progress_clone() {
+        let progress = ShutdownProgress {
+            current_step: "ports".to_string(),
+            message: "Stopping port-forwards".to_string(),
+            is_complete: false,
+            has_error: false,
+            error_message: None,
+            start_time: Some(std::time::Instant::now()),
+        };
+        let cloned = progress.clone();
+        assert_eq!(cloned.current_step, "ports");
+        assert_eq!(cloned.message, "Stopping port-forwards");
+    }
+
+    // ========== PortForwardRegistry Tests ==========
+
+    #[test]
+    fn test_port_forward_registry_default() {
+        let registry = PortForwardRegistry::default();
+        assert!(registry.processes.is_empty());
+    }
+
+    #[test]
+    fn test_port_forward_registry_tracks_pids() {
+        let mut registry = PortForwardRegistry::default();
+        registry.processes.push(("gateway".to_string(), 12345));
+        registry.processes.push(("read-model".to_string(), 12346));
+        
+        assert_eq!(registry.processes.len(), 2);
+        assert_eq!(registry.processes[0].0, "gateway");
+        assert_eq!(registry.processes[0].1, 12345);
+        assert_eq!(registry.processes[1].0, "read-model");
+    }
+
+    #[test]
+    fn test_port_forward_registry_clone() {
+        let mut registry = PortForwardRegistry::default();
+        registry.processes.push(("test-service".to_string(), 99999));
+        
+        let cloned = registry.clone();
+        assert_eq!(cloned.processes.len(), 1);
+        assert_eq!(cloned.processes[0].0, "test-service");
+    }
+
+    #[test]
+    fn test_port_forward_registry_clear() {
+        let mut registry = PortForwardRegistry::default();
+        registry.processes.push(("svc1".to_string(), 1));
+        registry.processes.push(("svc2".to_string(), 2));
+        registry.processes.clear();
+        
+        assert!(registry.processes.is_empty());
+    }
+
+    // ========== AppMode::ShutdownProgress Test ==========
+
+    #[test]
+    fn test_app_mode_shutdown_variant() {
+        let mode = AppMode::ShutdownProgress;
+        assert_eq!(mode, AppMode::ShutdownProgress);
+        assert_ne!(mode, AppMode::Dashboard);
     }
 }
 
