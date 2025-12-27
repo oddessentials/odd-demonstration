@@ -39,6 +39,10 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | A1 | Hermetic Bazel builds | Bazel `--lockfile_mode=error` | ✅ CI |
 | A2 | No manual intervention | — | 📝 Documented-Only |
 | A3 | Single test entrypoint | `run-all-tests.ps1` | ✅ CI |
+| B1 | Shared-asset services use repo root context | `validate-dockerfile-context.py` | ✅ CI |
+| B2 | COPY paths match context assumptions | `validate-dockerfile-context.py` | ✅ CI |
+| B3 | VERSION missing = hard failure | `start-all.ps1` fail-fast | ✅ Runtime |
+| B4 | $PSScriptRoot fallback to marker discovery | Hardened Root Resolution | ✅ Runtime |
 
 
 ---
@@ -155,32 +159,45 @@ See [`tests/DETERMINISM.md`](../tests/DETERMINISM.md) for test timing contracts:
 
 | ID | Invariant | Enforcement |
 |----|-----------|-------------|
-| B1 | All service Dockerfiles use **repo root** as build context | `start-all.ps1` sets `Context = "."` |
-| B2 | All `COPY` paths in Dockerfiles are **repo-relative** | Manual review on Dockerfile changes |
+| B1 | Services with shared assets use **repo root** context | `validate-dockerfile-context.py` ✅ CI |
+| B2 | `COPY` paths must match build context assumptions | `validate-dockerfile-context.py` ✅ CI |
 | B3 | VERSION file missing = **hard failure** (no `:latest` fallback) | `start-all.ps1` fail-fast logic |
 | B4 | `$PSScriptRoot` empty = **detect and fallback** to marker-based discovery | Hardened Root Resolution Pattern |
+
+### Service Context Categories
+
+| Category | Services | Context | Reason |
+|----------|----------|---------|--------|
+| **Repo Root Required** | Gateway, Processor, web-pty-server | `.` | Use `COPY src/...` and `COPY contracts/` |
+| **Service-Local OK** | metrics-engine, read-model, web-ui | Service dir | Self-contained, no shared assets |
 
 ### Build Context Rules
 
 **The Problem**: Services like Gateway and Processor need access to `contracts/` at repo root, BUT their Dockerfiles live in subdirectories. If the context doesn't match the COPY paths, builds fail silently or with cryptic errors.
 
-**The Solution (Enforced v3.1.7)**:
+**The Solution (Enforced v3.1.8)**:
 
-1. **All builds use repo root context (`.`)**: `start-all.ps1` builds all images from the repository root.
-2. **All Dockerfiles use repo-relative COPY paths**: e.g., `COPY src/services/gateway/package.json ./`
-3. **No fallback to `:latest`**: Missing VERSION file = immediate failure with diagnostics.
+1. **Repo-root services use context (`.`)**: Gateway, Processor, web-pty-server builds from repository root.
+2. **All repo-root Dockerfiles use repo-relative COPY paths**: e.g., `COPY src/services/gateway/package.json ./`
+3. **Self-contained services may use service-local context**: metrics-engine, read-model use `COPY go.mod ./`
+4. **No fallback to `:latest`**: Missing VERSION file = immediate failure with diagnostics.
+5. **CI enforcement**: `validate-dockerfile-context.py` prevents context/path drift.
 
 ### Dockerfile Path Convention
 
 ```dockerfile
-# CORRECT: Repo-relative paths (context is repo root)
+# CORRECT: Repo-relative paths (context is repo root) - Gateway, Processor
 COPY src/services/gateway/package.json ./
 COPY src/services/gateway/VERSION ./dist/VERSION
 COPY contracts ./contracts
 
-# WRONG: Relative paths (expects context to be service directory)
-COPY package.json ./
-COPY VERSION ./dist/VERSION
+# CORRECT: Service-local paths (context is service dir) - metrics-engine, read-model
+COPY go.mod go.sum ./
+COPY VERSION ./VERSION
+
+# WRONG: Mixed paths (context mismatch)
+COPY package.json ./          # Assumes service-local context
+COPY contracts ./contracts    # Assumes repo-root context (will fail!)
 ```
 
 ### Verification Commands
@@ -191,6 +208,9 @@ docker build -t gateway:test -f src/services/gateway/Dockerfile .
 
 # Test Processor build with repo root context
 docker build -t processor:test -f src/services/processor/Dockerfile .
+
+# Validate CI context parity
+python scripts/validate-dockerfile-context.py
 
 # Simulate TUI invocation (tests $PSScriptRoot resolution)
 pwsh -NoProfile -Command "& './scripts/start-all.ps1' -OutputJson -SkipPortForward" 2>&1 | Select-Object -First 20
@@ -204,4 +224,5 @@ pwsh -NoProfile -Command "& './scripts/start-all.ps1' -OutputJson -SkipPortForwa
 | `$PSScriptRoot` Invocation Hazard | TUI reports `:latest` builds | Script spawned via `-Command` has empty `$PSScriptRoot` | Hardened Root Resolution Pattern |
 | Monorepo Build Context Hazard | `COPY contracts` fails | Dockerfile expects repo-root files but context is service dir | Repo-relative COPY paths |
 | VERSION Fallback Hazard | Silent `:latest` tagging | Missing VERSION = fallback instead of error | Fail-fast on missing VERSION |
+| CI/Local Context Drift | CI builds fail despite local success | CI used stale service-local context | `validate-dockerfile-context.py` enforcement |
 

@@ -110,3 +110,11 @@
 - [x] Add `dorny/paths-filter` for reliable change detection
 - [x] Add integration gate trigger invariant for contract/service changes
 - [x] Remove duplicate contracts CI job
+
+## Phase 31.6: CI Docker Build Context Fix [x]
+- [x] Fix CI build-images job to use repo root context for Gateway/Processor
+- [x] Remove fragile `cp contracts` workaround
+- [x] Add `scripts/validate-dockerfile-context.py` prevention script
+- [x] Add validation to CI workflow
+- [x] Update INVARIANTS.md with accurate B1-B4 documentation
+

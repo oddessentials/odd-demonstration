@@ -1,8 +1,8 @@
 # Distributed Task Observatory - Complete Session Audit
 
-**Last Updated:** 2025-12-26
+**Last Updated:** 2025-12-27
 **Original Session:** 2025-12-22 (Conversation ID: c305f5d6-89a1-4d5b-a311-e081142f51ae)
-**Phases Completed:** 0-31.5
+**Phases Completed:** 0-31.6
 
 ---
 
@@ -59,6 +59,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | Phase 31 | Visual Test Suite Stabilization | ✅ Complete |
 | Phase 31.4 | Container Contract & Per-IP Cap Tuning | ✅ Complete |
 | Phase 31.5 | Visual Test Strategy & Failure Injection | ✅ Complete |
+| Phase 31.6 | CI Docker Build Context Fix | ✅ Complete |
 
 ---
 
@@ -167,6 +168,7 @@ The Distributed Task Observatory is a production-grade distributed task processi
 | `scripts/verify-version-sync.ps1` | Verify version consistency |
 | `scripts/verify-artifact-names.ps1` | Verify canonical artifact names |
 | `scripts/audit-workflows.ps1` | Verify workflow secret isolation |
+| `scripts/validate-dockerfile-context.py` | CI prevention for Docker build context drift |
 
 ### Contracts
 | Path | Description |
@@ -757,7 +759,82 @@ Added `TestMode` enum to web-pty-server for deterministic testing:
 
 ---
 
+## Phase 31.6: CI Docker Build Context Fix (2025-12-27)
+
+### Objective
+Fix a latent bug where CI `build-images` job used service-local contexts while Dockerfiles require repo root contexts. Add prevention script to catch future drift.
+
+### Background
+- Phase 19 introduced CI `build-images` with service-local contexts
+- Dockerfiles were later updated to repo-relative COPY paths for `start-all.ps1` compatibility
+- Bug hadn't surfaced because CI hadn't rebuilt images since the Dockerfile changes
+
+### Discovery
+During INVARIANTS.md review, context mismatch was identified:
+```
+# CI Used (WRONG)           vs  Dockerfile Expects (CORRECT)
+context: src/services/gateway   context: .  (repo root)
+COPY src/services/gateway/...   # Fails with service-local context!
+```
+
+### Fix Applied
+
+#### 1. CI Workflow (`ci.yml`)
+```yaml
+# Before (BROKEN)
+- service: gateway
+  context: src/services/gateway
+  
+# After (FIXED)  
+- service: gateway
+  context: .
+```
+
+#### 2. Prevention Script Created
+New `scripts/validate-dockerfile-context.py`:
+- Conservative approach with explicit service lists
+- Documents assumptions in script header
+- Added to CI as "Dockerfile context parity check"
+
+#### 3. INVARIANTS.md Updated
+- B1/B2 now CI-enforced via `validate-dockerfile-context.py`
+- Added "Service Context Categories" table
+- Documented new hazard: "CI/Local Context Drift"
+
+### Service Context Categories
+
+| Category | Services | Context | Reason |
+|----------|----------|---------|--------|
+| **Repo Root Required** | gateway, processor, web-pty-server | `.` | Use `COPY src/...` and `COPY contracts/` |
+| **Service-Local OK** | metrics-engine, read-model, web-ui | Service dir | Self-contained, no shared assets |
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `scripts/validate-dockerfile-context.py` | CI prevention script for context/path drift |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `.github/workflows/ci.yml` | Fixed contexts, removed `cp contracts` workaround, added validation step, added web-pty-server and web-ui to matrix |
+| `docs/INVARIANTS.md` | Updated B1-B4 with accurate documentation and CI enforcement |
+| `README.md` | Updated Docker Hub images table with web-pty-server and web-ui |
+
+### Verification
+```
+✅ gateway: context '.' (repo root) - correct
+✅ processor: context '.' (repo root) - correct
+✅ web-pty-server: context '.' (repo root) - correct
+✅ metrics-engine: context 'src/services/metrics-engine' (service-local OK)
+✅ read-model: context 'src/services/read-model' (service-local OK)
+✅ web-ui: context 'src/interfaces/web' (service-local OK)
+✅ Docker build with repo root context: PASSED
+```
+
+---
+
 ## Session Complete ✓
 
-All 31.5 implementation phases completed successfully.
+All 31.6 implementation phases completed successfully.
+
 
