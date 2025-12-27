@@ -225,6 +225,19 @@ Invalid messages routed to `jobs.dead-letter` for debugging.
 
 ---
 
+## 🐳 Docker Build Context Governance (Phase 31.6)
+
+### Service Context Categories
+| Category | Services | Context | Reason |
+|----------|----------|---------|--------|
+| **Repo Root Required** | gateway, processor, web-pty-server | `.` | Use `COPY src/...` and `COPY contracts/` |
+| **Service-Local OK** | metrics-engine, read-model, web-ui | Service dir | Self-contained, no shared assets |
+
+### CI Enforcement
+`scripts/validate-dockerfile-context.py` prevents drift between Dockerfile COPY paths and CI build contexts.
+
+---
+
 ## 🎉 Project Complete
 
 The Distributed Task Observatory demonstrates:
@@ -234,6 +247,8 @@ The Distributed Task Observatory demonstrates:
 - **Production observability** (Prometheus, Grafana, Alertmanager)
 - **One-click deployment** via TUI launcher
 - **Comprehensive testing** at unit, contract, and integration levels
+- **CI governance** with Docker build context validation
 
 > [!IMPORTANT]
-> All 12 phases complete. The system is production-ready for demonstration purposes.
+> All 31.6 phases complete. The system is production-ready for demonstration purposes.
+

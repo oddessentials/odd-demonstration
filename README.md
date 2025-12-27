@@ -300,7 +300,8 @@ Pre-built container images are published to Docker Hub for faster integration te
 | `oddessentials/odto-processor:latest`      | python:3.11-slim | ~490 MB | Job Processor (Python)           |
 | `oddessentials/odto-metrics-engine:latest` | distroless       | ~23 MB  | Metrics Aggregator (Go)          |
 | `oddessentials/odto-read-model:latest`     | distroless       | ~20 MB  | Query API (Go)                   |
-| `oddessentials/odto-web-pty-server:latest` | rust:alpine      | ~50 MB  | PTY WebSocket Server (Rust)      |
+| `oddessentials/odto-web-pty-server:latest` | debian:bookworm  | ~80 MB  | PTY WebSocket Server (Rust)      |
+| `oddessentials/odto-web-ui:latest`         | nginx:alpine     | ~25 MB  | Web Terminal Frontend (nginx)    |
 
 ### Usage
 
@@ -310,6 +311,8 @@ docker pull oddessentials/odto-gateway:latest
 docker pull oddessentials/odto-processor:latest
 docker pull oddessentials/odto-metrics-engine:latest
 docker pull oddessentials/odto-read-model:latest
+docker pull oddessentials/odto-web-pty-server:latest
+docker pull oddessentials/odto-web-ui:latest
 
 # Run integration tests with pre-built images
 docker compose -f docker-compose.integration.yml up -d
@@ -326,7 +329,9 @@ Images are automatically built and pushed on every merge to `main`:
 
 - Security: Build/push only runs on `main`, never on PRs or forks
 - Contracts are baked into Gateway and Processor images for self-contained tests
-- Integration tests use these pre-built images for <90s runtime (I4 invariant)
+- Core services use these pre-built images for <90s runtime (I4 invariant)
+
+> **Note:** Visual regression tests (`tests/visual/`) build `web-pty-server` locally with `target: real` to embed the actual TUI binary. This ensures PR changes to the TUI are tested before merge.
 
 ## 🧪 Testing
 

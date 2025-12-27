@@ -325,6 +325,10 @@ jobs:
         if: needs.paths-filter.outputs.schemas == 'true' || needs.paths-filter.outputs.compat_script == 'true' || needs.paths-filter.result != 'success'
         run: python scripts/check-schema-compat.py --ci
 
+      # B1 invariant: Validate Dockerfile contexts match COPY path assumptions
+      - name: Dockerfile context parity check
+        run: python scripts/validate-dockerfile-context.py
+
   # ============================================================
   # Stall Diagnostic (Manual trigger only)
   # ============================================================
@@ -404,26 +408,33 @@ jobs:
     strategy:
       matrix:
         include:
+          # Gateway and Processor use repo root context (B1 invariant)
+          # Their Dockerfiles use repo-relative COPY paths (e.g., COPY src/services/gateway/...)
           - service: gateway
-            context: src/services/gateway
+            context: .
             dockerfile: src/services/gateway/Dockerfile
           - service: processor
-            context: src/services/processor
+            context: .
             dockerfile: src/services/processor/Dockerfile
+          # web-pty-server uses repo root context (embeds TUI binary from src/interfaces/tui)
+          - service: web-pty-server
+            context: .
+            dockerfile: src/services/web-pty-server/Dockerfile
+          # Go services use service-local context (self-contained, no shared assets)
           - service: metrics-engine
             context: src/services/metrics-engine
             dockerfile: src/services/metrics-engine/Dockerfile
           - service: read-model
             context: src/services/read-model
             dockerfile: src/services/read-model/Dockerfile
+          # Web UI uses service-local context (self-contained frontend)
+          - service: web-ui
+            context: src/interfaces/web
+            dockerfile: src/interfaces/web/Dockerfile
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Copy contracts for services that need them
-        if: matrix.service == 'gateway' || matrix.service == 'processor'
-        run: cp -r contracts ${{ matrix.context }}/contracts
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -443,6 +454,7 @@ jobs:
           tags: oddessentials/odto-${{ matrix.service }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
 
   # ============================================================
   # Integration Phase (Docker Compose harness)

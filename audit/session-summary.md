@@ -1,7 +1,7 @@
 # Distributed Task Observatory - Session Summary
 
-**Last Updated:** 2025-12-26
-**Phases Completed:** 0-31.5 (Phase 31.5: Visual Test Strategy & Failure Injection)
+**Last Updated:** 2025-12-27
+**Phases Completed:** 0-31.6 (Phase 31.6: CI Docker Build Context Fix)
 
 ## Objective
 
@@ -77,6 +77,7 @@ Implement a complete, production-grade distributed task processing system demons
 - **PTY State Preservation** (Phase 21) - Session state machine, ring buffer, replay protocol, 47 unit tests
 - **PTY Server Coverage** - 81% (47 unit tests)
 - **Tiered Visual Test Strategy** (Phase 31.5) - Nightly workflow, server-side failure injection, deterministic fallback testing
+- **CI Docker Build Context Fix** (Phase 31.6) - Fixed CI contexts, added `validate-dockerfile-context.py` prevention script
 
 ## Quick Start
 
