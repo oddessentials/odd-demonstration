@@ -19,9 +19,12 @@ test.describe('Web Terminal Reconnect', () => {
         const fallbackContainer = page.locator('#fallback-container');
 
         // Wait for either terminal or fallback to be visible
-        await expect(
-            terminalContainer.or(fallbackContainer)
-        ).toBeVisible({ timeout: 10000 });
+        // Both elements exist in DOM, so we check visibility separately
+        await expect(async () => {
+            const terminalVisible = await terminalContainer.isVisible();
+            const fallbackVisible = await fallbackContainer.isVisible();
+            expect(terminalVisible || fallbackVisible).toBe(true);
+        }).toPass({ timeout: 10000 });
 
         // If connected, verify test hooks are available
         const hasTestHooks = await page.evaluate(() =>
