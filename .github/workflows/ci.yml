@@ -393,17 +393,17 @@ jobs:
 
   # ============================================================
   # Build and Push Docker Images to Docker Hub
-  # Runs on main when services change (or on first push to bootstrap)
+  # Runs on main when services or web terminal change (or on first push to bootstrap)
   # ============================================================
   build-images:
     name: Build Docker Images
     runs-on: ubuntu-latest
     needs: [paths-filter, tests]
-    # Push images on main when: services changed, or filter failed (fail-closed)
+    # Push images on main when: services changed, web_terminal changed, or filter failed (fail-closed)
     if: |
       github.event_name == 'push' && 
       github.ref == 'refs/heads/main' &&
-      (needs.paths-filter.outputs.services == 'true' || needs.paths-filter.result != 'success')
+      (needs.paths-filter.outputs.services == 'true' || needs.paths-filter.outputs.web_terminal == 'true' || needs.paths-filter.result != 'success')
     
     strategy:
       matrix:
