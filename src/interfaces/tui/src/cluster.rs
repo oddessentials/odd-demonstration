@@ -13,7 +13,7 @@ use std::{
 use chrono::Utc;
 use uuid::Uuid;
 
-use crate::types::{ClusterStatus, SetupProgress, JobPayload, UiRegistry};
+use crate::types::{ClusterStatus, PortForwardStatus, SetupProgress, JobPayload, UiRegistry};
 use crate::error::{RegistryError, SubmitError, BrowserError, get_error_hint, get_remediation_steps, get_pwsh_install_steps};
 
 // ============================================================================
@@ -101,6 +101,128 @@ pub fn check_pods_status() -> ClusterStatus {
             ClusterStatus::NoPods
         }
     }
+}
+
+// ============================================================================
+// Port-Forward Health Checking
+// ============================================================================
+
+/// Check if port-forwards are healthy (Gateway and Read Model reachable)
+/// This is called during Loading phase before transitioning to Dashboard
+pub fn check_port_forwards(gateway_url: &str, read_model_url: &str) -> PortForwardStatus {
+    let client = match reqwest::blocking::Client::builder()
+        .timeout(Duration::from_millis(500))
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => return PortForwardStatus::Error(format!("Failed to create HTTP client: {}", e)),
+    };
+
+    let gateway_healthy = client
+        .get(format!("{}/healthz", gateway_url))
+        .send()
+        .map(|r| r.status().is_success())
+        .unwrap_or(false);
+
+    let read_model_healthy = client
+        .get(format!("{}/health", read_model_url))
+        .send()
+        .map(|r| r.status().is_success())
+        .unwrap_or(false);
+
+    match (gateway_healthy, read_model_healthy) {
+        (true, true) => PortForwardStatus::AllHealthy,
+        (false, true) => PortForwardStatus::GatewayUnhealthy,
+        (true, false) => PortForwardStatus::ReadModelUnhealthy,
+        (false, false) => PortForwardStatus::AllUnhealthy,
+    }
+}
+
+/// Start port-forwards for unhealthy services
+/// Returns Ok if port-forwards become healthy within timeout, Err otherwise
+pub fn ensure_port_forwards(gateway_url: &str, read_model_url: &str) -> Result<(), String> {
+    // Check current status
+    let status = check_port_forwards(gateway_url, read_model_url);
+    
+    if status == PortForwardStatus::AllHealthy {
+        return Ok(());
+    }
+
+    // Parse ports from URLs
+    let gateway_port = gateway_url
+        .split(':')
+        .last()
+        .and_then(|p| p.parse::<u16>().ok())
+        .unwrap_or(3000);
+    
+    let read_model_port = read_model_url
+        .split(':')
+        .last()
+        .and_then(|p| p.parse::<u16>().ok())
+        .unwrap_or(8080);
+
+    // Start port-forwards based on what's unhealthy
+    let needs_gateway = matches!(
+        status,
+        PortForwardStatus::GatewayUnhealthy | PortForwardStatus::AllUnhealthy
+    );
+    let needs_read_model = matches!(
+        status,
+        PortForwardStatus::ReadModelUnhealthy | PortForwardStatus::AllUnhealthy
+    );
+
+    if needs_gateway {
+        start_port_forward("gateway", gateway_port)?;
+    }
+
+    if needs_read_model {
+        start_port_forward("read-model", read_model_port)?;
+    }
+
+    // Wait for port-forwards to become healthy (up to 5 seconds)
+    for _ in 0..10 {
+        std::thread::sleep(Duration::from_millis(500));
+        if check_port_forwards(gateway_url, read_model_url) == PortForwardStatus::AllHealthy {
+            return Ok(());
+        }
+    }
+
+    Err("Port-forwards started but services not healthy after 5s".to_string())
+}
+
+/// Start a kubectl port-forward as a background process
+fn start_port_forward(service: &str, port: u16) -> Result<(), String> {
+    let port_arg = format!("{}:{}", port, port);
+    
+    // Windows: Use Start-Process to create a fully detached process
+    // Start-Job would die when the parent PowerShell exits
+    #[cfg(target_os = "windows")]
+    {
+        // Start-Process with -WindowStyle Hidden creates a detached, invisible process
+        let ps_script = format!(
+            "Start-Process -WindowStyle Hidden -FilePath kubectl -ArgumentList 'port-forward','svc/{}','{}','--context','kind-task-observatory'",
+            service, port_arg
+        );
+        Command::new("powershell.exe")
+            .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", &ps_script])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|e| format!("Failed to start port-forward for {}: {}", service, e))?;
+    }
+
+    // Unix: spawn kubectl directly - child process persists after TUI exits
+    #[cfg(not(target_os = "windows"))]
+    {
+        Command::new("kubectl")
+            .args(["port-forward", &format!("svc/{}", service), &port_arg, "--context", "kind-task-observatory"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|e| format!("Failed to start port-forward for {}: {}", service, e))?;
+    }
+
+    Ok(())
 }
 
 // ============================================================================
