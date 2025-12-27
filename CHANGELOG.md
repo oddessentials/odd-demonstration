@@ -1,3 +1,10 @@
+## [3.1.1](https://github.com/oddessentials/odd-demonstration/compare/v3.1.0...v3.1.1) (2025-12-27)
+
+
+### Bug Fixes
+
+* **tui:** make tests hermetic with RAII guard and temp dirs ([7840435](https://github.com/oddessentials/odd-demonstration/commit/78404353378c82c18f7c3bfadb12583bfd1023a9))
+
 # [3.1.0](https://github.com/oddessentials/odd-demonstration/compare/v3.0.4...v3.1.0) (2025-12-27)
 
 
