@@ -186,7 +186,7 @@ jobs:
         shell: pwsh
       
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
@@ -240,7 +240,7 @@ jobs:
           rm -rf flat
       
       - name: Upload checksums
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: SHA256SUMS
           path: artifacts/SHA256SUMS
