@@ -449,8 +449,8 @@ function Test-Connectivity {
         Start-Sleep -Seconds $PollIntervalSeconds
     }
     
-    # Timed out - report which endpoints failed
-    Write-Progress-Step -Step "verify" -Status "error" -Message "$($failedEndpoints -join ', ') not reachable after ${MaxWaitSeconds}s"
+    # Timed out - use 'warning' not 'error' since verify is non-fatal (TUI treats error as fatal)
+    Write-Progress-Step -Step "verify" -Status "warning" -Message "$($failedEndpoints -join ', ') not reachable after ${MaxWaitSeconds}s"
     return $false
 }
 
