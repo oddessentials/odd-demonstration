@@ -33,6 +33,7 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 
 - 🗺️ [Blueprints & Design](contracts/blueprint.md)
 - 📐 [Invariants](docs/INVARIANTS.md)
+- ✅ [Feature Coverage](docs/FEATURES.md)
 
 **Diagrams**
 
