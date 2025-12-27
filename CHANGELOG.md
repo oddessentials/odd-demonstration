@@ -1,3 +1,12 @@
+## [3.0.4](https://github.com/oddessentials/odd-demonstration/compare/v3.0.3...v3.0.4) (2025-12-27)
+
+
+### Bug Fixes
+
+* **ci:** align Docker build contexts with Dockerfile COPY paths ([bdf8853](https://github.com/oddessentials/odd-demonstration/commit/bdf88530e9e9cc631d06a9b9f6893add8e67cbc9))
+* **ci:** correct invalid bazel-contrib/setup-bazel input ([09babdf](https://github.com/oddessentials/odd-demonstration/commit/09babdff640e8c1745b2267b7db330d975da0373))
+* **ci:** trigger build-images on web_terminal changes ([3f4ee92](https://github.com/oddessentials/odd-demonstration/commit/3f4ee923e3297611fa985da8c3b4cf8af88a85af))
+
 ## [3.0.3](https://github.com/oddessentials/odd-demonstration/compare/v3.0.2...v3.0.3) (2025-12-26)
 
 
