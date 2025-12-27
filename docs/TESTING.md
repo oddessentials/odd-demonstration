@@ -90,15 +90,12 @@ The integration gate checks for event correlation and deduplication but **does N
 
 ## Integration Harness (Phase 18)
 
-> [!NOTE]
-> **Planning phase.** Implementation pending approval.
-
 The integration harness (`scripts/integration-harness.ps1`) is a self-contained Docker Compose-based test runner with:
 
 | Feature | Implementation |
 |---------|----------------|
 | Decision logging | Logs trigger reason (compat_critical / filter_failed) |
-| Wall-clock budget | 90s total, fails with `[BUDGET EXCEEDED]` |
+| Wall-clock budget | 180s total, fails with `[BUDGET EXCEEDED]` |
 | Compose version check | Validates Docker Compose at startup |
 | Authoritative health | Gateway confirms broker, read-model confirms DB |
 | Schema validation | AJV on P1–P3 responses |
@@ -116,5 +113,5 @@ The integration harness (`scripts/integration-harness.ps1`) is a self-contained 
 
 ### Victory Gate
 
-Manual governance: 3 consecutive green PR runs + 1 nightly under 90s budget.
+Manual governance: 3 consecutive green PR runs + 1 nightly under 180s budget.
 

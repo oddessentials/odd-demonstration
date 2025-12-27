@@ -31,9 +31,9 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | V7 | Visual regression tests pass | `tests/visual/` Playwright snapshots | ✅ CI (web_terminal changes) |
 | I1 | Integration gate on contracts change | `dorny/paths-filter` + job | ✅ CI |
 | I2 | Integration gate on services change | `dorny/paths-filter` + job | ✅ CI |
-| I3 | Integration harness self-contained | Docker Compose only | ⏳ Blocked (needs Docker Hub images) |
-| I4 | Integration runtime <180s | `integration-harness.ps1` timeout | ⏳ Blocked (needs Docker Hub images) |
-| I5 | Artifact capture every run | Guarded `finally` block | ⏳ Blocked (needs Docker Hub images) |
+| I3 | Integration harness self-contained | Docker Compose only | ✅ CI |
+| I4 | Integration runtime <180s | `integration-harness.ps1` timeout | ✅ CI |
+| I5 | Artifact capture every run | Guarded `finally` block | ✅ CI |
 | I6 | Victory gate: 3 green + nightly | — | 📝 Governance-Only |
 | I7 | K8s/Compose service parity | `validate-compose-k8s-parity.ps1` | ✅ CI |
 | A1 | Hermetic Bazel builds | Bazel `--lockfile_mode=error` | ✅ CI |
@@ -105,7 +105,7 @@ Thresholds are externalized in `coverage-config.json` and enforced by `scripts/c
 | I1 | Integration gate runs on `contracts/` changes | `dorny/paths-filter` + `compat_critical` |
 | I2 | Integration gate runs on `src/services/` changes | `dorny/paths-filter` + `compat_critical` |
 | I3 | Integration harness is self-contained | Docker Compose only (no K8s) |
-| I4 | Integration runtime <120s (wall-clock) | `integration-harness.ps1` exits 1 on breach |
+| I4 | Integration runtime <180s (wall-clock) | `integration-harness.ps1` exits 1 on breach |
 | I5 | Artifact capture on every run | Guarded capture in `finally` block |
 | I6 | Victory gate: 3 green PRs + 1 nightly | 📝 Governance-only |
 | I7 | K8s and Docker Compose have same services | `validate-compose-k8s-parity.ps1` |

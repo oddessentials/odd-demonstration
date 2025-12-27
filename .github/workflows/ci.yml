@@ -458,7 +458,7 @@ jobs:
 
   # ============================================================
   # Integration Phase (Docker Compose harness)
-  # Invariants: I3 (self-contained), I4 (<90s), I5 (artifacts)
+  # Invariants: I3 (self-contained), I4 (<180s), I5 (artifacts)
   # ============================================================
   integration-phase:
     name: Integration Phase
