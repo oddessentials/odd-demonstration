@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/oddessentials/odd-demonstration/compare/v3.1.1...v3.2.0) (2025-12-27)
+
+
+### Features
+
+* **tui:** add shutdown feature with Ctrl+Q key binding ([e80aaa0](https://github.com/oddessentials/odd-demonstration/commit/e80aaa039bca7a7ccd08dbc56bb89dac7f9d117d))
+
 ## [3.1.1](https://github.com/oddessentials/odd-demonstration/compare/v3.1.0...v3.1.1) (2025-12-27)
 
 
