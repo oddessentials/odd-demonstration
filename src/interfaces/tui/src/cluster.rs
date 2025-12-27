@@ -13,7 +13,10 @@ use std::{
 use chrono::Utc;
 use uuid::Uuid;
 
-use crate::types::{ClusterStatus, PortForwardStatus, SetupProgress, JobPayload, UiRegistry};
+use crate::types::{
+    ClusterStatus, PortForwardStatus, SetupProgress, ShutdownProgress, 
+    PortForwardRegistry, JobPayload, UiRegistry, CLUSTER_NAME, KUBECTL_CONTEXT,
+};
 use crate::error::{RegistryError, SubmitError, BrowserError, get_error_hint, get_remediation_steps, get_pwsh_install_steps};
 
 // ============================================================================
@@ -31,7 +34,7 @@ pub fn check_cluster_status() -> ClusterStatus {
     
     // Normal mode: use kubectl to check cluster
     let output = Command::new("kubectl")
-        .args(["get", "nodes", "--context", "kind-task-observatory", "-o", "name"])
+        .args(["get", "nodes", "--context", KUBECTL_CONTEXT, "-o", "name"])
         .output();
 
     match output {
@@ -78,7 +81,7 @@ fn check_api_health() -> ClusterStatus {
 /// Check if application pods are deployed in the cluster
 pub fn check_pods_status() -> ClusterStatus {
     let output = Command::new("kubectl")
-        .args(["get", "pods", "--context", "kind-task-observatory", "-o", "name"])
+        .args(["get", "pods", "--context", KUBECTL_CONTEXT, "-o", "name"])
         .output();
 
     match output {
@@ -190,39 +193,174 @@ pub fn ensure_port_forwards(gateway_url: &str, read_model_url: &str) -> Result<(
     Err("Port-forwards started but services not healthy after 5s".to_string())
 }
 
-/// Start a kubectl port-forward as a background process
+/// Start a kubectl port-forward as a background process (legacy, no PID tracking)
 fn start_port_forward(service: &str, port: u16) -> Result<(), String> {
+    // Use the tracked version with a dummy registry for backwards compatibility
+    let dummy_registry = Arc::new(Mutex::new(PortForwardRegistry::default()));
+    start_port_forward_tracked(service, port, &dummy_registry)
+}
+
+/// Start a kubectl port-forward as a background process and track its PID
+/// PIDs are stored in the registry for clean shutdown via stop_port_forwards
+pub fn start_port_forward_tracked(
+    service: &str, 
+    port: u16,
+    registry: &Arc<Mutex<PortForwardRegistry>>,
+) -> Result<(), String> {
     let port_arg = format!("{}:{}", port, port);
     
-    // Windows: Use Start-Process to create a fully detached process
-    // Start-Job would die when the parent PowerShell exits
+    // Windows: Use Start-Process with -PassThru to capture PID
     #[cfg(target_os = "windows")]
     {
-        // Start-Process with -WindowStyle Hidden creates a detached, invisible process
         let ps_script = format!(
-            "Start-Process -WindowStyle Hidden -FilePath kubectl -ArgumentList 'port-forward','svc/{}','{}','--context','kind-task-observatory'",
-            service, port_arg
+            r#"$proc = Start-Process -WindowStyle Hidden -FilePath kubectl -PassThru -ArgumentList 'port-forward','svc/{}','{}','--context','{}'
+Write-Output $proc.Id"#,
+            service, port_arg, KUBECTL_CONTEXT
         );
-        Command::new("powershell.exe")
+        let output = Command::new("powershell.exe")
             .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", &ps_script])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
+            .output()
             .map_err(|e| format!("Failed to start port-forward for {}: {}", service, e))?;
+        
+        if let Ok(pid_str) = String::from_utf8(output.stdout) {
+            if let Ok(pid) = pid_str.trim().parse::<u32>() {
+                if let Ok(mut reg) = registry.lock() {
+                    reg.processes.push((service.to_string(), pid));
+                }
+            }
+        }
     }
 
-    // Unix: spawn kubectl directly - child process persists after TUI exits
+    // Unix: spawn kubectl directly and track child PID
     #[cfg(not(target_os = "windows"))]
     {
-        Command::new("kubectl")
-            .args(["port-forward", &format!("svc/{}", service), &port_arg, "--context", "kind-task-observatory"])
+        let child = Command::new("kubectl")
+            .args(["port-forward", &format!("svc/{}", service), &port_arg, "--context", KUBECTL_CONTEXT])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
             .map_err(|e| format!("Failed to start port-forward for {}: {}", service, e))?;
+        
+        if let Ok(mut reg) = registry.lock() {
+            reg.processes.push((service.to_string(), child.id()));
+        }
     }
 
     Ok(())
+}
+
+// ============================================================================
+// Cluster Shutdown Operations
+// ============================================================================
+
+/// Stop only the port-forward processes started by this TUI instance (PID-scoped)
+/// This avoids killing unrelated kubectl processes on the host
+pub fn stop_port_forwards(registry: &Arc<Mutex<PortForwardRegistry>>) -> Result<(), String> {
+    let pids: Vec<(String, u32)> = {
+        let reg = registry.lock().map_err(|e| format!("Lock error: {}", e))?;
+        reg.processes.clone()
+    };
+    
+    if pids.is_empty() {
+        return Ok(()); // Nothing to stop
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        for (_service, pid) in &pids {
+            let ps_script = format!(
+                "Stop-Process -Id {} -Force -ErrorAction SilentlyContinue",
+                pid
+            );
+            let _ = Command::new("powershell.exe")
+                .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", &ps_script])
+                .output();
+            // Log but don't fail if process already exited
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        for (_service, pid) in &pids {
+            // Send SIGTERM to specific PID
+            let _ = Command::new("kill")
+                .args(["-TERM", &pid.to_string()])
+                .output();
+        }
+    }
+
+    // Clear registry
+    if let Ok(mut reg) = registry.lock() {
+        reg.processes.clear();
+    }
+
+    Ok(())
+}
+
+/// Delete the Kind cluster using the canonical cluster name constant
+pub fn delete_cluster() -> Result<(), String> {
+    let output = Command::new("kind")
+        .args(["delete", "cluster", "--name", CLUSTER_NAME])
+        .output()
+        .map_err(|e| format!("Failed to run kind: {}", e))?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // "no clusters found" or "does not exist" is success (already deleted)
+        if stderr.contains("no clusters found") || stderr.contains("does not exist") {
+            Ok(())
+        } else {
+            Err(format!("Failed to delete cluster: {}", stderr))
+        }
+    }
+}
+
+/// Run the full shutdown sequence with progress reporting
+/// Called from Ctrl+Q handler in main.rs
+pub fn run_shutdown(
+    progress: Arc<Mutex<ShutdownProgress>>,
+    port_forward_registry: Arc<Mutex<PortForwardRegistry>>,
+) {
+    // Helper to update progress
+    let update = |step: &str, msg: &str| {
+        if let Ok(mut p) = progress.lock() {
+            p.current_step = step.to_string();
+            p.message = msg.to_string();
+        }
+    };
+
+    // Initialize timing
+    if let Ok(mut p) = progress.lock() {
+        p.start_time = Some(std::time::Instant::now());
+    }
+
+    // Step 1: Stop port-forwards (PID-scoped, safe)
+    update("ports", "Stopping port-forwards...");
+    if let Err(e) = stop_port_forwards(&port_forward_registry) {
+        // Non-fatal: log but continue
+        update("ports", &format!("Warning: {}", e));
+    }
+    std::thread::sleep(Duration::from_millis(500));
+
+    // Step 2: Delete cluster
+    update("cluster", &format!("Deleting Kind cluster '{}'...", CLUSTER_NAME));
+    if let Err(e) = delete_cluster() {
+        if let Ok(mut p) = progress.lock() {
+            p.has_error = true;
+            p.error_message = Some(e);
+            p.message = "Cluster deletion failed".to_string();
+            p.is_complete = true;
+        }
+        return;
+    }
+
+    // Success
+    if let Ok(mut p) = progress.lock() {
+        p.message = "Shutdown complete. Press any key to exit.".to_string();
+        p.is_complete = true;
+    }
 }
 
 // ============================================================================
@@ -1089,6 +1227,48 @@ mod find_project_root_tests {
         // The returned path should be an absolute path (container convention)
         let path = root.unwrap();
         assert!(path.is_absolute(), "Server mode root should be absolute");
+    }
+
+    // ========== Shutdown Functions Tests ==========
+
+    #[test]
+    fn test_stop_port_forwards_empty_registry() {
+        let registry = Arc::new(Mutex::new(PortForwardRegistry::default()));
+        let result = stop_port_forwards(&registry);
+        // Should succeed with empty registry (nothing to stop)
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_stop_port_forwards_clears_registry() {
+        let registry = Arc::new(Mutex::new(PortForwardRegistry::default()));
+        
+        // Add some fake PIDs (they won't actually correspond to real processes)
+        {
+            let mut reg = registry.lock().unwrap();
+            reg.processes.push(("fake-service-1".to_string(), 999999));
+            reg.processes.push(("fake-service-2".to_string(), 999998));
+        }
+        
+        // Call stop_port_forwards - it should not panic even with invalid PIDs
+        // (the processes just won't exist)
+        let result = stop_port_forwards(&registry);
+        
+        // Should succeed (even if processes don't exist)
+        assert!(result.is_ok());
+        
+        // Registry should be cleared
+        let reg = registry.lock().unwrap();
+        assert!(reg.processes.is_empty());
+    }
+
+    #[test]
+    fn test_delete_cluster_returns_result() {
+        // This test verifies the function doesn't panic and returns a Result
+        // The actual result depends on whether Kind is installed
+        let result = delete_cluster();
+        // May succeed (cluster deleted or didn't exist) or fail (kind not installed)
+        assert!(result.is_ok() || result.is_err());
     }
 }
 

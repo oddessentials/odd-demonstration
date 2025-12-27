@@ -4,7 +4,7 @@
 //! All functionality is modularized in the library crate.
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -29,14 +29,14 @@ use std::{
 
 // Import from the library modules
 use odd_dashboard::{
-    App, AppMode, ClusterStatus, SetupProgress,
+    App, AppMode, ClusterStatus, SetupProgress, ShutdownProgress,
     TaskCreationStatus, UiLauncherState,
     PrereqStatus,
     LOGO, SPINNER_FRAMES, LOADING_MESSAGES, APP_VERSION,
     check_platform_support, print_version, print_help, run_doctor,
     check_all_prerequisites, has_missing_prerequisites,
     check_cluster_status, run_setup_script, load_ui_registry, open_browser, submit_job,
-    ensure_port_forwards,
+    ensure_port_forwards, run_shutdown,
     get_install_command, copy_to_clipboard, execute_install_with_output,
 };
 
@@ -839,7 +839,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                             Span::styled("N", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
                             Span::raw(" New Task  "),
                             Span::styled("U", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                            Span::raw(" UIs"),
+                            Span::raw(" UIs  "),
+                            Span::styled("^Q", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+                            Span::raw(" Shutdown"),
                             Span::raw("  │  "),
                             Span::styled(format!("v{}", APP_VERSION), Style::default().fg(Color::DarkGray)),
                         ])
@@ -990,6 +992,85 @@ fn main() -> Result<(), Box<dyn Error>> {
                     f.render_widget(modal, modal_area);
                 })?;
             }
+            AppMode::ShutdownProgress => {
+                let progress = {
+                    app.shutdown_progress.lock().unwrap().clone()
+                };
+                
+                terminal.draw(|f| {
+                    let area = f.size();
+                    let modal_width = 50u16;
+                    let modal_height = 8u16;
+                    let x = (area.width.saturating_sub(modal_width)) / 2;
+                    let y = (area.height.saturating_sub(modal_height)) / 2;
+                    let modal_area = Rect::new(x, y, modal_width, modal_height);
+                    
+                    f.render_widget(Clear, modal_area);
+                    
+                    let spinner = SPINNER_FRAMES[frame_idx % SPINNER_FRAMES.len()];
+                    
+                    let (status_icon, status_color) = if progress.has_error {
+                        ("✗", Color::Red)
+                    } else if progress.is_complete {
+                        ("✓", Color::Green)
+                    } else {
+                        (spinner, Color::Yellow)
+                    };
+                    
+                    let mut lines = vec![
+                        Line::from(""),
+                        Line::from(vec![
+                            Span::raw("  "),
+                            Span::styled(status_icon, Style::default().fg(status_color).add_modifier(Modifier::BOLD)),
+                            Span::raw(" "),
+                            Span::styled(&progress.message, Style::default().fg(Color::White)),
+                        ]),
+                        Line::from(""),
+                    ];
+                    
+                    if let Some(ref err) = progress.error_message {
+                        lines.push(Line::from(vec![
+                            Span::styled(format!("  Error: {}", err), Style::default().fg(Color::Red)),
+                        ]));
+                    }
+                    
+                    if progress.is_complete {
+                        lines.push(Line::from(""));
+                        lines.push(Line::from(vec![
+                            Span::styled("  Press any key to exit...", Style::default().fg(Color::DarkGray)),
+                        ]));
+                    }
+                    
+                    let border_color = if progress.has_error {
+                        Color::Red
+                    } else if progress.is_complete {
+                        Color::Green
+                    } else {
+                        Color::Yellow
+                    };
+                    
+                    let modal = Paragraph::new(lines)
+                        .block(
+                            Block::default()
+                                .borders(Borders::ALL)
+                                .border_style(Style::default().fg(border_color))
+                                .title(" 🛑 Shutting Down ")
+                                .title_style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))
+                        );
+                    
+                    f.render_widget(modal, modal_area);
+                })?;
+                
+                // If shutdown is complete, wait for any key and exit
+                if progress.is_complete {
+                    if event::poll(Duration::from_millis(100))? {
+                        if let Event::Key(_) = event::read()? {
+                            break;
+                        }
+                    }
+                    continue;  // Skip the rest of the event loop
+                }
+            }
         }
 
         frame_idx = frame_idx.wrapping_add(1);
@@ -1086,18 +1167,30 @@ fn main() -> Result<(), Box<dyn Error>> {
                         }
                     }
                     AppMode::Dashboard => {
-                        match key.code {
-                            KeyCode::Char('q') => break,
-                            KeyCode::Char('r') => app.refresh(),
-                            KeyCode::Char('n') => {
-                                app.task_state = odd_dashboard::TaskCreationState::default();
-                                app.mode = AppMode::TaskCreation;
+                        // Ctrl+Q = Shutdown cluster and exit (destructive)
+                        if key.code == KeyCode::Char('q') && key.modifiers.contains(KeyModifiers::CONTROL) {
+                            // Start shutdown sequence
+                            app.mode = AppMode::ShutdownProgress;
+                            let progress = Arc::clone(&app.shutdown_progress);
+                            let registry = Arc::clone(&app.port_forward_registry);
+                            thread::spawn(move || {
+                                run_shutdown(progress, registry);
+                            });
+                        } else {
+                            // Regular key handling
+                            match key.code {
+                                KeyCode::Char('q') => break,  // Plain Q = quit only (non-destructive)
+                                KeyCode::Char('r') => app.refresh(),
+                                KeyCode::Char('n') => {
+                                    app.task_state = odd_dashboard::TaskCreationState::default();
+                                    app.mode = AppMode::TaskCreation;
+                                }
+                                KeyCode::Char('u') => {
+                                    app.launcher_state = UiLauncherState::default();
+                                    app.mode = AppMode::UiLauncher;
+                                }
+                                _ => {}
                             }
-                            KeyCode::Char('u') => {
-                                app.launcher_state = UiLauncherState::default();
-                                app.mode = AppMode::UiLauncher;
-                            }
-                            _ => {}
                         }
                     }
                     AppMode::TaskCreation => {
@@ -1174,6 +1267,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                             }
                             _ => {}
                         }
+                    }
+                    AppMode::ShutdownProgress => {
+                        // Any key exits when shutdown is complete
+                        let progress = app.shutdown_progress.lock().unwrap();
+                        if progress.is_complete {
+                            break;
+                        }
+                        // Otherwise ignore keys during shutdown
                     }
                     _ => {
                         if key.code == KeyCode::Char('q') {

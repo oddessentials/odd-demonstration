@@ -466,6 +466,11 @@ odd-demonstration/
 
 ## 🛑 Cleanup
 
+**Via TUI (recommended):**
+Press **Ctrl+Q** in the dashboard to cleanly stop port-forwards and delete the cluster.
+
+**Manual cleanup:**
+
 ```bash
 # Stop port-forwards (Windows PowerShell)
 Get-Job | Stop-Job | Remove-Job

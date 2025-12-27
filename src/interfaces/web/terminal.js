@@ -21,6 +21,7 @@ const CONFIG = {
     reconnectDelay: 1000,
     reconnectMaxDelay: 30000,
     reconnectBackoffFactor: 1.5,
+    autoRetryInterval: 20000,  // 20s auto-retry when disconnected (for shutdown recovery)
     resizeDebounceMs: 100,
     statsUrl: '/api/stats',
     authToken: null, // Set if auth required
@@ -39,6 +40,7 @@ let resizeTimeout = null;
 let lastSeq = null;
 let sessionActive = false;
 let optionalAddonsLoaded = false;
+let autoRetryTimer = null;  // Timer for 20s auto-retry
 
 /**
  * Lazy-load optional addons after session established.
@@ -397,6 +399,12 @@ function updateConnectionStatus(status) {
 function showTerminal() {
     document.getElementById('terminal-container').style.display = 'flex';
     document.getElementById('fallback-container').style.display = 'none';
+
+    // Clear auto-retry timer when connected
+    if (autoRetryTimer) {
+        clearInterval(autoRetryTimer);
+        autoRetryTimer = null;
+    }
 }
 
 /**
@@ -408,6 +416,13 @@ function showFallback() {
 
     // Load stats via HTTP
     loadFallbackStats();
+
+    // Start auto-retry timer (20s) for graceful recovery after shutdown
+    if (autoRetryTimer) clearInterval(autoRetryTimer);
+    autoRetryTimer = setInterval(() => {
+        console.log('Auto-retry: attempting reconnect after disconnect...');
+        retryConnection();
+    }, CONFIG.autoRetryInterval);
 }
 
 /**
@@ -478,4 +493,46 @@ window.addEventListener('beforeunload', () => {
     if (ws) {
         ws.close();
     }
+    if (autoRetryTimer) {
+        clearInterval(autoRetryTimer);
+    }
 });
+
+// ============================================================================
+// Test Hooks for Playwright
+// Expose state and methods for deterministic testing of disconnect/reconnect
+// ============================================================================
+if (typeof window !== 'undefined') {
+    window.__odtoTestHooks = {
+        /**
+         * Get current connection status for test assertions
+         */
+        getConnectionStatus: () => ({
+            connected: ws && ws.readyState === WebSocket.OPEN,
+            sessionActive,
+            reconnectAttempts,
+            intentionalClose,
+            autoRetryActive: autoRetryTimer !== null,
+        }),
+
+        /**
+         * Simulate a disconnect for testing reconnect behavior
+         */
+        simulateDisconnect: () => {
+            if (ws) {
+                intentionalClose = false; // Allow reconnect
+                ws.close(1000, 'test-disconnect');
+            }
+        },
+
+        /**
+         * Manually trigger a retry connection attempt
+         */
+        triggerRetry: () => retryConnection(),
+
+        /**
+         * Get current auto-retry interval setting
+         */
+        getAutoRetryInterval: () => CONFIG.autoRetryInterval,
+    };
+}
