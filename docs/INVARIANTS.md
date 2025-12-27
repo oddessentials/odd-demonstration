@@ -157,7 +157,7 @@ See [`tests/DETERMINISM.md`](../tests/DETERMINISM.md) for test timing contracts:
 |----|-----------|-------------|
 | B1 | Build context must match Dockerfile COPY assumptions | `start-all.ps1` + CI build steps |
 | B1a | Local dev builds use **repo root** as build context | `start-all.ps1` sets `Context = "."` |
-| B1b | CI builds use **service-local** context with synced `contracts/` for cache efficiency | CI step `cp -r contracts` into service directories |
+| B1b | CI build context must match the Dockerfile's `COPY` scope (repo-root or service-local) | CI build steps + Dockerfile review |
 | B2 | All `COPY` paths in Dockerfiles are **repo-relative** | Manual review on Dockerfile changes |
 | B3 | VERSION file missing = **hard failure** (no `:latest` fallback) | `start-all.ps1` fail-fast logic |
 | B4 | `$PSScriptRoot` empty = **detect and fallback** to marker-based discovery | Hardened Root Resolution Pattern |
@@ -172,9 +172,9 @@ See [`tests/DETERMINISM.md`](../tests/DETERMINISM.md) for test timing contracts:
 2. **All Dockerfiles use repo-relative COPY paths**: e.g., `COPY src/services/gateway/package.json ./`
 3. **No fallback to `:latest`**: Missing VERSION file = immediate failure with diagnostics.
 
-#### CI Service-Local Context (Intentional)
+#### CI Service-Local Context (Conditional)
 
-CI builds may use a **service-local** build context to maximize cache hits, as long as the service directory receives a synchronized `contracts/` copy (e.g., the CI `cp -r contracts` step) so repo-relative `COPY contracts/...` assumptions remain true. This pattern is valid and intentional because it preserves Docker layer reuse while still meeting the repo-relative COPY contract.
+CI can use a **service-local** build context to maximize cache hits **only when** the Dockerfile uses service-relative `COPY` paths (e.g., `COPY package.json ./`). In that case, the CI `cp -r contracts` step must sync `contracts/` into the service directory so `COPY contracts/...` remains valid. If the Dockerfile uses repo-relative paths (e.g., `COPY src/services/gateway/...`), CI must use repo-root context instead or the build will fail.
 
 ### Dockerfile Path Convention
 
