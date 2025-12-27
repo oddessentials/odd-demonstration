@@ -1,3 +1,15 @@
+# [3.1.0](https://github.com/oddessentials/odd-demonstration/compare/v3.0.4...v3.1.0) (2025-12-27)
+
+
+### Bug Fixes
+
+* **tui:** use Start-Process for Windows port-forwards ([be98ea7](https://github.com/oddessentials/odd-demonstration/commit/be98ea77aade72e87a878142e0a01370c15d0681))
+
+
+### Features
+
+* **tui:** add port-forward health check during loading ([f9c90a7](https://github.com/oddessentials/odd-demonstration/commit/f9c90a73b906f648e1bb152f22d2e367b47bde76))
+
 ## [3.0.4](https://github.com/oddessentials/odd-demonstration/compare/v3.0.3...v3.0.4) (2025-12-27)
 
 
