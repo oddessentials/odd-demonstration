@@ -68,6 +68,17 @@ pub enum ClusterStatus {
     Error(String),
 }
 
+/// Port-forward status for Gateway and Read Model services
+/// Used to verify connectivity before loading Dashboard
+#[derive(Debug, Clone, PartialEq)]
+pub enum PortForwardStatus {
+    AllHealthy,                    // Both Gateway and Read Model reachable
+    GatewayUnhealthy,             // Gateway unreachable, Read Model OK
+    ReadModelUnhealthy,           // Read Model unreachable, Gateway OK
+    AllUnhealthy,                 // Neither service reachable
+    Error(String),                // Error during health check
+}
+
 /// Setup progress tracking
 #[derive(Debug, Clone, Default)]
 pub struct SetupProgress {
@@ -688,6 +699,42 @@ mod tests {
         } else {
             panic!("Expected Error variant");
         }
+    }
+
+    // ========== PortForwardStatus Tests ==========
+
+    #[test]
+    fn test_port_forward_status_all_healthy() {
+        let status = PortForwardStatus::AllHealthy;
+        assert_eq!(status, PortForwardStatus::AllHealthy);
+    }
+
+    #[test]
+    fn test_port_forward_status_variants() {
+        let all_healthy = PortForwardStatus::AllHealthy;
+        let gateway_unhealthy = PortForwardStatus::GatewayUnhealthy;
+        let read_model_unhealthy = PortForwardStatus::ReadModelUnhealthy;
+        let all_unhealthy = PortForwardStatus::AllUnhealthy;
+        let error = PortForwardStatus::Error("test error".to_string());
+
+        assert_eq!(all_healthy, PortForwardStatus::AllHealthy);
+        assert_eq!(gateway_unhealthy, PortForwardStatus::GatewayUnhealthy);
+        assert_eq!(read_model_unhealthy, PortForwardStatus::ReadModelUnhealthy);
+        assert_eq!(all_unhealthy, PortForwardStatus::AllUnhealthy);
+        assert!(matches!(error, PortForwardStatus::Error(_)));
+    }
+
+    #[test]
+    fn test_port_forward_status_clone() {
+        let status = PortForwardStatus::Error("connection failed".to_string());
+        let cloned = status.clone();
+        assert_eq!(status, cloned);
+    }
+
+    #[test]
+    fn test_port_forward_status_inequality() {
+        assert_ne!(PortForwardStatus::AllHealthy, PortForwardStatus::AllUnhealthy);
+        assert_ne!(PortForwardStatus::GatewayUnhealthy, PortForwardStatus::ReadModelUnhealthy);
     }
 
     // ========== UiLauncherState Tests ==========

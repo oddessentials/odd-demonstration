@@ -12,7 +12,7 @@ pub mod config;
 
 // Re-export commonly used items for convenience
 pub use types::{
-    App, AppMode, ClusterStatus, SetupProgress, 
+    App, AppMode, ClusterStatus, PortForwardStatus, SetupProgress, 
     TaskCreationState, TaskCreationStatus, JobPayload,
     UiEntry, UiRegistry, UiLauncherState,
     Stats, Job, Alert, AlertLabels,
@@ -37,7 +37,7 @@ pub use doctor::{
 };
 
 pub use cluster::{
-    check_cluster_status, check_pods_status,
+    check_cluster_status, check_pods_status, check_port_forwards, ensure_port_forwards,
     find_project_root, run_setup_script,
     load_ui_registry, open_browser,
     validate_job_type, submit_job,

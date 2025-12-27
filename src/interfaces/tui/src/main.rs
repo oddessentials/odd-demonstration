@@ -36,6 +36,7 @@ use odd_dashboard::{
     check_platform_support, print_version, print_help, run_doctor,
     check_all_prerequisites, has_missing_prerequisites,
     check_cluster_status, run_setup_script, load_ui_registry, open_browser, submit_job,
+    ensure_port_forwards,
     get_install_command, copy_to_clipboard, execute_install_with_output,
 };
 
@@ -602,6 +603,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let api_url_clone = app.api_url.clone();
                 let gateway_url_clone = app.gateway_url.clone();
                 let handle = thread::spawn(move || {
+                    // First ensure port-forwards are healthy before fetching data
+                    let _ = ensure_port_forwards(&gateway_url_clone, &api_url_clone);
+                    
                     let mut background_app = App::new(api_url_clone, gateway_url_clone);
                     background_app.refresh();
                     loading_done_clone.store(true, Ordering::SeqCst);
@@ -627,6 +631,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
                 
                 app = handle.join().expect("Background thread panicked");
+                
+                // Final port-forward verification before Dashboard
+                // This catches the case where port-forwards failed to start
+                if let Err(_) = ensure_port_forwards(&app.gateway_url, &app.api_url) {
+                    // Port-forwards still not healthy - refresh anyway but warn via alerts
+                    app.alerts_error = Some("Port-forwards unhealthy - task creation may fail".to_string());
+                }
+                
                 app.mode = AppMode::Dashboard;
             }
             ClusterStatus::NoPods | ClusterStatus::NotFound | ClusterStatus::Error(_) => {
