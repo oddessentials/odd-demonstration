@@ -405,6 +405,11 @@ function Start-PortForwards {
 }
 
 function Test-Connectivity {
+    param(
+        [int]$MaxWaitSeconds = 15,
+        [int]$PollIntervalSeconds = 2
+    )
+    
     Write-Progress-Step -Step "verify" -Status "starting" -Message "Verifying connectivity..."
     
     $endpoints = @(
@@ -413,25 +418,40 @@ function Test-Connectivity {
         @{ Name = "Web Terminal"; Url = "http://localhost:8081/health" }
     )
     
-    $allOk = $true
-    foreach ($ep in $endpoints) {
-        try {
-            $response = Invoke-WebRequest -Uri $ep.Url -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
-            if ($response.StatusCode -ne 200) {
+    $deadline = (Get-Date).AddSeconds($MaxWaitSeconds)
+    $attempt = 0
+    
+    while ((Get-Date) -lt $deadline) {
+        $attempt++
+        $allOk = $true
+        $failedEndpoints = @()
+        
+        foreach ($ep in $endpoints) {
+            try {
+                $response = Invoke-WebRequest -Uri $ep.Url -TimeoutSec 3 -UseBasicParsing -ErrorAction Stop
+                if ($response.StatusCode -ne 200) {
+                    $allOk = $false
+                    $failedEndpoints += $ep.Name
+                }
+            } catch {
                 $allOk = $false
-                Write-Progress-Step -Step "verify" -Status "error" -Message "$($ep.Name) returned $($response.StatusCode)"
+                $failedEndpoints += $ep.Name
             }
-        } catch {
-            $allOk = $false
-            Write-Progress-Step -Step "verify" -Status "error" -Message "$($ep.Name) not reachable"
         }
+        
+        if ($allOk) {
+            Write-Progress-Step -Step "verify" -Status "complete" -Message "All services reachable"
+            return $true
+        }
+        
+        # Not ready yet - wait and retry
+        Write-Progress-Step -Step "verify" -Status "starting" -Message "Waiting for: $($failedEndpoints -join ', ')..."
+        Start-Sleep -Seconds $PollIntervalSeconds
     }
     
-    if ($allOk) {
-        Write-Progress-Step -Step "verify" -Status "complete" -Message "All services reachable"
-    }
-    
-    return $allOk
+    # Timed out - report which endpoints failed
+    Write-Progress-Step -Step "verify" -Status "error" -Message "$($failedEndpoints -join ', ') not reachable after ${MaxWaitSeconds}s"
+    return $false
 }
 
 function Show-AccessInfo {
@@ -543,10 +563,9 @@ if (-not $SkipPortForward) {
     Write-Progress-Step -Step "ports" -Status "skipped" -Message "Skipping port-forwards"
 }
 
-# Step 8: Verify
-Start-Sleep -Seconds 2  # Give port-forwards a moment
-if (-not (Test-Connectivity)) {
-    Write-Progress-Step -Step "verify" -Status "warning" -Message "Some services may not be ready yet"
+# Step 8: Verify (with built-in retry - non-fatal if it fails)
+if (-not (Test-Connectivity -MaxWaitSeconds 15)) {
+    Write-Progress-Step -Step "verify" -Status "warning" -Message "Some services may not be reachable yet"
 }
 
 # Step 9: Done!
