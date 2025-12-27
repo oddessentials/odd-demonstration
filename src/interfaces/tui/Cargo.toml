@@ -8,6 +8,8 @@ license = "MIT"
 readme = "README.md"
 keywords = ["kubernetes", "observability", "dashboard", "tui"]
 categories = ["command-line-utilities", "development-tools"]
+# Include Cargo.lock so `cargo test --locked` works from packaged tarball
+include = ["src/**/*", "Cargo.toml", "Cargo.lock", "README.md", "VERSION", "build.rs"]
 
 [lib]
 name = "odd_dashboard"
@@ -31,3 +33,7 @@ arboard = "=2.1"  # Pinned: v3 pulls moxcms requiring edition2024 (not stable in
 
 [build-dependencies]
 chrono = "0.4"
+
+[dev-dependencies]
+tempfile = "3"
+serial_test = "3"
