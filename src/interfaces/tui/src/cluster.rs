@@ -194,12 +194,13 @@ pub fn ensure_port_forwards(gateway_url: &str, read_model_url: &str) -> Result<(
 fn start_port_forward(service: &str, port: u16) -> Result<(), String> {
     let port_arg = format!("{}:{}", port, port);
     
-    // Use PowerShell's Start-Job to run port-forward in background
-    // This survives the parent process and persists in the shell session
+    // Windows: Use Start-Process to create a fully detached process
+    // Start-Job would die when the parent PowerShell exits
     #[cfg(target_os = "windows")]
     {
+        // Start-Process with -WindowStyle Hidden creates a detached, invisible process
         let ps_script = format!(
-            "Start-Job -ScriptBlock {{ kubectl port-forward svc/{} {} --context kind-task-observatory 2>$null }}",
+            "Start-Process -WindowStyle Hidden -FilePath kubectl -ArgumentList 'port-forward','svc/{}','{}','--context','kind-task-observatory'",
             service, port_arg
         );
         Command::new("powershell.exe")
@@ -210,9 +211,9 @@ fn start_port_forward(service: &str, port: u16) -> Result<(), String> {
             .map_err(|e| format!("Failed to start port-forward for {}: {}", service, e))?;
     }
 
+    // Unix: spawn kubectl directly - child process persists after TUI exits
     #[cfg(not(target_os = "windows"))]
     {
-        // On Unix, spawn kubectl directly in background
         Command::new("kubectl")
             .args(["port-forward", &format!("svc/{}", service), &port_arg, "--context", "kind-task-observatory"])
             .stdout(Stdio::null())
