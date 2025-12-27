@@ -43,6 +43,7 @@ This document defines the non-negotiable guarantees that the Distributed Task Ob
 | B2 | COPY paths match context assumptions | `validate-dockerfile-context.py` | ✅ CI |
 | B3 | VERSION missing = hard failure | `start-all.ps1` fail-fast | ✅ Runtime |
 | B4 | $PSScriptRoot fallback to marker discovery | Hardened Root Resolution | ✅ Runtime |
+| R1 | TUI tests pass from `cargo package` before release | `release.yml` `test-packaged` job | ✅ CI |
 
 
 ---

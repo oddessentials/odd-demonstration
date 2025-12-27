@@ -80,9 +80,47 @@ jobs:
           echo "new_release_git_tag: '${{ steps.semantic.outputs.new_release_git_tag }}'"
           echo "Job output new_release will be: '${{ steps.semantic.outputs.new_release_published }}'"
 
-  # Build binaries for all platforms (only if new release)
-  build:
+  # Verify TUI tests pass from packaged crate (matches shipped artifact context)
+  # Invariant R1: TUI tests must pass from cargo package tarball
+  test-packaged:
     needs: release
+    if: needs.release.outputs.new_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Verify workspace is clean (strict)
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::Workspace is not clean"
+            git status --porcelain
+            exit 1
+          fi
+      
+      - name: Package crate
+        run: |
+          cd src/interfaces/tui
+          cargo package
+      
+      - name: Test from packaged tarball
+        run: |
+          cd src/interfaces/tui
+          TARBALL=$(ls target/package/*.crate)
+          mkdir -p /tmp/packaged-test
+          tar -xzf "$TARBALL" -C /tmp/packaged-test
+          cd /tmp/packaged-test/*/
+          
+          # Strict lockfile + single-threaded for serial tests
+          cargo test --locked -- --test-threads=1
+
+  # Build binaries for all platforms (only if new release and tests pass)
+  build:
+    needs: [release, test-packaged]
     if: needs.release.outputs.new_release == 'true'
     strategy:
       fail-fast: false

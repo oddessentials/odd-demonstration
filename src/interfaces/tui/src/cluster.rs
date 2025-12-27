@@ -618,9 +618,44 @@ pub fn submit_job(gateway_url: &str, job_type: &str) -> Result<String, SubmitErr
     }
 }
 
+// ============================================================================
+// Test Infrastructure: RAII guard for env/cwd isolation
+// ============================================================================
+
+#[cfg(test)]
+struct TestEnvGuard {
+    original_cwd: std::path::PathBuf,
+    env_vars: Vec<(String, Option<String>)>,
+}
+
+#[cfg(test)]
+impl TestEnvGuard {
+    fn new(env_keys: &[&str]) -> Self {
+        let original_cwd = std::env::current_dir().unwrap_or_default();
+        let env_vars = env_keys.iter()
+            .map(|k| (k.to_string(), std::env::var(k).ok()))
+            .collect();
+        Self { original_cwd, env_vars }
+    }
+}
+
+#[cfg(test)]
+impl Drop for TestEnvGuard {
+    fn drop(&mut self) {
+        let _ = std::env::set_current_dir(&self.original_cwd);
+        for (key, val) in &self.env_vars {
+            match val {
+                Some(v) => std::env::set_var(key, v),
+                None => std::env::remove_var(key),
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     #[test]
     fn test_cluster_status_variants() {
@@ -637,7 +672,9 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_find_project_root_returns_option() {
+        let _guard = TestEnvGuard::new(&["ODTO_PROJECT_ROOT", "ODD_DASHBOARD_SERVER_MODE"]);
         // This test just verifies the function returns an Option
         let result = find_project_root();
         // Result may be Some or None depending on where tests are run
@@ -645,6 +682,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // Integration test: requires full repo checkout with scripts/ directory
     fn test_find_project_root_finds_scripts() {
         // If we find a root, it should have the scripts directory
         if let Some(root) = find_project_root() {
@@ -895,16 +933,15 @@ mod tests {
     // ========== W11: Server Mode API Health Check Tests ==========
 
     #[test]
+    #[serial]
     fn test_server_mode_uses_api_health_check() {
+        let _guard = TestEnvGuard::new(&["ODD_DASHBOARD_SERVER_MODE", "READ_MODEL_URL"]);
         // When server mode is enabled, check_cluster_status should use HTTP
         // instead of kubectl (which doesn't exist in containers)
         std::env::set_var("ODD_DASHBOARD_SERVER_MODE", "1");
         std::env::set_var("READ_MODEL_URL", "http://localhost:9999"); // Non-existent
         
         let status = check_cluster_status();
-        
-        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
-        std::env::remove_var("READ_MODEL_URL");
         
         // Should return NotFound (connection failed) not Error (kubectl not found)
         // This proves HTTP was used instead of kubectl
@@ -916,22 +953,23 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_server_mode_respects_read_model_url() {
+        let _guard = TestEnvGuard::new(&["ODD_DASHBOARD_SERVER_MODE", "READ_MODEL_URL"]);
         // Verify that the READ_MODEL_URL env var is used
         std::env::set_var("ODD_DASHBOARD_SERVER_MODE", "1");
         std::env::set_var("READ_MODEL_URL", "http://127.0.0.1:1"); // Invalid port
         
         let status = check_cluster_status();
         
-        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
-        std::env::remove_var("READ_MODEL_URL");
-        
         // Should fail to connect (NotFound) rather than error on kubectl
         assert!(matches!(status, ClusterStatus::NotFound | ClusterStatus::Error(_)));
     }
 
     #[test]
+    #[serial]
     fn test_normal_mode_uses_kubectl() {
+        let _guard = TestEnvGuard::new(&["ODD_DASHBOARD_SERVER_MODE"]);
         // When server mode is disabled, check_cluster_status should use kubectl
         std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
         
@@ -943,6 +981,114 @@ mod tests {
             status,
             ClusterStatus::Ready | ClusterStatus::NotFound | ClusterStatus::NoPods | ClusterStatus::Error(_)
         ));
+    }
+}
+
+// ============================================================================
+// Hermetic Tests: find_project_root with synthetic temp directories
+// ============================================================================
+
+#[cfg(test)]
+mod find_project_root_tests {
+    use super::*;
+    use serial_test::serial;
+    use tempfile::TempDir;
+
+    /// Create a temp directory with specified markers (files/dirs)
+    fn create_project_layout(markers: &[&str]) -> TempDir {
+        let temp = TempDir::new().unwrap();
+        for marker in markers {
+            let path = temp.path().join(marker);
+            if marker.contains('.') {
+                std::fs::write(&path, "").unwrap(); // Create file
+            } else {
+                std::fs::create_dir(&path).unwrap(); // Create directory
+            }
+        }
+        temp
+    }
+
+    #[test]
+    #[serial]
+    fn test_returns_none_when_no_markers() {
+        let _guard = TestEnvGuard::new(&["ODTO_PROJECT_ROOT", "ODD_DASHBOARD_SERVER_MODE"]);
+        let temp = TempDir::new().unwrap();
+        std::env::set_current_dir(temp.path()).unwrap();
+        std::env::remove_var("ODTO_PROJECT_ROOT");
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        
+        assert!(find_project_root().is_none());
+    }
+
+    #[test]
+    #[serial]
+    fn test_returns_root_when_all_markers_present() {
+        let _guard = TestEnvGuard::new(&["ODTO_PROJECT_ROOT", "ODD_DASHBOARD_SERVER_MODE"]);
+        let temp = create_project_layout(&["README.md", "scripts", "infra", "src"]);
+        std::env::set_current_dir(temp.path()).unwrap();
+        std::env::remove_var("ODTO_PROJECT_ROOT");
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        
+        let root = find_project_root().unwrap();
+        assert_eq!(root.canonicalize().unwrap(), temp.path().canonicalize().unwrap());
+    }
+
+    #[test]
+    #[serial]
+    fn test_returns_none_when_partial_markers() {
+        let _guard = TestEnvGuard::new(&["ODTO_PROJECT_ROOT", "ODD_DASHBOARD_SERVER_MODE"]);
+        // Missing 'infra' marker
+        let temp = create_project_layout(&["README.md", "scripts", "src"]);
+        std::env::set_current_dir(temp.path()).unwrap();
+        std::env::remove_var("ODTO_PROJECT_ROOT");
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        
+        assert!(find_project_root().is_none());
+    }
+
+    #[test]
+    #[serial]
+    fn test_walks_up_to_find_root() {
+        let _guard = TestEnvGuard::new(&["ODTO_PROJECT_ROOT", "ODD_DASHBOARD_SERVER_MODE"]);
+        let temp = create_project_layout(&["README.md", "scripts", "infra", "src"]);
+        let nested = temp.path().join("src/interfaces/tui");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::env::set_current_dir(&nested).unwrap();
+        std::env::remove_var("ODTO_PROJECT_ROOT");
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        
+        let root = find_project_root().unwrap();
+        assert_eq!(root.canonicalize().unwrap(), temp.path().canonicalize().unwrap());
+    }
+
+    #[test]
+    #[serial]
+    fn test_env_var_fallback() {
+        let _guard = TestEnvGuard::new(&["ODTO_PROJECT_ROOT", "ODD_DASHBOARD_SERVER_MODE"]);
+        let temp = create_project_layout(&["README.md", "scripts", "infra", "src"]);
+        let empty = TempDir::new().unwrap();
+        std::env::set_current_dir(empty.path()).unwrap();
+        std::env::set_var("ODTO_PROJECT_ROOT", temp.path());
+        std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
+        
+        assert!(find_project_root().is_some());
+    }
+
+    #[test]
+    #[serial]
+    #[cfg(target_os = "linux")]
+    fn test_server_mode_bypasses_filesystem_walk() {
+        let _guard = TestEnvGuard::new(&["ODD_DASHBOARD_SERVER_MODE"]);
+        std::env::set_var("ODD_DASHBOARD_SERVER_MODE", "1");
+        
+        let root = find_project_root();
+        
+        // Server mode MUST return a root (bypasses FS walk)
+        assert!(root.is_some(), "Server mode should always return a root");
+        
+        // The returned path should be an absolute path (container convention)
+        let path = root.unwrap();
+        assert!(path.is_absolute(), "Server mode root should be absolute");
     }
 }
 
