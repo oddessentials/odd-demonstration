@@ -443,7 +443,7 @@ odd-demonstration/
 ├── src/
 │   ├── interfaces/
 │   │   ├── tui/         # Rust TUI (ratatui) with cluster launcher
-│   │   └── web/         # Glassmorphic web dashboard (Nginx)
+│   │   └── web/         # xterm.js Web Terminal (Nginx + PTY)
 │   └── services/
 │       ├── gateway/         # Node.js - API ingress, schema validation
 │       ├── processor/       # Python - Job execution worker

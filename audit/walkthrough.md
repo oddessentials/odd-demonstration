@@ -106,30 +106,20 @@ Deterministic tests for:
 - Message cycling logic
 - Setup progress state
 
-### Web Dashboard (`src/interfaces/web`)
+### Web Terminal (`src/interfaces/web`)
 
-Modern glassmorphic UI with feature parity:
+xterm.js-based terminal that mirrors the TUI via WebSocket PTY streaming (Phase 20):
 
-#### Loading Splash
-- Animated ASCII logo
-- Spinner and cycling messages
-- Auto-hides after first successful fetch
+#### Architecture
+- **web-pty-ws** (Rust): PTY broker running `odd-dashboard` in pseudo-terminal
+- **web-ui-http** (nginx): Static files + `/ws` proxy to PTY server
+- Split K8s deployments for independent rolling updates
 
-#### Main Dashboard
-- Stats cards (Total, Completed, Failed, Alerts)
-- Recent jobs table
-- Active alerts panel
-- Raw events table (MongoDB)
-
-#### New Task Modal
-- Placeholder for future task creation
-- Click "➕ New Task" button in header
-
-#### Launcher Page (`launcher.html`)
-- Opens directly from filesystem (file://)
-- Detects cluster status via API polling
-- Shows manual startup instructions
-- Auto-redirects when cluster is ready
+#### Features
+- xterm.js client with auto-reconnect
+- Session reconnect tokens (single-use)
+- Fallback dashboard when WebSocket unavailable
+- Server-side test mode injection for deterministic testing
 
 ---
 
