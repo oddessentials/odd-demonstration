@@ -2,10 +2,6 @@
 
 A self-contained, local-first demonstration platform showcasing modern, production-grade distributed systems designed to enable professional-level agentic development at the most efficient rate possible.
 
-![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue)
-![Stack](https://img.shields.io/badge/Stack-Polyglot-green)
-![Platform](https://img.shields.io/badge/Platform-Kubernetes-326CE5)
-
 **Test Coverage:**
 
 ![Gateway](https://img.shields.io/badge/Gateway-80%25-brightgreen)
@@ -18,6 +14,97 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 **Behavioral Tests:**
 
 [![TUI Visual Tests](https://img.shields.io/badge/TUI%20Visual-Passing-blue)](./tests/visual/)
+
+---
+
+![Demo](screenshots/3.x/demo.gif)
+[Click here to expand the demo video (MP4)](https://github.com/oddessentials/odd-demonstration/raw/main/screenshots/3.x/demo.mp4)
+
+---
+
+## 🏗️ Architecture
+
+![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue)
+![Stack](https://img.shields.io/badge/Stack-Polyglot-green)
+![Platform](https://img.shields.io/badge/Platform-Kubernetes-326CE5)
+
+```mermaid
+flowchart TB
+subgraph Interfaces
+Browser["Browser (xterm.js)"]
+WebUI["web-ui-http (nginx)"]
+TUI["odd-dashboard TUI (Rust/ratatui)"]
+end
+
+    subgraph EdgeServices["Edge & Access"]
+        WebPTY["web-pty-ws (Rust)"]
+        Gateway["Gateway API (Node.js)"]
+        ReadModel["Read Model API (Go)"]
+    end
+
+    subgraph CoreServices["Core Services"]
+        Processor["Processor (Python)"]
+        Metrics["Metrics Engine (Go)"]
+    end
+
+    subgraph Data["Data & Messaging"]
+        RabbitMQ["RabbitMQ (event spine)"]
+        Postgres["PostgreSQL (authoritative)"]
+        Mongo["MongoDB (event store)"]
+        Redis["Redis (cache)"]
+    end
+
+    subgraph Observability
+        Prometheus["Prometheus"]
+        Grafana["Grafana"]
+    end
+
+    subgraph Testing["Test Framework"]
+        Unit["Unit Tests\n(vitest / go test / pytest / cargo)"]
+        Contracts["Contract Validator\nscripts/validate-contracts.ps1"]
+        Smoke["Smoke Test\nscripts/smoke-test.ps1"]
+        Integration["Integration Gate/Harness\nscripts/integration-gate.ps1\nscripts/integration-harness.ps1"]
+        Visual["Playwright Visual Tests\ntests/visual"]
+    end
+
+    Browser --> WebUI
+    WebUI -- WebSocket --> WebPTY
+    WebPTY --> TUI
+    WebUI -- /api --> ReadModel
+    TUI --> Gateway
+    TUI --> ReadModel
+
+    Gateway --> RabbitMQ
+    Processor --> RabbitMQ
+    Metrics --> RabbitMQ
+
+    Processor --> Postgres
+    ReadModel --> Postgres
+
+    ReadModel --> Mongo
+    Metrics --> Mongo
+
+    ReadModel --> Redis
+    Metrics --> Redis
+
+    Prometheus --> Metrics
+    Grafana --> Prometheus
+
+    Unit -.-> Gateway
+    Unit -.-> Processor
+    Unit -.-> Metrics
+    Unit -.-> ReadModel
+    Unit -.-> WebPTY
+    Contracts -.-> Gateway
+    Contracts -.-> Processor
+    Smoke -.-> Gateway
+    Smoke -.-> ReadModel
+    Integration -.-> Gateway
+    Integration -.-> ReadModel
+    Integration -.-> Processor
+    Integration -.-> Metrics
+    Visual -.-> WebUI
+```
 
 ## 🚀 Quick Start (5 minutes)
 
@@ -177,88 +264,6 @@ odd-dashboard doctor
 
 **System Requirements:** 8GB RAM minimum (16GB recommended), 4+ CPU cores, 15GB disk.
 See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.
-
-## 🏗️ Architecture
-
-```mermaid
-flowchart TB
-subgraph Interfaces
-Browser["Browser (xterm.js)"]
-WebUI["web-ui-http (nginx)"]
-TUI["odd-dashboard TUI (Rust/ratatui)"]
-end
-
-    subgraph EdgeServices["Edge & Access"]
-        WebPTY["web-pty-ws (Rust)"]
-        Gateway["Gateway API (Node.js)"]
-        ReadModel["Read Model API (Go)"]
-    end
-
-    subgraph CoreServices["Core Services"]
-        Processor["Processor (Python)"]
-        Metrics["Metrics Engine (Go)"]
-    end
-
-    subgraph Data["Data & Messaging"]
-        RabbitMQ["RabbitMQ (event spine)"]
-        Postgres["PostgreSQL (authoritative)"]
-        Mongo["MongoDB (event store)"]
-        Redis["Redis (cache)"]
-    end
-
-    subgraph Observability
-        Prometheus["Prometheus"]
-        Grafana["Grafana"]
-    end
-
-    subgraph Testing["Test Framework"]
-        Unit["Unit Tests\n(vitest / go test / pytest / cargo)"]
-        Contracts["Contract Validator\nscripts/validate-contracts.ps1"]
-        Smoke["Smoke Test\nscripts/smoke-test.ps1"]
-        Integration["Integration Gate/Harness\nscripts/integration-gate.ps1\nscripts/integration-harness.ps1"]
-        Visual["Playwright Visual Tests\ntests/visual"]
-    end
-
-    Browser --> WebUI
-    WebUI -- WebSocket --> WebPTY
-    WebPTY --> TUI
-    WebUI -- /api --> ReadModel
-    TUI --> Gateway
-    TUI --> ReadModel
-
-    Gateway --> RabbitMQ
-    Processor --> RabbitMQ
-    Metrics --> RabbitMQ
-
-    Processor --> Postgres
-    ReadModel --> Postgres
-
-    ReadModel --> Mongo
-    Metrics --> Mongo
-
-    ReadModel --> Redis
-    Metrics --> Redis
-
-    Prometheus --> Metrics
-    Grafana --> Prometheus
-
-    Unit -.-> Gateway
-    Unit -.-> Processor
-    Unit -.-> Metrics
-    Unit -.-> ReadModel
-    Unit -.-> WebPTY
-    Contracts -.-> Gateway
-    Contracts -.-> Processor
-    Smoke -.-> Gateway
-    Smoke -.-> ReadModel
-    Integration -.-> Gateway
-    Integration -.-> ReadModel
-    Integration -.-> Processor
-    Integration -.-> Metrics
-    Visual -.-> WebUI
-```
-
----
 
 ## 🔗 Access Points
 
