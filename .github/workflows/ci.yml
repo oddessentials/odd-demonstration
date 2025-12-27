@@ -34,7 +34,7 @@ jobs:
       filter_ok: ${{ steps.filter.outcome == 'success' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Detect changes
         uses: dorny/paths-filter@v3
@@ -86,7 +86,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # PREFLIGHT: Validate GitHub Release asset exists before invoking Bazelisk
       - name: Verify Bazel mirror asset exists
@@ -281,7 +281,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -340,7 +340,7 @@ jobs:
     steps:
       # Checkout to a separate directory to avoid polluting the main workspace
       - name: Checkout code (isolated path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: repro-workspace
 
@@ -434,7 +434,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -478,7 +478,7 @@ jobs:
       FILTER_FAILED: ${{ needs.paths-filter.result != 'success' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node.js (for schema validation)
         uses: actions/setup-node@v4
@@ -524,7 +524,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -592,7 +592,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
       - name: Verify naming consistency
         shell: pwsh
@@ -622,7 +622,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -661,7 +661,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build web-ui Docker image
         run: |
@@ -684,7 +684,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -721,7 +721,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Install PowerShell Core
         run: brew install powershell
@@ -755,7 +755,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -889,7 +889,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Full history for --new-from-rev
 
@@ -987,6 +987,6 @@ jobs:
   #   needs: [bazel, docker]
   #   if: startsWith(github.ref, 'refs/tags/v')
   #   steps:
-  #     - uses: actions/checkout@v4
+  #     - uses: actions/checkout@v6
   #     - name: Create GitHub Release
   #       uses: softprops/action-gh-release@v1
