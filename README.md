@@ -85,17 +85,17 @@ flowchart LR
     WebUI -.->|/api| ReadModel
     TUI -.-> ReadModel
     Processor -.-> Postgres
-    ReadModel -.-> Postgres
-    ReadModel -.-> Mongo
+    Postgres -.-> ReadModel
+    Mongo -.-> ReadModel
     Metrics -.-> Mongo
-    ReadModel -.-> Redis
+    Redis -.-> ReadModel
     Metrics -.-> Redis
     Processor -.-> RabbitMQ
-    Metrics -.-> RabbitMQ
+    RabbitMQ -.-> Metrics
 
     %% Observability (BLUE)
-    Prometheus -.-> Metrics
-    Grafana -.-> Prometheus
+    Metrics -.-> Prometheus
+    Prometheus -.-> Grafana
 
     %% Test framework connections (ORANGE)
     Unit -.-> Gateway
@@ -118,7 +118,7 @@ flowchart LR
     Gateway -->|"2. Publish task event"| RabbitMQ
     RabbitMQ -->|"3. Consume event"| Processor
     Processor -->|"4. Process & write results"| Postgres
-    ReadModel -->|"5. Query updated views"| Postgres
+    Postgres -->|"5. Return query results"| ReadModel
     ReadModel -->|"6. Provide status updates"| TUI
 
     %% Node styling

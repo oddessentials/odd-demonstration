@@ -1,80 +1,94 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mermaid Task Flow — Fancy Animated</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mermaid Task Flow — Fancy Animated</title>
 
-    <style>
-      body {
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-        margin: 24px;
-        background: #0b0f14;
-        color: #e7eef7;
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 24px;
+      background: #0b0f14;
+      color: #e7eef7;
+    }
+
+    .mermaid {
+      background: #0f1621;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      overflow: auto;
+    }
+
+    @keyframes flow {
+      from {
+        stroke-dashoffset: 0;
       }
 
-      .mermaid {
-        background: #0f1621;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        padding: 18px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-        overflow: auto;
+      to {
+        stroke-dashoffset: -36;
+      }
+    }
+
+    @keyframes glow {
+      0% {
+        filter: drop-shadow(0 0 2px rgba(46, 139, 87, 0.35));
       }
 
-      @keyframes flow {
-        from { stroke-dashoffset: 0; }
-        to   { stroke-dashoffset: -36; }
+      50% {
+        filter: drop-shadow(0 0 8px rgba(46, 139, 87, 0.65));
       }
 
-      @keyframes glow {
-        0%   { filter: drop-shadow(0 0 2px rgba(46, 139, 87, 0.35)); }
-        50%  { filter: drop-shadow(0 0 8px rgba(46, 139, 87, 0.65)); }
-        100% { filter: drop-shadow(0 0 2px rgba(46, 139, 87, 0.35)); }
+      100% {
+        filter: drop-shadow(0 0 2px rgba(46, 139, 87, 0.35));
       }
-    </style>
-  </head>
+    }
+  </style>
+</head>
 
-  <body>
-    <!-- prettier-ignore -->
-    <div class="mermaid" id="diagram">
-flowchart LR
+<body>
+  <!-- prettier-ignore -->
+  <div class="mermaid" id="diagram">
+    flowchart LR
     %% NOTE:
     %% linkStyle indices are order-dependent.
     %% If you add/remove edges above, update the linkStyle ranges below.
 
     subgraph Interfaces
-        Browser["Browser (xterm.js)"]
-        WebUI["web-ui-http (nginx)"]
-        TUI["odd-dashboard TUI (Rust/ratatui)"]
+    Browser["Browser (xterm.js)"]
+    WebUI["web-ui-http (nginx)"]
+    TUI["odd-dashboard TUI (Rust/ratatui)"]
     end
     subgraph EdgeServices["Edge & Access"]
-        WebPTY["web-pty-ws (Rust)"]
-        Gateway["Gateway API (Node.js)"]
-        ReadModel["Read Model API (Go)"]
+    WebPTY["web-pty-ws (Rust)"]
+    Gateway["Gateway API (Node.js)"]
+    ReadModel["Read Model API (Go)"]
     end
     subgraph CoreServices["Core Services"]
-        Processor["Processor (Python)"]
-        Metrics["Metrics Engine (Go)"]
+    Processor["Processor (Python)"]
+    Metrics["Metrics Engine (Go)"]
     end
     subgraph Data["Data & Messaging"]
-        RabbitMQ["RabbitMQ (event spine)"]
-        Postgres["PostgreSQL (authoritative)"]
-        Mongo["MongoDB (event store)"]
-        Redis["Redis (cache)"]
+    RabbitMQ["RabbitMQ (event spine)"]
+    Postgres["PostgreSQL (authoritative)"]
+    Mongo["MongoDB (event store)"]
+    Redis["Redis (cache)"]
     end
     subgraph Observability
-        Prometheus["Prometheus"]
-        Grafana["Grafana"]
+    Prometheus["Prometheus"]
+    Grafana["Grafana"]
     end
     subgraph Testing["Test Framework"]
-        Unit["Unit Tests<br/>(vitest / go test / pytest / cargo)"]
-        Contracts["Contract Validator<br/>scripts/validate-contracts.ps1"]
-        Smoke["Smoke Test<br/>scripts/smoke-test.ps1"]
-        Integration["Integration Gate/Harness<br/>scripts/integration-gate.ps1<br/>scripts/integration-harness.ps1"]
-        Visual["Playwright Visual Tests<br/>tests/visual"]
+    Unit["Unit Tests<br />(vitest / go test / pytest / cargo)"]
+    Contracts["Contract Validator<br />scripts/validate-contracts.ps1"]
+    Smoke["Smoke Test<br />scripts/smoke-test.ps1"]
+    Integration["Integration Gate/Harness<br />scripts/integration-gate.ps1<br />scripts/integration-harness.ps1"]
+    Visual["Playwright Visual Tests<br />tests/visual"]
     end
 
     %% Core runtime connections
@@ -84,17 +98,20 @@ flowchart LR
     WebUI -.->|/api| ReadModel
     TUI -.-> ReadModel
     Processor -.-> Postgres
-    ReadModel -.-> Postgres
-    ReadModel -.-> Mongo
+
+    %% IMPORTANT: direction is Postgres -> ReadModel (as requested)
+    Postgres -.-> ReadModel
+
+    Mongo -.-> ReadModel
     Metrics -.-> Mongo
-    ReadModel -.-> Redis
+    Redis -.-> ReadModel
     Metrics -.-> Redis
     Processor -.-> RabbitMQ
-    Metrics -.-> RabbitMQ
+    RabbitMQ -.-> Metrics
 
     %% Observability (BLUE)
-    Prometheus -.-> Metrics
-    Grafana -.-> Prometheus
+    Metrics -.-> Prometheus
+    Prometheus -.-> Grafana
 
     %% Test framework connections (ORANGE)
     Unit -.-> Gateway
@@ -117,7 +134,10 @@ flowchart LR
     Gateway -->|"2. Publish task event"| RabbitMQ
     RabbitMQ -->|"3. Consume event"| Processor
     Processor -->|"4. Process & write results"| Postgres
-    ReadModel -->|"5. Query updated views"| Postgres
+
+    %% IMPORTANT: direction is Postgres -> ReadModel (step 5)
+    Postgres -->|"5. Return updated view data"| ReadModel
+
     ReadModel -->|"6. Provide status updates"| TUI
 
     %% Node styling
@@ -151,46 +171,47 @@ flowchart LR
     linkStyle 32 stroke:#2E8B57,stroke-width:4px;
     linkStyle 33 stroke:#2E8B57,stroke-width:4px;
     linkStyle 34 stroke:#2E8B57,stroke-width:4px;
-    </div>
+  </div>
 
-    <script>
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: "dark",
-        securityLevel: "loose"
-      });
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "dark",
+      securityLevel: "loose"
+    });
 
-      function animatePath(p, delaySeconds) {
-        p.style.strokeDasharray = "10 8";
-        p.style.strokeLinecap = "round";
-        p.style.strokeLinejoin = "round";
-        p.style.animation =
-          `flow 1.15s linear ${delaySeconds}s infinite, glow 2.2s ease-in-out ${delaySeconds}s infinite`;
+    function animatePath(p, delaySeconds) {
+      p.style.strokeDasharray = "10 8";
+      p.style.strokeLinecap = "round";
+      p.style.strokeLinejoin = "round";
+      p.style.animation =
+        `flow 1.15s linear ${delaySeconds}s infinite, glow 2.2s ease-in-out ${delaySeconds}s infinite`;
+    }
+
+    async function renderAndAnimate() {
+      await mermaid.run({ querySelector: "#diagram" });
+
+      const svg = document.querySelector("#diagram svg");
+      if (!svg) return;
+
+      // Mermaid v10: edges are typically paths with marker-end. This is robust.
+      const edgePaths = Array.from(svg.querySelectorAll("path"))
+        .filter(p => p.getAttribute("marker-end"));
+
+      // Animate linkStyle 29..34 by taking edges in order (0-based).
+      // If you change edge ordering, these indices must be updated (same as linkStyle).
+      const start = 29, end = 34;
+
+      for (let i = start; i <= end; i++) {
+        const p = edgePaths[i];
+        if (!p) continue;
+        animatePath(p, (i - start) * 0.12);
       }
+    }
 
-      async function renderAndAnimate() {
-        await mermaid.run({ querySelector: "#diagram" });
+    // Ensure Mermaid has inserted SVG before we style it
+    requestAnimationFrame(() => renderAndAnimate());
+  </script>
+</body>
 
-        const svg = document.querySelector("#diagram svg");
-        if (!svg) return;
-
-        // Mermaid v10: edges are typically paths with marker-end. This is robust.
-        const edgePaths = Array.from(svg.querySelectorAll("path"))
-          .filter(p => p.getAttribute("marker-end"));
-
-        // Animate linkStyle 29..34 by taking edges in order (0-based).
-        // If you change edge ordering, these indices must be updated (same as linkStyle).
-        const start = 29, end = 34;
-
-        for (let i = start; i <= end; i++) {
-          const p = edgePaths[i];
-          if (!p) continue;
-          animatePath(p, (i - start) * 0.12);
-        }
-      }
-
-      // Ensure Mermaid has inserted SVG before we style it
-      requestAnimationFrame(() => renderAndAnimate());
-    </script>
-  </body>
 </html>

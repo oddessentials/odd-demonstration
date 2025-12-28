@@ -38,8 +38,8 @@ flowchart LR
   end
 
   %% Observability edges (BLUE)
-  Prometheus -.-> Metrics
-  Grafana -.-> Prometheus
+  Metrics -.-> Prometheus
+  Prometheus -.-> Grafana
 
   %% Test framework edges (ORANGE)
   Unit -.-> Gateway

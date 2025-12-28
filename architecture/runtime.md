@@ -40,20 +40,20 @@ flowchart LR
   TUI -.-> ReadModel
 
   Processor -.-> Postgres
-  ReadModel -.-> Postgres
-  ReadModel -.-> Mongo
+  Postgres -.-> ReadModel
+  Mongo -.-> ReadModel
   Metrics -.-> Mongo
-  ReadModel -.-> Redis
+  Redis -.-> ReadModel
   Metrics -.-> Redis
   Processor -.-> RabbitMQ
-  Metrics -.-> RabbitMQ
+  RabbitMQ -.-> Metrics
 
   %% Task creation flow (GREEN, steps 1–6)
   TUI -->|"1. User creates task (e.g., press N in TUI)"| Gateway
   Gateway -->|"2. Publish task event"| RabbitMQ
   RabbitMQ -->|"3. Consume event"| Processor
   Processor -->|"4. Process & write results"| Postgres
-  ReadModel -->|"5. Query updated views"| Postgres
+  Postgres -->|"5. Return query results"| ReadModel
   ReadModel -->|"6. Provide status updates"| TUI
 
   %% Node styling
