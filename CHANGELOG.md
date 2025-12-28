@@ -1,3 +1,16 @@
+# [3.4.0](https://github.com/oddessentials/odd-demonstration/compare/v3.3.0...v3.4.0) (2025-12-28)
+
+
+### Bug Fixes
+
+* mobile experiment display ([9fa421f](https://github.com/oddessentials/odd-demonstration/commit/9fa421f4f33de918943772afba624524ff9b80aa))
+* update medium url ([fac84fb](https://github.com/oddessentials/odd-demonstration/commit/fac84fb1789c3904f25ca3f7a95d2d1f32b63e3f))
+
+
+### Features
+
+* **docs:** add E2E tests and fix UI colors ([a274238](https://github.com/oddessentials/odd-demonstration/commit/a274238b41dd593eb2fd20fea0549f7ed699ee79))
+
 # [3.3.0](https://github.com/oddessentials/odd-demonstration/compare/v3.2.0...v3.3.0) (2025-12-28)
 
 
