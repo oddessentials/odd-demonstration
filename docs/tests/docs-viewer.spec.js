@@ -149,6 +149,14 @@ test.describe('Docs Viewer', () => {
         const secondaryTree = page.locator('#tree-secondary');
         await expect(secondaryTree).not.toBeEmpty();
 
+        // On mobile, the secondary sidebar is a drawer that needs to be opened first
+        const secondaryNavBtn = page.locator('#nav-btn-secondary');
+        if (await secondaryNavBtn.isVisible()) {
+            await secondaryNavBtn.click();
+            // Wait for sidebar to slide in
+            await expect(page.locator('#sidebar-secondary')).toHaveClass(/open/, { timeout: 5000 });
+        }
+
         // Click on 'experiment.pdf' which is a top-level file (always visible)
         const secondaryFile = secondaryTree.locator('.file-link', { hasText: 'experiment.pdf' });
         await expect(secondaryFile).toBeVisible({ timeout: 5000 });
