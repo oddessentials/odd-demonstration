@@ -428,6 +428,34 @@ Authoritative reference documentation for builders and autonomous agents:
 | [📋 SUPPORT_MATRIX.md](./docs/agents/SUPPORT_MATRIX.md)         | Platform support and hardware requirements             |
 | [✔️ VERIFYING_RELEASES.md](./docs/agents/VERIFYING_RELEASES.md) | Release verification and checksum validation           |
 
+### 📖 Further Reading & Background
+
+The following articles document the motivation and evolution of this repository.  
+They are **not required reading**, but provide additional context for interested readers.
+
+- **From Puppeteer to Conductor**  
+  _Designing autonomous systems without sacrificing safety or determinism_  
+  https://medium.com/@pete.palles/from-puppeteer-to-conductor-520c8f18e37f
+
+- **The Renaissance Engineers**  
+  _Dark Magic, Dog Food, Determinism, and the Humans in the Loop_
+  https://medium.com/@pete.palles/the-renaissance-engineers-e3c1efa15572
+
+- **The Future of Software Engineering**  
+  _Supercolonies: Where the Most Skilled Engineers Command Hives and Swarms_  
+  https://medium.com/@pete.palles/the-future-of-software-engineering-51de53d2e45a
+
+---
+
+## 👤 Author
+
+<img src="docs/img/pete-palles-512.jpg" alt="Pete Palles" width="96" style="border-radius:50%;" />
+
+**Pete Palles**  
+🔗 LinkedIn: https://www.linkedin.com/in/petepalles
+
+Peter is a Software Engineering Manager at a large enterprise healthcare organization, where he leads a team of highly skilled software engineers. He is also the Founder and CEO of Odd Essentials, LLC. With more than 20 years of experience spanning full-stack development, systems engineering, and applied AI, Peter has architected, designed, and delivered large-scale software systems end-to-end. At the ripe age of 41, Pete is currently completing his MBA at the University of Pittsburgh’s Katz Graduate School of Business.
+
 ---
 
 ## 📝 License
