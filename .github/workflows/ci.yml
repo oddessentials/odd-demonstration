@@ -27,6 +27,8 @@ jobs:
       compat_critical: ${{ steps.filter.outputs.schemas == 'true' || steps.filter.outputs.compat_script == 'true' || steps.filter.outputs.services == 'true' }}
       # Tier 2: Visual tests
       web_terminal: ${{ steps.filter.outputs.web_terminal }}
+      # Tier 2b: Docs viewer tests
+      docs: ${{ steps.filter.outputs.docs }}
       # Tier 3: Governance-only (does NOT trigger integration gate)
       contracts_docs: ${{ steps.filter.outputs.contracts_docs }}
       governance: ${{ steps.filter.outputs.governance }}
@@ -57,6 +59,8 @@ jobs:
               - 'scripts/*.py'
               - 'scripts/*.ps1'
               - '.github/workflows/**'
+            docs:
+              - 'docs/**'
 
       # Explicit filter-failed detection with CI annotation
       - name: Check filter health
@@ -582,6 +586,50 @@ jobs:
       - name: Stop services
         if: always()
         run: docker compose -f docker-compose.integration.yml down -v
+
+  # ============================================================
+  # Docs Viewer Tests (Playwright)
+  # Only runs when /docs changes - isolated from main test suite
+  # ============================================================
+  docs-tests:
+    name: Docs Viewer Tests
+    runs-on: ubuntu-latest
+    needs: [paths-filter]
+    # Run ONLY when docs files change
+    if: needs.paths-filter.outputs.docs == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd docs
+          npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd docs
+          npx playwright install chromium webkit --with-deps
+
+      - name: Run docs viewer tests
+        run: |
+          cd docs
+          npx playwright test
+        timeout-minutes: 5
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-playwright-report
+          path: docs/playwright-report/
+          retention-days: 7
 
   # ============================================================
   # Distribution Audit (naming, version, artifact consistency)

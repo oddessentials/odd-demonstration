@@ -74,10 +74,7 @@ body {
 .logo {
   font-size: 1.1rem;
   font-weight: 600;
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent-primary);
 }
 
 .header-left {
@@ -249,7 +246,7 @@ body {
 }
 
 .file-link.active {
-  background: var(--accent-gradient);
+  background: #0284c7;
   color: white;
 }
 
@@ -483,10 +480,7 @@ body {
 .intro h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #0284c7;
   margin: 0 0 24px 0;
 }
 
@@ -517,10 +511,7 @@ body {
 .stat-value {
   font-size: 2.5rem;
   font-weight: 700;
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #0284c7;
 }
 
 .stat-label {
