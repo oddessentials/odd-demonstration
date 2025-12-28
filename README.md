@@ -379,23 +379,23 @@ kind delete cluster --name task-observatory
 
 ---
 
-## 🔍 Audit (raw)
+## 🔍 Audit (raw details)
 
 This project includes comprehensive audit documentation capturing the implementation journey across 31+ phases:
 
-| Document                                                          | Description                                                                                             |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [📋 session-summary.md](./audit/session-summary.md)               | High-level project overview with technology stack, key features, and quick access points                |
-| [✅ task.md](./audit/task.md)                                     | Phase-by-phase implementation checklist tracking all completed work from foundation to hardening        |
-| [📖 walkthrough.md](./audit/walkthrough.md)                       | Detailed implementation walkthrough covering core services, observability, automation, and verification |
-| [📑 complete-session-audit.md](./audit/complete-session-audit.md) | Comprehensive technical audit with executive summary, phase details, and architecture decisions         |
-| [📦 conversations.zip](./audit/conversations.zip)                 | _ Archived conversation logs from the development sessions. _.pb files require some priorietery unlock. |
+| Document                                                          | Description                                                                                              |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| [📋 session-summary.md](./audit/session-summary.md)               | High-level project overview with technology stack, key features, and quick access points                 |
+| [✅ task.md](./audit/task.md)                                     | Phase-by-phase implementation checklist tracking all completed work from foundation to hardening         |
+| [📖 walkthrough.md](./audit/walkthrough.md)                       | Detailed implementation walkthrough covering core services, observability, automation, and verification  |
+| [📑 complete-session-audit.md](./audit/complete-session-audit.md) | Comprehensive technical audit with executive summary, phase details, and architecture decisions          |
+| [📦 conversations.zip](./audit/conversations.zip)                 | \*Archived conversation logs from the development sessions. \*.pb files require some priorietery unlock. |
 
 ### 🎬 Audit Video
 
 [![Watch the Audit Video](https://img.youtube.com/vi/Z3iev0YyYCw/maxresdefault.jpg)](https://youtu.be/Z3iev0YyYCw)
 
-_\* Because the converations.zip doesn't seem accessible, I've recorded the conversations from start to finish in this video._
+_\* Because the converations.zip doesn't seem accessible, I've recorded the Google Anti-Gravity conversations that made up the vast majority of this development effort (from start to finish) in this video._
 
 ---
 
