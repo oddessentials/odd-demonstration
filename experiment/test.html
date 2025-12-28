@@ -1,64 +1,71 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mermaid Task Flow — Fancy Animated (Optimized, Green Unchanged)</title>
 
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mermaid Task Flow — Fancy Animated</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-
-  <style>
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 24px;
-      background: #0b0f14;
-      color: #e7eef7;
-    }
-
-    .mermaid {
-      background: #0f1621;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-      overflow: auto;
-    }
-
-    @keyframes flow {
-      from {
-        stroke-dashoffset: 0;
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        margin: 24px;
+        background: #0b0f14;
+        color: #e7eef7;
       }
 
-      to {
-        stroke-dashoffset: -36;
-      }
-    }
-
-    @keyframes glow {
-      0% {
-        filter: drop-shadow(0 0 2px rgba(46, 139, 87, 0.35));
-      }
-
-      50% {
-        filter: drop-shadow(0 0 8px rgba(46, 139, 87, 0.65));
+      .mermaid {
+        background: #0f1621;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        overflow: auto;
       }
 
-      100% {
-        filter: drop-shadow(0 0 2px rgba(46, 139, 87, 0.35));
+      /* Shared flow motion */
+      @keyframes flow {
+        from { stroke-dashoffset: 0; }
+        to   { stroke-dashoffset: -36; }
       }
-    }
-  </style>
-</head>
 
-<body>
-  <!-- prettier-ignore -->
-  <div class="mermaid" id="diagram">
+      /* GREEN MUST MATCH YOUR ORIGINAL (animated glow filter) */
+      @keyframes glow-green {
+        0%   { filter: drop-shadow(0 0 2px rgba(46, 139, 87, 0.35)); }
+        50%  { filter: drop-shadow(0 0 8px rgba(46, 139, 87, 0.65)); }
+        100% { filter: drop-shadow(0 0 2px rgba(46, 139, 87, 0.35)); }
+      }
+
+      /* Perf-tuned: for non-green, keep glow STATIC (no filter animation) */
+      .glow-blue-static {
+        filter: drop-shadow(0 0 2px rgba(30, 144, 255, 0.35)) drop-shadow(0 0 8px rgba(30, 144, 255, 0.25));
+      }
+      .glow-orange-static {
+        filter: drop-shadow(0 0 2px rgba(255, 140, 0, 0.35)) drop-shadow(0 0 8px rgba(255, 140, 0, 0.22));
+      }
+      .glow-default-static {
+        filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.30)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.18));
+      }
+
+      /* Non-green animation class uses CSS variables to reduce per-edge style writes */
+      .anim-edge {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        will-change: stroke-dashoffset;
+        stroke-dasharray: var(--dash, 6 4);
+        animation: flow var(--flowDur, 1.2s) linear var(--delay, 0s) infinite;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- prettier-ignore -->
+    <div class="mermaid" id="diagram">
     flowchart LR
     %% NOTE:
     %% linkStyle indices are order-dependent.
     %% If you add/remove edges above, update the linkStyle ranges below.
-
     subgraph Interfaces
     Browser["Browser (xterm.js)"]
     WebUI["web-ui-http (nginx)"]
@@ -90,7 +97,6 @@
     Integration["Integration Gate/Harness<br />scripts/integration-gate.ps1<br />scripts/integration-harness.ps1"]
     Visual["Playwright Visual Tests<br />tests/visual"]
     end
-
     %% Core runtime connections
     Browser --> WebUI
     WebUI -->|WebSocket| WebPTY
@@ -98,21 +104,17 @@
     WebUI -.->|/api| ReadModel
     TUI -.-> ReadModel
     Processor -.-> Postgres
-
     %% IMPORTANT: direction is Postgres -> ReadModel (as requested)
     Postgres -.-> ReadModel
-
     Mongo -.-> ReadModel
     Metrics -.-> Mongo
     Redis -.-> ReadModel
     Metrics -.-> Redis
     Processor -.-> RabbitMQ
     RabbitMQ -.-> Metrics
-
     %% Observability (BLUE)
     Metrics -.-> Prometheus
     Prometheus -.-> Grafana
-
     %% Test framework connections (ORANGE)
     Unit -.-> Gateway
     Unit -.-> Processor
@@ -128,26 +130,20 @@
     Integration -.-> Processor
     Integration -.-> Metrics
     Visual -.-> WebUI
-
     %% Task creation flow (GREEN, steps 1–6)
     TUI -->|"1. User creates task (e.g., press N in TUI)"| Gateway
     Gateway -->|"2. Publish task event"| RabbitMQ
     RabbitMQ -->|"3. Consume event"| Processor
     Processor -->|"4. Process & write results"| Postgres
-
     %% IMPORTANT: direction is Postgres -> ReadModel (step 5)
     Postgres -->|"5. Return updated view data"| ReadModel
-
     ReadModel -->|"6. Provide status updates"| TUI
-
     %% Node styling
     classDef flowNode fill:#FFEFD5,stroke:#333,stroke-width:1.5px,color:#000;
     class TUI,Gateway,RabbitMQ,Processor,Postgres,ReadModel flowNode;
-
     %% Observability edges (blue)
     linkStyle 13 stroke:#1E90FF,stroke-width:3px;
     linkStyle 14 stroke:#1E90FF,stroke-width:3px;
-
     %% Test framework edges (orange)
     linkStyle 15 stroke:#FF8C00,stroke-width:2.5px;
     linkStyle 16 stroke:#FF8C00,stroke-width:2.5px;
@@ -163,7 +159,6 @@
     linkStyle 26 stroke:#FF8C00,stroke-width:2.5px;
     linkStyle 27 stroke:#FF8C00,stroke-width:2.5px;
     linkStyle 28 stroke:#FF8C00,stroke-width:2.5px;
-
     %% Task flow edges (green)
     linkStyle 29 stroke:#2E8B57,stroke-width:4px;
     linkStyle 30 stroke:#2E8B57,stroke-width:4px;
@@ -171,47 +166,89 @@
     linkStyle 32 stroke:#2E8B57,stroke-width:4px;
     linkStyle 33 stroke:#2E8B57,stroke-width:4px;
     linkStyle 34 stroke:#2E8B57,stroke-width:4px;
-  </div>
+    </div>
 
-  <script>
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: "dark",
-      securityLevel: "loose"
-    });
+    <script>
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "dark",
+        securityLevel: "loose"
+      });
 
-    function animatePath(p, delaySeconds) {
-      p.style.strokeDasharray = "10 8";
-      p.style.strokeLinecap = "round";
-      p.style.strokeLinejoin = "round";
-      p.style.animation =
-        `flow 1.15s linear ${delaySeconds}s infinite, glow 2.2s ease-in-out ${delaySeconds}s infinite`;
-    }
-
-    async function renderAndAnimate() {
-      await mermaid.run({ querySelector: "#diagram" });
-
-      const svg = document.querySelector("#diagram svg");
-      if (!svg) return;
-
-      // Mermaid v10: edges are typically paths with marker-end. This is robust.
-      const edgePaths = Array.from(svg.querySelectorAll("path"))
-        .filter(p => p.getAttribute("marker-end"));
-
-      // Animate linkStyle 29..34 by taking edges in order (0-based).
-      // If you change edge ordering, these indices must be updated (same as linkStyle).
-      const start = 29, end = 34;
-
-      for (let i = start; i <= end; i++) {
-        const p = edgePaths[i];
-        if (!p) continue;
-        animatePath(p, (i - start) * 0.12);
+      // Deterministic jitter in [0,1) (replaces Math.random; stable across runs)
+      function jitter01(i) {
+        let x = (i + 1) * 2654435761;
+        x ^= x >>> 16;
+        x = Math.imul(x, 2246822519);
+        x ^= x >>> 13;
+        x = Math.imul(x, 3266489917);
+        x ^= x >>> 16;
+        return (x >>> 0) / 4294967296;
       }
-    }
 
-    // Ensure Mermaid has inserted SVG before we style it
-    requestAnimationFrame(() => renderAndAnimate());
-  </script>
-</body>
+      // GREEN: keep EXACT original animated styling (same as your baseline)
+      function animatePathGreenExactlyLikeBaseline(p, delay) {
+        p.style.strokeDasharray = "10 8";
+        p.style.strokeLinecap = "round";
+        p.style.strokeLinejoin = "round";
+        const flowAnim = `flow 1.15s linear ${delay}s infinite`;
+        const glowAnim = `glow-green 2.2s ease-in-out ${delay}s infinite`;
+        p.style.animation = `${flowAnim}, ${glowAnim}`;
+      }
 
+      async function renderAndAnimate() {
+        await mermaid.run({ querySelector: "#diagram" });
+
+        const svg = document.querySelector("#diagram svg");
+        if (!svg) return;
+
+        const edgePaths = Array.from(svg.querySelectorAll("path")).filter((p) =>
+          p.getAttribute("marker-end")
+        );
+
+        for (let i = 0; i < edgePaths.length; i++) {
+          const p = edgePaths[i];
+          if (!p) continue;
+
+          // GREEN GROUP (29..34): do EXACT baseline behavior
+          if (i >= 29 && i <= 34) {
+            const delay = (i - 29) * 0.12;
+            animatePathGreenExactlyLikeBaseline(p, delay);
+            continue;
+          }
+
+          // NON-GREEN: perf-tuned (dash flow only, static glow), minimal inline writes
+          p.classList.add("anim-edge");
+
+          // Default (core)
+          let dash = "6 4";
+          let flowDur = "1.2s";
+          let delay = `${i * 0.07 + jitter01(i) * 0.03}s`;
+          let glowClass = "glow-default-static";
+
+          // Blue observability (13..14)
+          if (i >= 13 && i <= 14) {
+            dash = "8 6";
+            flowDur = "1.5s";
+            delay = `${(i - 13) * 0.2 + jitter01(i) * 0.1}s`;
+            glowClass = "glow-blue-static";
+          }
+          // Orange tests (15..28)
+          else if (i >= 15 && i <= 28) {
+            dash = "12 10";
+            flowDur = "0.8s";
+            delay = `${(i - 15) * 0.08 + jitter01(i) * 0.05}s`;
+            glowClass = "glow-orange-static";
+          }
+
+          p.classList.add(glowClass);
+          p.style.setProperty("--dash", dash);
+          p.style.setProperty("--flowDur", flowDur);
+          p.style.setProperty("--delay", delay);
+        }
+      }
+
+      requestAnimationFrame(() => renderAndAnimate());
+    </script>
+  </body>
 </html>
