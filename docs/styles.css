@@ -293,15 +293,59 @@ body {
   padding: 0 24px;
   display: flex;
   align-items: center;
+  gap: 12px;
   border-bottom: 1px solid var(--glass-border);
   background: var(--glass-bg);
   flex-shrink: 0;
 }
 
-.file-path {
+.file-path,
+.file-path-slot {
   font-size: 0.875rem;
   color: var(--text-muted);
   font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Per-pane navigation button - hidden by default, shown on mobile compare mode */
+.pane-nav-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pane-nav-btn:hover,
+.pane-nav-btn:active {
+  background: var(--glass-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+}
+
+.pane-nav-btn .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-primary);
+}
+
+.pane.primary .pane-nav-btn .icon {
+  color: var(--accent-primary);
+}
+
+.pane.secondary .pane-nav-btn .icon {
+  color: var(--accent-secondary);
 }
 
 .content-body {
@@ -675,13 +719,56 @@ body {
     font-size: 2rem;
   }
 
-  /* Disable compare mode on mobile */
+  /* Compare mode on mobile - stack vertically */
+  #viewer.compare-mode {
+    flex-direction: column;
+  }
+
+  #viewer.compare-mode .pane {
+    flex: none;
+    height: 50vh;
+    min-height: 300px;
+  }
+
   #viewer.compare-mode .pane.secondary {
+    display: flex;
+    border-left: none;
+    border-top: 2px solid var(--accent-primary);
+  }
+
+  /* In compare mode, both sidebars become slide-out drawers */
+  #viewer.compare-mode .sidebar {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    max-width: 320px;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  }
+
+  #viewer.compare-mode .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Show per-pane nav buttons in mobile compare mode */
+  #viewer.compare-mode .pane-nav-btn {
+    display: flex;
+  }
+
+  /* Hide main hamburger in mobile compare mode - per-pane buttons replace it */
+  #viewer.compare-mode~#header .menu-btn,
+  body:has(#viewer.compare-mode) .menu-btn {
     display: none;
   }
 
-  .compare-btn-mobile-hidden {
-    display: none !important;
+  /* Adjust content-header for mobile compare */
+  #viewer.compare-mode .content-header {
+    padding: 0 12px;
+    gap: 8px;
   }
 }
 

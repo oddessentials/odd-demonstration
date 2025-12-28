@@ -144,7 +144,13 @@ const ExperimentViewer = {
 
         // Update header (show path without 'experiment/' prefix for cleaner display)
         const displayPath = path.replace(/^experiment\//, '');
-        headerDiv.innerHTML = `<span class="file-path">${displayPath}</span>`;
+        const filePathSlot = headerDiv.querySelector('.file-path-slot');
+        if (filePathSlot) {
+            filePathSlot.textContent = displayPath;
+        } else {
+            // Fallback for when slot doesn't exist
+            headerDiv.innerHTML = `<span class="file-path">${displayPath}</span>`;
+        }
 
         // Update URL hash
         this.updateHash();
@@ -243,7 +249,12 @@ const ExperimentViewer = {
         const headerDiv = contentDiv.querySelector('.content-header');
         const bodyDiv = contentDiv.querySelector('.content-body');
 
-        headerDiv.innerHTML = '<span class="file-path">Welcome</span>';
+        const filePathSlot = headerDiv.querySelector('.file-path-slot');
+        if (filePathSlot) {
+            filePathSlot.textContent = 'Welcome';
+        } else {
+            headerDiv.innerHTML = '<span class="file-path">Welcome</span>';
+        }
         bodyDiv.innerHTML = `
       <div class="intro">
         <h1>AI Model Assessment Experiment</h1>
@@ -288,6 +299,9 @@ const ExperimentViewer = {
         // Setup mobile menu
         this.setupMobileMenu();
 
+        // Setup per-pane nav buttons for mobile compare mode
+        this.setupPaneNavButtons();
+
         // Check for hash on load
         const hashState = this.parseHash();
         if (hashState && hashState.primary) {
@@ -317,10 +331,11 @@ const ExperimentViewer = {
     // Setup mobile menu functionality
     setupMobileMenu() {
         const menuBtn = document.getElementById('menu-btn');
-        const sidebar = document.getElementById('sidebar-primary');
+        const primarySidebar = document.getElementById('sidebar-primary');
+        const secondarySidebar = document.getElementById('sidebar-secondary');
         const overlay = document.getElementById('sidebar-overlay');
 
-        if (!menuBtn || !sidebar || !overlay) return;
+        if (!menuBtn || !primarySidebar || !overlay) return;
 
         // Toggle sidebar on menu button click
         menuBtn.onclick = () => {
@@ -332,12 +347,21 @@ const ExperimentViewer = {
             this.closeMobileMenu();
         };
 
-        // Close sidebar when a file is selected on mobile
-        sidebar.addEventListener('click', (e) => {
+        // Close sidebar when a file is selected on mobile (for primary sidebar)
+        primarySidebar.addEventListener('click', (e) => {
             if (e.target.closest('.file-link') && window.innerWidth <= 768) {
                 this.closeMobileMenu();
             }
         });
+
+        // Close sidebar when a file is selected on mobile (for secondary sidebar)
+        if (secondarySidebar) {
+            secondarySidebar.addEventListener('click', (e) => {
+                if (e.target.closest('.file-link') && window.innerWidth <= 768) {
+                    this.closeMobileMenu();
+                }
+            });
+        }
 
         // Handle window resize - close mobile menu when resizing to desktop
         window.addEventListener('resize', () => {
@@ -347,25 +371,94 @@ const ExperimentViewer = {
         });
     },
 
-    // Toggle mobile menu
+    // Track which sidebar is currently open on mobile
+    activeMobileSidebar: null,
+
+    // Toggle mobile menu - in compare mode, cycle through both sidebars
     toggleMobileMenu() {
-        const sidebar = document.getElementById('sidebar-primary');
+        const primarySidebar = document.getElementById('sidebar-primary');
+        const secondarySidebar = document.getElementById('sidebar-secondary');
         const overlay = document.getElementById('sidebar-overlay');
 
-        if (sidebar && overlay) {
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('visible');
+        if (!primarySidebar || !overlay) return;
+
+        // In compare mode, cycle: closed -> primary -> secondary -> closed
+        if (this.state.compareMode && secondarySidebar) {
+            if (this.activeMobileSidebar === null) {
+                // Open primary sidebar
+                primarySidebar.classList.add('open');
+                overlay.classList.add('visible');
+                this.activeMobileSidebar = 'primary';
+            } else if (this.activeMobileSidebar === 'primary') {
+                // Switch to secondary sidebar
+                primarySidebar.classList.remove('open');
+                secondarySidebar.classList.add('open');
+                this.activeMobileSidebar = 'secondary';
+            } else {
+                // Close all
+                this.closeMobileMenu();
+            }
+        } else {
+            // Normal mode - just toggle primary
+            const isOpen = primarySidebar.classList.contains('open');
+            if (isOpen) {
+                this.closeMobileMenu();
+            } else {
+                primarySidebar.classList.add('open');
+                overlay.classList.add('visible');
+                this.activeMobileSidebar = 'primary';
+            }
         }
     },
 
     // Close mobile menu
     closeMobileMenu() {
-        const sidebar = document.getElementById('sidebar-primary');
+        const primarySidebar = document.getElementById('sidebar-primary');
+        const secondarySidebar = document.getElementById('sidebar-secondary');
         const overlay = document.getElementById('sidebar-overlay');
 
-        if (sidebar && overlay) {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('visible');
+        if (primarySidebar) primarySidebar.classList.remove('open');
+        if (secondarySidebar) secondarySidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('visible');
+        this.activeMobileSidebar = null;
+    },
+
+    // Setup per-pane navigation buttons for mobile compare mode
+    setupPaneNavButtons() {
+        const primaryNavBtn = document.getElementById('nav-btn-primary');
+        const secondaryNavBtn = document.getElementById('nav-btn-secondary');
+
+        if (primaryNavBtn) {
+            primaryNavBtn.onclick = () => {
+                this.openSidebar('primary');
+            };
+        }
+
+        if (secondaryNavBtn) {
+            secondaryNavBtn.onclick = () => {
+                this.openSidebar('secondary');
+            };
+        }
+    },
+
+    // Open a specific sidebar directly
+    openSidebar(sidebarId) {
+        const primarySidebar = document.getElementById('sidebar-primary');
+        const secondarySidebar = document.getElementById('sidebar-secondary');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        // Close any open sidebar first
+        this.closeMobileMenu();
+
+        // Open the requested sidebar
+        if (sidebarId === 'primary' && primarySidebar) {
+            primarySidebar.classList.add('open');
+            if (overlay) overlay.classList.add('visible');
+            this.activeMobileSidebar = 'primary';
+        } else if (sidebarId === 'secondary' && secondarySidebar) {
+            secondarySidebar.classList.add('open');
+            if (overlay) overlay.classList.add('visible');
+            this.activeMobileSidebar = 'secondary';
         }
     }
 };
