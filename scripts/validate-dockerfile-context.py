@@ -2,7 +2,7 @@
 """
 Validate CI Docker build contexts match Dockerfile path assumptions.
 
-ASSUMPTIONS (documented in docs/INVARIANTS.md B1):
+ASSUMPTIONS (documented in docs/agents/INVARIANTS.md B1):
 1. Dockerfiles with COPY paths starting with 'src/' or 'contracts/' require
    repo root as build context (context: '.')
 2. Dockerfiles with local-relative COPY paths (e.g., 'package.json', 'go.mod')

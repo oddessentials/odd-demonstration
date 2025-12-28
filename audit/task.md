@@ -104,7 +104,7 @@
 - [x] Update BUILD.bazel for TypeScript tests
 
 ## Phase 17: Testing Optimizations & CI Hardening [x]
-- [x] Create `docs/INVARIANTS.md` with cross-platform and contract guarantees
+- [x] Create `docs/agents/INVARIANTS.md` with cross-platform and contract guarantees
 - [x] Add unified coverage enforcement via `coverage-config.json` and `check-coverage.py`
 - [x] Parallelize Go tests with pwsh < 7 fallback
 - [x] Add `dorny/paths-filter` for reliable change detection
@@ -118,3 +118,23 @@
 - [x] Add validation to CI workflow
 - [x] Update INVARIANTS.md with accurate B1-B4 documentation
 
+## Phase 31.7: Mermaid Animator Expansion [x]
+- [x] Implement Phase 1 tokenizers (Flowchart, State, Sequence)
+- [x] Implement Phase 2 tokenizers (Sankey, Pie, Radar, Gantt, Mindmap, GitGraph, Class)
+- [x] Create type detection router (`src/type-router.js`)
+- [x] Add animation strategies (stream-flow, reveal, trace, cascade, branch-grow)
+- [x] 110+ passing unit tests across 20+ suites
+
+## Phase 31.8: Docs Viewer & E2E Tests [x]
+- [x] Create GitHub Pages experiment viewer (`docs/index.html`, `docs/app.js`)
+- [x] Implement side-by-side comparison mode for assessments
+- [x] Add responsive mobile stacking for compare mode
+- [x] Add Playwright E2E tests (`docs/tests/docs-viewer.spec.js`)
+- [x] Integrate with CI via path-filtered triggers
+
+## Phase 32: Docs Directory Refactor [x]
+- [x] Move 7 .md files from `docs/` to `docs/agents/`
+- [x] Update all functional code references (README.md, scripts, doctor.rs)
+- [x] Update internal cross-references in moved files
+- [x] Enhance README Documentation section with docs/agents table
+- [x] Update audit session data with new phases

@@ -21,7 +21,7 @@ pub const SUPPORT_MATRIX: &[(&str, &str)] = &[
     ("linux", "aarch64"),
 ];
 
-pub const SUPPORT_MATRIX_URL: &str = "https://github.com/oddessentials/odd-demonstration/blob/main/docs/SUPPORT_MATRIX.md";
+pub const SUPPORT_MATRIX_URL: &str = "https://github.com/oddessentials/odd-demonstration/blob/main/docs/agents/SUPPORT_MATRIX.md";
 
 /// Check if current platform is supported (no I/O, pure computation)
 pub fn check_platform_support() -> Result<(), String> {

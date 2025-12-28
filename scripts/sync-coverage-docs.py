@@ -5,7 +5,7 @@ Sync coverage documentation from coverage-config.json.
 This script reads coverage thresholds from coverage-config.json (single source of truth)
 and updates:
 1. README.md - Coverage badges showing minimum thresholds
-2. docs/INVARIANTS.md - Coverage Invariants table
+2. docs/agents/INVARIANTS.md - Coverage Invariants table
 
 Usage:
     python sync-coverage-docs.py           # Update README.md and INVARIANTS.md
@@ -178,7 +178,7 @@ def update_invariants(project_root: Path, config: dict, check_only: bool = False
     Returns:
         (changed: bool, message: str)
     """
-    invariants_path = project_root / "docs" / "INVARIANTS.md"
+    invariants_path = project_root / "docs" / "agents" / "INVARIANTS.md"
     content = invariants_path.read_text(encoding='utf-8')
     
     # Pattern to match the coverage table

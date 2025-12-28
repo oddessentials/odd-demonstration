@@ -19,7 +19,12 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 
 ![Demo](screenshots/3.x/demo.gif)
 
-[Download Demo (MP4)](https://github.com/oddessentials/odd-demonstration/raw/main/screenshots/3.x/demo.mp4)
+🎥 <a href="https://youtu.be/Z3iev0YyYCw" target="_blank" rel="noopener noreferrer">
+Click here to watch the dashboard demo on YouTube
+
+💾 [Click here to download the dasbhoard demo (MP4)](https://github.com/oddessentials/odd-demonstration/raw/main/screenshots/3.x/demo.mp4)
+
+</a>
 
 ---
 
@@ -32,8 +37,8 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 **Authoritative Resources**
 
 - 🗺️ [Blueprints & Design](contracts/blueprint.md)
-- 📐 [Invariants](docs/INVARIANTS.md)
-- ✅ [Feature Coverage](docs/FEATURES.md)
+- 📐 [Invariants](docs/agents/INVARIANTS.md)
+- ✅ [Feature Coverage](docs/agents/FEATURES.md)
 
 **Diagrams**
 
@@ -65,7 +70,7 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 ## 📦 Installation Details
 
 > **Note:** currently releases are unsigned bootstrap builds.
-> See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for checksums.
+> See [Verifying Releases](./docs/agents/VERIFYING_RELEASES.md) for checksums.
 
 ### Verify installation
 
@@ -87,7 +92,7 @@ odd-dashboard doctor
 | Linux   | ARM64         | `odd-dashboard-linux-arm64`     |
 
 **System Requirements:** 8GB RAM minimum (16GB recommended), 4+ CPU cores, 15GB disk.
-See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.
+See [Support Matrix](./docs/agents/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.
 
 ---
 
@@ -372,11 +377,84 @@ kind delete cluster --name task-observatory
 
 ---
 
+## 🔬 Experiment
+
+Here are the results of the experiment associated with this repository.
+
+[![Experiment Results](screenshots/3.x/assessment-meta-data-2025-12-27.png)](https://oddessentials.github.io/odd-demonstration/)
+
+<a href="https://oddessentials.github.io/odd-demonstration/" target="_blank">View the full experiment →</a>
+
+---
+
+## 🔍 Audit (raw details)
+
+This project includes comprehensive audit documentation capturing the implementation journey across 31+ phases:
+
+| Document                                                          | Description                                                                                              |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| [📋 session-summary.md](./audit/session-summary.md)               | High-level project overview with technology stack, key features, and quick access points                 |
+| [✅ task.md](./audit/task.md)                                     | Phase-by-phase implementation checklist tracking all completed work from foundation to hardening         |
+| [📖 walkthrough.md](./audit/walkthrough.md)                       | Detailed implementation walkthrough covering core services, observability, automation, and verification  |
+| [📑 complete-session-audit.md](./audit/complete-session-audit.md) | Comprehensive technical audit with executive summary, phase details, and architecture decisions          |
+| [📦 conversations.zip](./audit/conversations.zip)                 | \*Archived conversation logs from the development sessions. \*.pb files require some priorietery unlock. |
+
+### 🎬 Audit Video
+
+[![Watch the Audit Video](https://img.youtube.com/vi/Z3iev0YyYCw/maxresdefault.jpg)](https://youtu.be/Z3iev0YyYCw)
+
+_\* Because the converations.zip doesn't seem accessible, I've recorded the Google Anti-Gravity conversations that made up the vast majority of this development effort (from start to finish) in this video._
+
+---
+
 ## 📚 Documentation
+
+### Guides
 
 - [Beginner Setup Guide](./README_beginner.md) - Step-by-step with prerequisites
 - [Contributing](./CONTRIBUTING.md) - Development guidelines
-- [Audit](./audit/) - Implementation details and walkthroughs
+
+### Agent Documentation (docs/agents/)
+
+Authoritative reference documentation for builders and autonomous agents:
+
+| Document                                                        | Description                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------ |
+| [📐 INVARIANTS.md](./docs/agents/INVARIANTS.md)                 | System invariants and CI enforcement map               |
+| [✅ FEATURES.md](./docs/agents/FEATURES.md)                     | Feature coverage and implementation status             |
+| [🧪 TESTING.md](./docs/agents/TESTING.md)                       | Testing strategy, harnesses, and determinism contracts |
+| [📦 RELEASE_CHECKLIST.md](./docs/agents/RELEASE_CHECKLIST.md)   | Release preparation and verification steps             |
+| [🔐 SECRET_MANAGEMENT.md](./docs/agents/SECRET_MANAGEMENT.md)   | Secrets handling and rotation procedures               |
+| [📋 SUPPORT_MATRIX.md](./docs/agents/SUPPORT_MATRIX.md)         | Platform support and hardware requirements             |
+| [✔️ VERIFYING_RELEASES.md](./docs/agents/VERIFYING_RELEASES.md) | Release verification and checksum validation           |
+
+### 📖 Further Reading & Background
+
+The following articles document the motivation and evolution of this repository.  
+They are **not required reading**, but provide additional context for interested readers.
+
+- **From Puppeteer to Conductor (Part 3 of 3)**  
+  _Designing autonomous systems without sacrificing safety or determinism_  
+  https://medium.com/@pete.palles/from-puppeteer-to-conductor-520c8f18e37f
+
+- **The Renaissance Engineers (Part 2 of 3)**  
+  _Dark Magic, Dog Food, Determinism, and the Humans in the Loop_
+  https://medium.com/@pete.palles/the-renaissance-engineers-e3c1efa15572
+
+- **The Future of Software Engineering (Part 1 of 3)**  
+  _Supercolonies: Where the Most Skilled Engineers Command Hives and Swarms_  
+  https://medium.com/@pete.palles/the-future-of-software-engineering-51de53d2e45a
+
+---
+
+## 👤 Author
+
+<img src="docs/img/pete-palles-512.jpg" alt="Pete Palles" width="96" style="border-radius:50%;" />
+
+**Pete Palles**  
+🔗 LinkedIn: https://www.linkedin.com/in/petepalles
+
+Peter is a Software Engineering Manager at a large enterprise healthcare organization, where he leads a team of highly skilled software engineers. He is also the Founder and CEO of Odd Essentials, LLC. With more than 20 years of experience spanning full-stack development, systems engineering, and applied AI, Peter has architected, designed, and delivered large-scale software systems end-to-end. At the ripe age of 41, Pete is currently completing his MBA at the University of Pittsburgh’s Katz Graduate School of Business.
 
 ---
 
