@@ -285,6 +285,9 @@ const ExperimentViewer = {
         const compareBtn = document.getElementById('compare-btn');
         compareBtn.onclick = () => this.toggleCompareMode();
 
+        // Setup mobile menu
+        this.setupMobileMenu();
+
         // Check for hash on load
         const hashState = this.parseHash();
         if (hashState && hashState.primary) {
@@ -309,8 +312,64 @@ const ExperimentViewer = {
                 this.loadFile(state.primary, isPdf, 'primary');
             }
         };
+    },
+
+    // Setup mobile menu functionality
+    setupMobileMenu() {
+        const menuBtn = document.getElementById('menu-btn');
+        const sidebar = document.getElementById('sidebar-primary');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        if (!menuBtn || !sidebar || !overlay) return;
+
+        // Toggle sidebar on menu button click
+        menuBtn.onclick = () => {
+            this.toggleMobileMenu();
+        };
+
+        // Close sidebar on overlay click
+        overlay.onclick = () => {
+            this.closeMobileMenu();
+        };
+
+        // Close sidebar when a file is selected on mobile
+        sidebar.addEventListener('click', (e) => {
+            if (e.target.closest('.file-link') && window.innerWidth <= 768) {
+                this.closeMobileMenu();
+            }
+        });
+
+        // Handle window resize - close mobile menu when resizing to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                this.closeMobileMenu();
+            }
+        });
+    },
+
+    // Toggle mobile menu
+    toggleMobileMenu() {
+        const sidebar = document.getElementById('sidebar-primary');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        if (sidebar && overlay) {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('visible');
+        }
+    },
+
+    // Close mobile menu
+    closeMobileMenu() {
+        const sidebar = document.getElementById('sidebar-primary');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        if (sidebar && overlay) {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('visible');
+        }
     }
 };
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => ExperimentViewer.init());
+
