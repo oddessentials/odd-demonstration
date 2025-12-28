@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Model Assessment Experiment</title>
+    <meta name="description" content="Compare AI model assessments of code repositories for autonomous agent safety, enterprise-grade quality, and implementation complexity." />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css" />
+    
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Header -->
+      <header id="header">
+        <div class="logo">AI Assessment Experiment</div>
+        <div class="toolbar">
+          <button id="compare-btn" class="toolbar-btn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="18" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="18" rx="1"></rect>
+            </svg>
+            <span>Compare</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Viewer -->
+      <div id="viewer">
+        <!-- Primary Pane -->
+        <div class="pane primary">
+          <aside class="sidebar">
+            <div class="sidebar-header">
+              <h2>Assessments</h2>
+            </div>
+            <nav class="sidebar-content">
+              <ul id="tree-primary"></ul>
+            </nav>
+          </aside>
+          <main class="content" id="content-primary">
+            <div class="content-header"></div>
+            <div class="content-body"></div>
+          </main>
+        </div>
+
+        <!-- Secondary Pane (Compare Mode) -->
+        <div class="pane secondary">
+          <aside class="sidebar">
+            <div class="sidebar-header">
+              <h2>Compare To</h2>
+            </div>
+            <nav class="sidebar-content">
+              <ul id="tree-secondary"></ul>
+            </nav>
+          </aside>
+          <main class="content" id="content-secondary">
+            <div class="content-header"></div>
+            <div class="content-body"></div>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+  </body>
+</html>
