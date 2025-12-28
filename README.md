@@ -433,15 +433,15 @@ Authoritative reference documentation for builders and autonomous agents:
 The following articles document the motivation and evolution of this repository.  
 They are **not required reading**, but provide additional context for interested readers.
 
-- **From Puppeteer to Conductor**  
+- **From Puppeteer to Conductor (Part 3 of 3)**  
   _Designing autonomous systems without sacrificing safety or determinism_  
   https://medium.com/@pete.palles/from-puppeteer-to-conductor-520c8f18e37f
 
-- **The Renaissance Engineers**  
+- **The Renaissance Engineers (Part 2 of 3)**  
   _Dark Magic, Dog Food, Determinism, and the Humans in the Loop_
   https://medium.com/@pete.palles/the-renaissance-engineers-e3c1efa15572
 
-- **The Future of Software Engineering**  
+- **The Future of Software Engineering (Part 1 of 3)**  
   _Supercolonies: Where the Most Skilled Engineers Command Hives and Swarms_  
   https://medium.com/@pete.palles/the-future-of-software-engineering-51de53d2e45a
 
