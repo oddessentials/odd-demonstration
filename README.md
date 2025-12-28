@@ -19,7 +19,7 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 
 ![Demo](screenshots/3.x/demo.gif)
 
-[Click here to expand the demo video (MP4)](https://github.com/oddessentials/odd-demonstration/raw/main/screenshots/3.x/demo.mp4)
+[Download Demo (MP4)](https://github.com/oddessentials/odd-demonstration/raw/main/screenshots/3.x/demo.mp4)
 
 ---
 
