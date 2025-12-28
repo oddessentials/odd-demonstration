@@ -372,10 +372,13 @@ kind delete cluster --name task-observatory
 
 ---
 
-## 📚 Documentation
+## 🔬 Experiment
 
-- [Beginner Setup Guide](./README_beginner.md) - Step-by-step with prerequisites
-- [Contributing](./CONTRIBUTING.md) - Development guidelines
+Here are the results of the experiment associated with this repository.
+
+[![Experiment Results](screenshots/3.x/assessment-meta-data-2025-12-27.png)](https://oddessentials.github.io/odd-demonstration/)
+
+<a href="https://oddessentials.github.io/odd-demonstration/" target="_blank">View the full experiment →</a>
 
 ---
 
@@ -396,6 +399,13 @@ This project includes comprehensive audit documentation capturing the implementa
 [![Watch the Audit Video](https://img.youtube.com/vi/Z3iev0YyYCw/maxresdefault.jpg)](https://youtu.be/Z3iev0YyYCw)
 
 _\* Because the converations.zip doesn't seem accessible, I've recorded the Google Anti-Gravity conversations that made up the vast majority of this development effort (from start to finish) in this video._
+
+---
+
+## 📚 Documentation
+
+- [Beginner Setup Guide](./README_beginner.md) - Step-by-step with prerequisites
+- [Contributing](./CONTRIBUTING.md) - Development guidelines
 
 ---
 
