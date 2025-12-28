@@ -66,7 +66,7 @@ Secrets are defined at the environment level, NOT repository level.
 2. Export private key: `gpg --export-secret-keys --armor KEY_ID`
 3. Update `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`
 4. Export and publish public key to `keys/release-signing.pub`
-5. Update key fingerprint in `docs/VERIFYING_RELEASES.md`
+5. Update key fingerprint in `VERIFYING_RELEASES.md`
 6. Update GitHub user GPG keys
 
 ## Emergency Revocation

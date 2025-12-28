@@ -1,7 +1,7 @@
 # Distributed Task Observatory - Session Summary
 
-**Last Updated:** 2025-12-27
-**Phases Completed:** 0-31.6 (Phase 31.6: CI Docker Build Context Fix)
+**Last Updated:** 2025-12-28
+**Phases Completed:** 0-32 (Phase 32: Docs Directory Refactor)
 
 ## Objective
 
@@ -78,6 +78,9 @@ Implement a complete, production-grade distributed task processing system demons
 - **PTY Server Coverage** - 81% (47 unit tests)
 - **Tiered Visual Test Strategy** (Phase 31.5) - Nightly workflow, server-side failure injection, deterministic fallback testing
 - **CI Docker Build Context Fix** (Phase 31.6) - Fixed CI contexts, added `validate-dockerfile-context.py` prevention script
+- **Mermaid Animator Expansion** (Phase 31.7) - Multi-tokenizer architecture for 20+ Mermaid types, 110+ passing unit tests
+- **Docs Viewer & E2E Tests** (Phase 31.8) - GitHub Pages experiment viewer with comparison mode, Playwright E2E tests
+- **Docs Directory Refactor** (Phase 32) - Moved 7 .md files to `docs/agents/`, enhanced README documentation section
 
 ## Quick Start
 

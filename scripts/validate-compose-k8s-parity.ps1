@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 Write-Host "=== Docker Compose / K8s Parity Check ===" -ForegroundColor Cyan
 
 # Critical services that MUST exist in both k8s and docker-compose
-# This is enforced as invariant I7 in docs/INVARIANTS.md
+# This is enforced as invariant I7 in docs/agents/INVARIANTS.md
 $criticalServices = @(
     "postgres",
     "mongodb", 

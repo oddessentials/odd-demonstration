@@ -325,7 +325,7 @@ jobs:
             sha256sum -c SHA256SUMS --ignore-missing
             ```
             
-            See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for full verification instructions.
+            See [Verifying Releases](./docs/agents/VERIFYING_RELEASES.md) for full verification instructions.
 
   # Publish npm package
   npm-publish:

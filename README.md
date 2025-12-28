@@ -19,7 +19,12 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 
 ![Demo](screenshots/3.x/demo.gif)
 
-[Download Demo (MP4)](https://github.com/oddessentials/odd-demonstration/raw/main/screenshots/3.x/demo.mp4)
+🎥 <a href="https://youtu.be/Z3iev0YyYCw" target="_blank" rel="noopener noreferrer">
+Click here to watch the dashboard demo on YouTube
+
+💾 [Click here to download the dasbhoard demo (MP4)](https://github.com/oddessentials/odd-demonstration/raw/main/screenshots/3.x/demo.mp4)
+
+</a>
 
 ---
 
@@ -32,8 +37,8 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 **Authoritative Resources**
 
 - 🗺️ [Blueprints & Design](contracts/blueprint.md)
-- 📐 [Invariants](docs/INVARIANTS.md)
-- ✅ [Feature Coverage](docs/FEATURES.md)
+- 📐 [Invariants](docs/agents/INVARIANTS.md)
+- ✅ [Feature Coverage](docs/agents/FEATURES.md)
 
 **Diagrams**
 
@@ -65,7 +70,7 @@ A self-contained, local-first demonstration platform showcasing modern, producti
 ## 📦 Installation Details
 
 > **Note:** currently releases are unsigned bootstrap builds.
-> See [Verifying Releases](./docs/VERIFYING_RELEASES.md) for checksums.
+> See [Verifying Releases](./docs/agents/VERIFYING_RELEASES.md) for checksums.
 
 ### Verify installation
 
@@ -87,7 +92,7 @@ odd-dashboard doctor
 | Linux   | ARM64         | `odd-dashboard-linux-arm64`     |
 
 **System Requirements:** 8GB RAM minimum (16GB recommended), 4+ CPU cores, 15GB disk.
-See [Support Matrix](./docs/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.
+See [Support Matrix](./docs/agents/SUPPORT_MATRIX.md) for full hardware requirements and Docker Desktop configuration.
 
 ---
 
@@ -404,8 +409,24 @@ _\* Because the converations.zip doesn't seem accessible, I've recorded the Goog
 
 ## 📚 Documentation
 
+### Guides
+
 - [Beginner Setup Guide](./README_beginner.md) - Step-by-step with prerequisites
 - [Contributing](./CONTRIBUTING.md) - Development guidelines
+
+### Agent Documentation (docs/agents/)
+
+Authoritative reference documentation for builders and autonomous agents:
+
+| Document                                                        | Description                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------ |
+| [📐 INVARIANTS.md](./docs/agents/INVARIANTS.md)                 | System invariants and CI enforcement map               |
+| [✅ FEATURES.md](./docs/agents/FEATURES.md)                     | Feature coverage and implementation status             |
+| [🧪 TESTING.md](./docs/agents/TESTING.md)                       | Testing strategy, harnesses, and determinism contracts |
+| [📦 RELEASE_CHECKLIST.md](./docs/agents/RELEASE_CHECKLIST.md)   | Release preparation and verification steps             |
+| [🔐 SECRET_MANAGEMENT.md](./docs/agents/SECRET_MANAGEMENT.md)   | Secrets handling and rotation procedures               |
+| [📋 SUPPORT_MATRIX.md](./docs/agents/SUPPORT_MATRIX.md)         | Platform support and hardware requirements             |
+| [✔️ VERIFYING_RELEASES.md](./docs/agents/VERIFYING_RELEASES.md) | Release verification and checksum validation           |
 
 ---
 

@@ -104,7 +104,7 @@ The following platforms are **not supported**:
 Running on unsupported platforms will result in:
 ```
 ERROR: Unsupported platform: {os}-{arch}
-See supported configurations: https://github.com/oddessentials/odd-demonstration/blob/main/docs/SUPPORT_MATRIX.md
+See supported configurations: https://github.com/oddessentials/odd-demonstration/blob/main/docs/agents/SUPPORT_MATRIX.md
 ```
 
 ## Checking Platform Support
