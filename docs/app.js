@@ -4,41 +4,44 @@
  */
 
 const ExperimentViewer = {
-    // Corrected file tree matching actual directory structure
+    // Base path for content files (relative to /docs)
+    basePath: 'experiment/',
+
+    // File tree matching actual directory structure under /docs/experiment
     fileTree: [
         {
             name: 'control-groups',
             type: 'dir',
-            path: 'control-groups',
+            path: 'experiment/control-groups',
             children: [
                 {
                     name: 'dapr',
                     type: 'dir',
-                    path: 'control-groups/dapr',
+                    path: 'experiment/control-groups/dapr',
                     children: [
-                        { name: 'dapr-claude-opus-assessment-2025-12-27.md', type: 'file', path: 'control-groups/dapr/dapr-claude-opus-assessment-2025-12-27.md' },
-                        { name: 'dapr-claude-sonnet-assessment-2025-12-27.md', type: 'file', path: 'control-groups/dapr/dapr-claude-sonnet-assessment-2025-12-27.md' },
-                        { name: 'dapr-gemini-flash-assessment-2025-12-27.md', type: 'file', path: 'control-groups/dapr/dapr-gemini-flash-assessment-2025-12-27.md' },
-                        { name: 'dapr-gemini-high-assessment-2025-12-27.md', type: 'file', path: 'control-groups/dapr/dapr-gemini-high-assessment-2025-12-27.md' },
-                        { name: 'dapr-gpt-oss-120b-assessment-2025-12-27.md', type: 'file', path: 'control-groups/dapr/dapr-gpt-oss-120b-assessment-2025-12-27.md' },
-                        { name: 'dapr-gpt5.2-browser-assessment-2025-12-27.md', type: 'file', path: 'control-groups/dapr/dapr-gpt5.2-browser-assessment-2025-12-27.md' },
-                        { name: 'dapr-gpt5.2-browser-assessment-2025-12-27.pdf', type: 'file', path: 'control-groups/dapr/dapr-gpt5.2-browser-assessment-2025-12-27.pdf' },
-                        { name: 'dapr-supergrok-browser-assessment-2025-12-27.md', type: 'file', path: 'control-groups/dapr/dapr-supergrok-browser-assessment-2025-12-27.md' },
+                        { name: 'dapr-claude-opus-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/dapr/dapr-claude-opus-assessment-2025-12-27.md' },
+                        { name: 'dapr-claude-sonnet-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/dapr/dapr-claude-sonnet-assessment-2025-12-27.md' },
+                        { name: 'dapr-gemini-flash-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/dapr/dapr-gemini-flash-assessment-2025-12-27.md' },
+                        { name: 'dapr-gemini-high-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/dapr/dapr-gemini-high-assessment-2025-12-27.md' },
+                        { name: 'dapr-gpt-oss-120b-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/dapr/dapr-gpt-oss-120b-assessment-2025-12-27.md' },
+                        { name: 'dapr-gpt5.2-browser-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/dapr/dapr-gpt5.2-browser-assessment-2025-12-27.md' },
+                        { name: 'dapr-gpt5.2-browser-assessment-2025-12-27.pdf', type: 'file', path: 'experiment/control-groups/dapr/dapr-gpt5.2-browser-assessment-2025-12-27.pdf' },
+                        { name: 'dapr-supergrok-browser-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/dapr/dapr-supergrok-browser-assessment-2025-12-27.md' },
                     ]
                 },
                 {
                     name: 'google-microservices-demo',
                     type: 'dir',
-                    path: 'control-groups/google-microservices-demo',
+                    path: 'experiment/control-groups/google-microservices-demo',
                     children: [
-                        { name: 'gm-claude-opus-assessment-2025-12-27.md', type: 'file', path: 'control-groups/google-microservices-demo/gm-claude-opus-assessment-2025-12-27.md' },
-                        { name: 'gm-claude-sonnet-assessment-2025-12-27.md', type: 'file', path: 'control-groups/google-microservices-demo/gm-claude-sonnet-assessment-2025-12-27.md' },
-                        { name: 'gm-gemini-flash-assessment-2025-12-27.md', type: 'file', path: 'control-groups/google-microservices-demo/gm-gemini-flash-assessment-2025-12-27.md' },
-                        { name: 'gm-gemini-high-assessment-2025-12-27.md', type: 'file', path: 'control-groups/google-microservices-demo/gm-gemini-high-assessment-2025-12-27.md' },
-                        { name: 'gm-gpt-oss-120b-assessment-2025-12-27.md', type: 'file', path: 'control-groups/google-microservices-demo/gm-gpt-oss-120b-assessment-2025-12-27.md' },
-                        { name: 'gm-gpt5.2-browser-assessment-2025-12-27.md', type: 'file', path: 'control-groups/google-microservices-demo/gm-gpt5.2-browser-assessment-2025-12-27.md' },
-                        { name: 'gm-gpt5.2-browser-assessment-2025-12-27.pdf', type: 'file', path: 'control-groups/google-microservices-demo/gm-gpt5.2-browser-assessment-2025-12-27.pdf' },
-                        { name: 'gm-supergrok-browser-assessment-2025-12-27.md', type: 'file', path: 'control-groups/google-microservices-demo/gm-supergrok-browser-assessment-2025-12-27.md' },
+                        { name: 'gm-claude-opus-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/google-microservices-demo/gm-claude-opus-assessment-2025-12-27.md' },
+                        { name: 'gm-claude-sonnet-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/google-microservices-demo/gm-claude-sonnet-assessment-2025-12-27.md' },
+                        { name: 'gm-gemini-flash-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/google-microservices-demo/gm-gemini-flash-assessment-2025-12-27.md' },
+                        { name: 'gm-gemini-high-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/google-microservices-demo/gm-gemini-high-assessment-2025-12-27.md' },
+                        { name: 'gm-gpt-oss-120b-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/google-microservices-demo/gm-gpt-oss-120b-assessment-2025-12-27.md' },
+                        { name: 'gm-gpt5.2-browser-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/google-microservices-demo/gm-gpt5.2-browser-assessment-2025-12-27.md' },
+                        { name: 'gm-gpt5.2-browser-assessment-2025-12-27.pdf', type: 'file', path: 'experiment/control-groups/google-microservices-demo/gm-gpt5.2-browser-assessment-2025-12-27.pdf' },
+                        { name: 'gm-supergrok-browser-assessment-2025-12-27.md', type: 'file', path: 'experiment/control-groups/google-microservices-demo/gm-supergrok-browser-assessment-2025-12-27.md' },
                     ]
                 }
             ]
@@ -46,21 +49,21 @@ const ExperimentViewer = {
         {
             name: 'experiment-group',
             type: 'dir',
-            path: 'experiment-group',
+            path: 'experiment/experiment-group',
             children: [
-                { name: 'oed-claude-opus-assessment-2025-12-27.md', type: 'file', path: 'experiment-group/oed-claude-opus-assessment-2025-12-27.md' },
-                { name: 'oed-claude-sonnet-assessment-2025-12-27.md', type: 'file', path: 'experiment-group/oed-claude-sonnet-assessment-2025-12-27.md' },
-                { name: 'oed-gemini-flash-assessment-2025-12-27.md', type: 'file', path: 'experiment-group/oed-gemini-flash-assessment-2025-12-27.md' },
-                { name: 'oed-gemini-high-assessment-2025-12-27.md', type: 'file', path: 'experiment-group/oed-gemini-high-assessment-2025-12-27.md' },
-                { name: 'oed-gpt-codex-assessment-2025-12-27.md', type: 'file', path: 'experiment-group/oed-gpt-codex-assessment-2025-12-27.md' },
-                { name: 'oed-gpt-oss-120b-assessment-2025-12-27.md', type: 'file', path: 'experiment-group/oed-gpt-oss-120b-assessment-2025-12-27.md' },
-                { name: 'oed-gpt5.2-browser-assessment-2025-12-27.md', type: 'file', path: 'experiment-group/oed-gpt5.2-browser-assessment-2025-12-27.md' },
-                { name: 'oed-gpt5.2-browser-assessment-2025-12-27.pdf', type: 'file', path: 'experiment-group/oed-gpt5.2-browser-assessment-2025-12-27.pdf' },
-                { name: 'oed-supergrok-browser-assessment-2025-12-27.md', type: 'file', path: 'experiment-group/oed-supergrok-browser-assessment-2025-12-27.md' },
+                { name: 'oed-claude-opus-assessment-2025-12-27.md', type: 'file', path: 'experiment/experiment-group/oed-claude-opus-assessment-2025-12-27.md' },
+                { name: 'oed-claude-sonnet-assessment-2025-12-27.md', type: 'file', path: 'experiment/experiment-group/oed-claude-sonnet-assessment-2025-12-27.md' },
+                { name: 'oed-gemini-flash-assessment-2025-12-27.md', type: 'file', path: 'experiment/experiment-group/oed-gemini-flash-assessment-2025-12-27.md' },
+                { name: 'oed-gemini-high-assessment-2025-12-27.md', type: 'file', path: 'experiment/experiment-group/oed-gemini-high-assessment-2025-12-27.md' },
+                { name: 'oed-gpt-codex-assessment-2025-12-27.md', type: 'file', path: 'experiment/experiment-group/oed-gpt-codex-assessment-2025-12-27.md' },
+                { name: 'oed-gpt-oss-120b-assessment-2025-12-27.md', type: 'file', path: 'experiment/experiment-group/oed-gpt-oss-120b-assessment-2025-12-27.md' },
+                { name: 'oed-gpt5.2-browser-assessment-2025-12-27.md', type: 'file', path: 'experiment/experiment-group/oed-gpt5.2-browser-assessment-2025-12-27.md' },
+                { name: 'oed-gpt5.2-browser-assessment-2025-12-27.pdf', type: 'file', path: 'experiment/experiment-group/oed-gpt5.2-browser-assessment-2025-12-27.pdf' },
+                { name: 'oed-supergrok-browser-assessment-2025-12-27.md', type: 'file', path: 'experiment/experiment-group/oed-supergrok-browser-assessment-2025-12-27.md' },
             ]
         },
-        { name: 'experiment.md', type: 'file', path: 'experiment.md' },
-        { name: 'experiment.pdf', type: 'file', path: 'experiment.pdf' },
+        { name: 'experiment.md', type: 'file', path: 'experiment/experiment.md' },
+        { name: 'experiment.pdf', type: 'file', path: 'experiment/experiment.pdf' },
     ],
 
     // Application state
@@ -139,8 +142,9 @@ const ExperimentViewer = {
             this.state.compareFile = path;
         }
 
-        // Update header
-        headerDiv.innerHTML = `<span class="file-path">${path}</span>`;
+        // Update header (show path without 'experiment/' prefix for cleaner display)
+        const displayPath = path.replace(/^experiment\//, '');
+        headerDiv.innerHTML = `<span class="file-path">${displayPath}</span>`;
 
         // Update URL hash
         this.updateHash();
