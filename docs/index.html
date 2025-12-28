@@ -1,107 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🧪 AI Model Assessment Experiment</title>
+    <meta
+      name="description"
+      content="Compare AI model assessments of code repositories for autonomous agent safety, enterprise-grade quality, and implementation complexity."
+    />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Model Assessment Experiment</title>
-  <meta name="description"
-    content="Compare AI model assessments of code repositories for autonomous agent safety, enterprise-grade quality, and implementation complexity." />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css" />
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles.css" />
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
 
-  <!-- Markdown Parser -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-</head>
+  <body>
+    <div id="app">
+      <!-- Header -->
+      <header id="header">
+        <div class="header-left">
+          <button
+            id="menu-btn"
+            class="menu-btn"
+            aria-label="Toggle navigation menu"
+          >
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="logo">🧪 AI Assessment Experiment</div>
+        </div>
+        <div class="toolbar">
+          <button id="compare-btn" class="toolbar-btn">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="3" y="3" width="7" height="18" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="18" rx="1"></rect>
+            </svg>
+            <span>Compare</span>
+          </button>
+        </div>
+      </header>
 
-<body>
-  <div id="app">
-    <!-- Header -->
-    <header id="header">
-      <div class="header-left">
-        <button id="menu-btn" class="menu-btn" aria-label="Toggle navigation menu">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-        <div class="logo">AI Assessment Experiment</div>
-      </div>
-      <div class="toolbar">
-        <button id="compare-btn" class="toolbar-btn">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="18" rx="1"></rect>
-            <rect x="14" y="3" width="7" height="18" rx="1"></rect>
-          </svg>
-          <span>Compare</span>
-        </button>
-      </div>
-    </header>
+      <!-- Mobile Sidebar Overlay -->
+      <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-    <!-- Mobile Sidebar Overlay -->
-    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+      <!-- Viewer -->
+      <div id="viewer">
+        <!-- Primary Pane -->
+        <div class="pane primary">
+          <aside class="sidebar" id="sidebar-primary">
+            <div class="sidebar-header">
+              <h2>Assessments</h2>
+            </div>
+            <nav class="sidebar-content">
+              <ul id="tree-primary"></ul>
+            </nav>
+          </aside>
+          <main class="content" id="content-primary">
+            <div class="content-header">
+              <button
+                class="pane-nav-btn"
+                id="nav-btn-primary"
+                aria-label="Select file for primary pane"
+              >
+                <svg
+                  class="icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                  ></path>
+                </svg>
+                <span>Primary</span>
+              </button>
+              <span class="file-path-slot"></span>
+            </div>
+            <div class="content-body"></div>
+          </main>
+        </div>
 
-    <!-- Viewer -->
-    <div id="viewer">
-      <!-- Primary Pane -->
-      <div class="pane primary">
-        <aside class="sidebar" id="sidebar-primary">
-          <div class="sidebar-header">
-            <h2>Assessments</h2>
-          </div>
-          <nav class="sidebar-content">
-            <ul id="tree-primary"></ul>
-          </nav>
-        </aside>
-        <main class="content" id="content-primary">
-          <div class="content-header">
-            <button class="pane-nav-btn" id="nav-btn-primary" aria-label="Select file for primary pane">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-              <span>Primary</span>
-            </button>
-            <span class="file-path-slot"></span>
-          </div>
-          <div class="content-body"></div>
-        </main>
-      </div>
-
-      <!-- Secondary Pane (Compare Mode) -->
-      <div class="pane secondary">
-        <aside class="sidebar" id="sidebar-secondary">
-          <div class="sidebar-header">
-            <h2>Compare To</h2>
-          </div>
-          <nav class="sidebar-content">
-            <ul id="tree-secondary"></ul>
-          </nav>
-        </aside>
-        <main class="content" id="content-secondary">
-          <div class="content-header">
-            <button class="pane-nav-btn" id="nav-btn-secondary" aria-label="Select file for compare pane">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-              <span>Compare</span>
-            </button>
-            <span class="file-path-slot"></span>
-          </div>
-          <div class="content-body"></div>
-        </main>
+        <!-- Secondary Pane (Compare Mode) -->
+        <div class="pane secondary">
+          <aside class="sidebar" id="sidebar-secondary">
+            <div class="sidebar-header">
+              <h2>Compare To</h2>
+            </div>
+            <nav class="sidebar-content">
+              <ul id="tree-secondary"></ul>
+            </nav>
+          </aside>
+          <main class="content" id="content-secondary">
+            <div class="content-header">
+              <button
+                class="pane-nav-btn"
+                id="nav-btn-secondary"
+                aria-label="Select file for compare pane"
+              >
+                <svg
+                  class="icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                  ></path>
+                </svg>
+                <span>Compare</span>
+              </button>
+              <span class="file-path-slot"></span>
+            </div>
+            <div class="content-body"></div>
+          </main>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Application Script -->
-  <script src="app.js"></script>
-</body>
-
+    <!-- Application Script -->
+    <script src="app.js"></script>
+  </body>
 </html>
