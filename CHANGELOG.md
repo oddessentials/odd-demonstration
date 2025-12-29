@@ -1,3 +1,10 @@
+## [3.4.2](https://github.com/oddessentials/odd-demonstration/compare/v3.4.1...v3.4.2) (2025-12-29)
+
+
+### Bug Fixes
+
+* capitalization ([831c7d3](https://github.com/oddessentials/odd-demonstration/commit/831c7d38d316c9beac94eb17bb2863cd3e70da13))
+
 ## [3.4.1](https://github.com/oddessentials/odd-demonstration/compare/v3.4.0...v3.4.1) (2025-12-29)
 
 
