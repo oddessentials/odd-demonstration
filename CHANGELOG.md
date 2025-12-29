@@ -1,3 +1,10 @@
+## [3.4.1](https://github.com/oddessentials/odd-demonstration/compare/v3.4.0...v3.4.1) (2025-12-29)
+
+
+### Bug Fixes
+
+* experiment logo ([65df501](https://github.com/oddessentials/odd-demonstration/commit/65df50132f7676a4cbebb3430c2b62d230a26b8b))
+
 # [3.4.0](https://github.com/oddessentials/odd-demonstration/compare/v3.3.0...v3.4.0) (2025-12-28)
 
 
