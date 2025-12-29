@@ -2,6 +2,11 @@
 
 A self-contained, local-first demonstration platform showcasing modern, production-grade distributed systems designed to enable professional-level agentic development at the most efficient rate possible.
 
+⚠️ DISCLAIMER
+
+This repository is a research and demonstration project.
+It is **not production software** and **not intended for enterprise deployment**.
+
 **Test Coverage:**
 
 ![Gateway](https://img.shields.io/badge/Gateway-80%25-brightgreen)
