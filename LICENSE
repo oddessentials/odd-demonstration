@@ -1,18 +1,18 @@
-IMPORTANT NOTICE — NON-PRODUCTION SOFTWARE
+## ⚠️ IMPORTANT NOTICE — DEMONSTRATION & REFERENCE SOFTWARE
 
-This software is provided for demonstration, educational, and experimental
-purposes only. It is not intended, represented, or warranted to be suitable
-for production use, enterprise deployment, or safety-critical environments.
+This repository contains **demonstration, reference, and experimental software** intended to illustrate architectural patterns, governance mechanisms, testing strategies, and system design approaches used within the Odd Essentials ecosystem.
 
-Any references to architectural patterns, enterprise concepts, or system
-design principles are illustrative in nature and do not constitute a claim
-that this software meets enterprise production standards, regulatory
-requirements, or operational readiness criteria.
+While the codebase may exhibit **high engineering rigor**, including structured tests, observability, safety checks, and deterministic behavior, it is **not intended, represented, or warranted** to be suitable for:
 
-Users are solely responsible for evaluating the appropriateness of this
-software for their use case. The authors make no representations regarding
-security, correctness, performance, reliability, compliance, or fitness for
-any production or commercial purpose.
+- Production deployment  
+- Enterprise or regulated environments  
+- Safety-critical systems  
+- Commercial products or services  
+
+Any references to scalability, reliability, security, or enterprise-grade concepts are **illustrative only** and do **not** constitute a claim that this software meets production, regulatory, compliance, or operational readiness standards.
+
+Users are solely responsible for evaluating the appropriateness of this software for their own use cases.  
+Odd Essentials, LLC makes **no representations or warranties** regarding security, correctness, performance, reliability, compliance, or fitness for any production or commercial purpose.
 
 # **Odd Essentials License (OEL)**
 
@@ -95,3 +95,4 @@ For commercial use, redistribution, integration, or partnership inquiries, conta
 **Odd Essentials, LLC**  
 📧 legal@oddessentials.com  
 🌐 https://oddessentials.com/
+
