@@ -1,25 +1,3 @@
-MIT License
-
-Copyright (c) 2024 Distributed Task Observatory
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "odd-demonstration"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
 IMPORTANT NOTICE — NON-PRODUCTION SOFTWARE
 
 This software is provided for demonstration, educational, and experimental
@@ -35,3 +13,85 @@ Users are solely responsible for evaluating the appropriateness of this
 software for their use case. The authors make no representations regarding
 security, correctness, performance, reliability, compliance, or fitness for
 any production or commercial purpose.
+
+# **Odd Essentials License (OEL)**
+
+**Copyright © 2025 Odd Essentials, LLC. All rights reserved.**
+
+This repository and all associated code are provided under a **source-available, non-commercial license**.
+
+You are free to **read, clone, fork, modify, and contribute** to the Software **solely for non-commercial purposes**, under the terms below.
+
+---
+
+## **Intent and Scope**
+
+The Software is **not** intended for use in commercial products, services, platforms, or revenue-generating activities without an explicit commercial license.
+
+---
+
+## **1. Permitted Non-Commercial Use**
+
+You may use, modify, and run the Software **only for non-commercial purposes**, including:
+
+- Personal experimentation and learning
+- Educational or academic research
+- Open-source development and maintenance
+- Internal development **solely for non-commercial, non-revenue-generating evaluation or research purposes**
+- Submitting contributions (pull requests) to this repository
+- Using the fixtures to improve or validate **non-commercial open-source projects**
+
+Any use that directly or indirectly supports a commercial offering is excluded unless separately licensed.
+
+---
+
+## **2. Prohibited Commercial Use**
+
+You **may not** use the Software, or any derivative of it, **for commercial purposes**, including but not limited to:
+
+- Selling, licensing, or monetizing the Software
+- Using the Software as part of a revenue-generating product, service, platform, or SaaS
+- Incorporating the Software into any tool, framework, or system offered for a fee or commercial advantage
+- Using the Software to **train, fine-tune, benchmark, or evaluate AI models or systems intended for commercial deployment**
+- Using the Software to build, enhance, or validate tools or services that provide **substantially similar functionality** to Odd Essentials offerings and are offered commercially
+
+Commercial use requires a **separate, written commercial license** from Odd Essentials, LLC.
+
+---
+
+## **3. Contributions**
+
+By submitting a pull request or other contribution:
+
+- You grant Odd Essentials, LLC a **perpetual, irrevocable, worldwide, royalty-free license** to use, modify, distribute, sublicense, and relicense your contribution, with or without attribution.
+- You represent that your contribution is your own original work and does not infringe any third-party rights.
+
+---
+
+## **4. No Warranty**
+
+The Software is provided **“as is”**, without warranty of any kind, express or implied.  
+Odd Essentials, LLC disclaims all warranties, including fitness for a particular purpose and non-infringement.
+
+---
+
+## **5. Trademark**
+
+The names **Odd Essentials**, related odd-\* code repositories, and any related logos or branding are trademarks of Odd Essentials, LLC. and may not be used without prior written permission.
+
+---
+
+## **6. Termination**
+
+This license is automatically terminated if you violate its terms.
+Upon termination, you must **cease all use and distribution** of the Software.
+
+---
+
+## **7. Commercial Licensing**
+
+For commercial use, redistribution, integration, or partnership inquiries, contact:
+
+**Odd Essentials, LLC**  
+📧 legal@oddessentials.com  
+🌐 https://oddessentials.com/
