@@ -26,7 +26,7 @@
         "ajv": "^8.12.0",
         "ajv-formats": "^2.1.1",
         "uuid": "^9.0.1",
-        "body-parser": "^1.20.2",
+        "body-parser": "^2.2.1",
         "prom-client": "^15.1.0",
         "swagger-ui-express": "^5.0.0"
     },
