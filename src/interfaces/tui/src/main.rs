@@ -48,10 +48,7 @@ use odd_dashboard::{
 fn render_loading_splash<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     frame_idx: usize,
-) -> Result<(), Box<dyn Error>>
-where
-    <B as ratatui::backend::Backend>::Error: 'static,
-{
+) -> Result<(), Box<dyn Error>> {
     let spinner = SPINNER_FRAMES[frame_idx % SPINNER_FRAMES.len()];
     let message = LOADING_MESSAGES[frame_idx / 3 % LOADING_MESSAGES.len()];
     
@@ -128,10 +125,7 @@ where
 fn render_launcher_view<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     frame_idx: usize,
-) -> Result<(), Box<dyn Error>>
-where
-    <B as ratatui::backend::Backend>::Error: 'static,
-{
+) -> Result<(), Box<dyn Error>> {
     let spinner = SPINNER_FRAMES[frame_idx % SPINNER_FRAMES.len()];
     
     terminal.draw(|f| {
@@ -219,10 +213,7 @@ fn render_setup_progress<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     progress: &SetupProgress,
     frame_idx: usize,
-) -> Result<(), Box<dyn Error>>
-where
-    <B as ratatui::backend::Backend>::Error: 'static,
-{
+) -> Result<(), Box<dyn Error>> {
     let spinner = SPINNER_FRAMES[frame_idx % SPINNER_FRAMES.len()];
     
     terminal.draw(|f| {
@@ -382,10 +373,7 @@ fn render_prerequisite_setup<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     app: &App,
     _frame_idx: usize,
-) -> Result<(), Box<dyn Error>>
-where
-    <B as ratatui::backend::Backend>::Error: 'static,
-{
+) -> Result<(), Box<dyn Error>> {
     let prereqs = check_all_prerequisites();
     
     terminal.draw(|f| {
