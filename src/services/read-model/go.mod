@@ -4,8 +4,8 @@ go 1.21
 
 require (
 	github.com/lib/pq v1.10.9
-	github.com/redis/go-redis/v9 v9.17.2
-	go.mongodb.org/mongo-driver v1.17.6
+	github.com/redis/go-redis/v9 v9.4.0
+	go.mongodb.org/mongo-driver v1.13.1
 )
 
 require (
