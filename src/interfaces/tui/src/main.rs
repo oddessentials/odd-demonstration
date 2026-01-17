@@ -48,12 +48,15 @@ use odd_dashboard::{
 fn render_loading_splash<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     frame_idx: usize,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error>>
+where
+    <B as ratatui::backend::Backend>::Error: 'static,
+{
     let spinner = SPINNER_FRAMES[frame_idx % SPINNER_FRAMES.len()];
     let message = LOADING_MESSAGES[frame_idx / 3 % LOADING_MESSAGES.len()];
     
     terminal.draw(|f| {
-        let size = f.size();
+        let size = f.area();
         
         let vertical_center = Layout::default()
             .direction(Direction::Vertical)
@@ -125,11 +128,14 @@ fn render_loading_splash<B: ratatui::backend::Backend>(
 fn render_launcher_view<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     frame_idx: usize,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error>>
+where
+    <B as ratatui::backend::Backend>::Error: 'static,
+{
     let spinner = SPINNER_FRAMES[frame_idx % SPINNER_FRAMES.len()];
     
     terminal.draw(|f| {
-        let size = f.size();
+        let size = f.area();
         
         let vertical_center = Layout::default()
             .direction(Direction::Vertical)
@@ -213,11 +219,14 @@ fn render_setup_progress<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     progress: &SetupProgress,
     frame_idx: usize,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error>>
+where
+    <B as ratatui::backend::Backend>::Error: 'static,
+{
     let spinner = SPINNER_FRAMES[frame_idx % SPINNER_FRAMES.len()];
     
     terminal.draw(|f| {
-        let size = f.size();
+        let size = f.area();
         
         let vertical_center = Layout::default()
             .direction(Direction::Vertical)
@@ -372,12 +381,15 @@ fn render_setup_progress<B: ratatui::backend::Backend>(
 fn render_prerequisite_setup<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     app: &App,
-    frame_idx: usize,
-) -> Result<(), Box<dyn Error>> {
+    _frame_idx: usize,
+) -> Result<(), Box<dyn Error>>
+where
+    <B as ratatui::backend::Backend>::Error: 'static,
+{
     let prereqs = check_all_prerequisites();
     
     terminal.draw(|f| {
-        let size = f.size();
+        let size = f.area();
         
         let vertical_center = Layout::default()
             .direction(Direction::Vertical)
@@ -688,7 +700,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             Constraint::Min(8),
                             Constraint::Length(1),
                         ])
-                        .split(f.size());
+                        .split(f.area());
 
                     let header_chunks = Layout::default()
                         .direction(Direction::Horizontal)
@@ -810,9 +822,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         Constraint::Length(12),
                         Constraint::Min(25),
                     ];
-                    let table = Table::new(rows)
+                    let table = Table::new(rows, widths)
                         .header(header)
-                        .widths(&widths)
                         .block(Block::default().title(" Recent Jobs ").borders(Borders::ALL));
                     f.render_widget(table, main_chunks[2]);
 
@@ -852,7 +863,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             AppMode::TaskCreation => {
                 terminal.draw(|f| {
-                    let area = f.size();
+                    let area = f.area();
                     let modal_width = 55u16;
                     let modal_height = 10u16;
                     let x = (area.width.saturating_sub(modal_width)) / 2;
@@ -921,7 +932,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
                 
                 terminal.draw(|f| {
-                    let area = f.size();
+                    let area = f.area();
                     let modal_width = 60u16;
                     let modal_height = 15u16;
                     let x = (area.width.saturating_sub(modal_width)) / 2;
@@ -998,7 +1009,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 };
                 
                 terminal.draw(|f| {
-                    let area = f.size();
+                    let area = f.area();
                     let modal_width = 50u16;
                     let modal_height = 8u16;
                     let x = (area.width.saturating_sub(modal_width)) / 2;
