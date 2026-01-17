@@ -1,3 +1,11 @@
+## [3.4.4](https://github.com/oddessentials/odd-demonstration/compare/v3.4.3...v3.4.4) (2026-01-17)
+
+
+### Bug Fixes
+
+* **deps:** pin instability to 0.3.6 for Rust 1.83 compatibility ([f6256a3](https://github.com/oddessentials/odd-demonstration/commit/f6256a36f17950d426287a961cc2de28927a96f7))
+* **deps:** revert Go dependencies to working versions ([0dee05c](https://github.com/oddessentials/odd-demonstration/commit/0dee05c157e0b0ec6b74247ad6b9f71d10653af3))
+
 ## [3.4.3](https://github.com/oddessentials/odd-demonstration/compare/v3.4.2...v3.4.3) (2026-01-17)
 
 
