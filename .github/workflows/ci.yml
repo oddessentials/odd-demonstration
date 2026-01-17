@@ -36,7 +36,7 @@ jobs:
       filter_ok: ${{ steps.filter.outcome == 'success' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Detect changes
         uses: dorny/paths-filter@v3
@@ -90,7 +90,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # PREFLIGHT: Validate GitHub Release asset exists before invoking Bazelisk
       - name: Verify Bazel mirror asset exists
@@ -116,7 +116,7 @@ jobs:
 
       # Cache for speed (not the guarantee - mirror is the guarantee)
       - name: Cache Bazelisk binaries
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/bazelisk
@@ -124,7 +124,7 @@ jobs:
           key: bazelisk-${{ runner.os }}-${{ hashFiles('.bazelversion') }}
 
       - name: Set up Bazelisk
-        uses: bazel-contrib/setup-bazel@0.9.0
+        uses: bazel-contrib/setup-bazel@0.16.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -265,7 +265,7 @@ jobs:
 
       - name: Upload test logs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bazel-testlogs
           path: bazel-testlogs/
@@ -285,10 +285,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -298,7 +298,7 @@ jobs:
           go-version: '1.21'
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -344,12 +344,12 @@ jobs:
     steps:
       # Checkout to a separate directory to avoid polluting the main workspace
       - name: Checkout code (isolated path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: repro-workspace
 
       - name: Set up Bazelisk (isolated cache)
-        uses: bazel-contrib/setup-bazel@0.9.0
+        uses: bazel-contrib/setup-bazel@0.16.0
         with:
           bazelisk-cache: true
           # Completely separate cache key to prevent poisoning main cache
@@ -438,7 +438,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -482,10 +482,10 @@ jobs:
       FILTER_FAILED: ${{ needs.paths-filter.result != 'success' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node.js (for schema validation)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -507,7 +507,7 @@ jobs:
 
       - name: Upload integration artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: integration-artifacts
           path: integration-artifacts/
@@ -528,10 +528,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -569,7 +569,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: tests/visual/playwright-report/
@@ -577,7 +577,7 @@ jobs:
 
       - name: Upload snapshots on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-snapshots
           path: tests/visual/terminal.spec.ts-snapshots/
@@ -600,10 +600,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -625,7 +625,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docs-playwright-report
           path: docs/playwright-report/
@@ -640,7 +640,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
       - name: Verify naming consistency
         shell: pwsh
@@ -670,13 +670,13 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -709,7 +709,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build web-ui Docker image
         run: |
@@ -732,10 +732,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
       
@@ -769,7 +769,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Install PowerShell Core
         run: brew install powershell
@@ -803,17 +803,17 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -937,17 +937,17 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Full history for --new-from-rev
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -1035,6 +1035,6 @@ jobs:
   #   needs: [bazel, docker]
   #   if: startsWith(github.ref, 'refs/tags/v')
   #   steps:
-  #     - uses: actions/checkout@v4
+  #     - uses: actions/checkout@v6
   #     - name: Create GitHub Release
   #       uses: softprops/action-gh-release@v1

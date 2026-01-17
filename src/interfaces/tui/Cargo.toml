@@ -20,9 +20,9 @@ name = "odd-dashboard"
 path = "src/main.rs"
 
 [dependencies]
-ratatui = "=0.24.0"
-crossterm = "=0.27.0"
-reqwest = { version = "0.11", default-features = false, features = ["json", "blocking", "rustls-tls"] }
+ratatui = "=0.29.0"  # Pinned: v0.30 pulls ratatui-macros requiring edition2024 (not stable in Cargo 1.83)
+crossterm = "=0.29.0"
+reqwest = { version = "0.12", default-features = false, features = ["json", "blocking", "rustls-tls"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
