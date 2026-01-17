@@ -1,3 +1,12 @@
+## [3.4.3](https://github.com/oddessentials/odd-demonstration/compare/v3.4.2...v3.4.3) (2026-01-17)
+
+
+### Bug Fixes
+
+* **ci:** revert GitHub Actions to existing stable versions ([5e47d56](https://github.com/oddessentials/odd-demonstration/commit/5e47d56fca6ebacfeadabe5516329e371f403dca))
+* **deps:** downgrade ratatui to 0.29.0 for stable Rust compatibility ([833c60e](https://github.com/oddessentials/odd-demonstration/commit/833c60ed6f154448ed6bcc7476b59431a62d9280))
+* **deps:** pin instability to 0.3.6 for Rust 1.83 compatibility ([e7cece3](https://github.com/oddessentials/odd-demonstration/commit/e7cece3647dc71ab9051e472a7ead11e51089df8))
+
 ## [3.4.2](https://github.com/oddessentials/odd-demonstration/compare/v3.4.1...v3.4.2) (2025-12-29)
 
 
