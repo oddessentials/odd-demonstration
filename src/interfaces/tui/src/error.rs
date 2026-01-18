@@ -38,10 +38,17 @@ pub enum SubmitError {
 impl std::fmt::Display for SubmitError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SubmitError::Timeout => write!(f, "Gateway timeout (2s) - cluster may be starting or unavailable"),
-            SubmitError::ConnectionRefused => write!(f, "Cannot connect to Gateway - ensure cluster is running"),
+            SubmitError::Timeout => write!(
+                f,
+                "Gateway timeout (2s) - cluster may be starting or unavailable"
+            ),
+            SubmitError::ConnectionRefused => {
+                write!(f, "Cannot connect to Gateway - ensure cluster is running")
+            }
             SubmitError::ValidationFailed(msg) => write!(f, "Validation failed: {}", msg),
-            SubmitError::ServerError(code, body) => write!(f, "Gateway returned {}: {}", code, body),
+            SubmitError::ServerError(code, body) => {
+                write!(f, "Gateway returned {}: {}", code, body)
+            }
             SubmitError::NetworkError(msg) => write!(f, "Network error: {}", msg),
         }
     }
@@ -59,7 +66,9 @@ impl std::fmt::Display for BrowserError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             BrowserError::NotAvailable(msg) => write!(f, "No browser available: {}", msg),
-            BrowserError::EnvironmentRestricted(msg) => write!(f, "Environment restriction: {}", msg),
+            BrowserError::EnvironmentRestricted(msg) => {
+                write!(f, "Environment restriction: {}", msg)
+            }
             BrowserError::LaunchFailed(msg) => write!(f, "Launch failed: {}", msg),
         }
     }
@@ -72,7 +81,7 @@ impl std::fmt::Display for BrowserError {
 /// Get a user-friendly hint based on the error message
 pub fn get_error_hint(message: &str) -> String {
     let msg_lower = message.to_lowercase();
-    
+
     if msg_lower.contains("docker") {
         "Docker Desktop may not be running".to_string()
     } else if msg_lower.contains("kind") || msg_lower.contains("cluster") {
@@ -93,7 +102,7 @@ pub fn get_error_hint(message: &str) -> String {
 /// Get remediation steps based on the error message (cross-platform)
 pub fn get_remediation_steps(message: &str) -> Vec<String> {
     let msg_lower = message.to_lowercase();
-    
+
     if msg_lower.contains("docker") {
         vec![
             "1. Open Docker Desktop".to_string(),
@@ -286,7 +295,9 @@ pub fn get_install_command(prereq_name: &str) -> Option<String> {
     {
         match prereq_name.to_lowercase().as_str() {
             "docker" | "docker desktop" => Some("brew install --cask docker".to_string()),
-            "powershell" | "powershell core" | "pwsh" => Some("brew install powershell".to_string()),
+            "powershell" | "powershell core" | "pwsh" => {
+                Some("brew install powershell".to_string())
+            }
             "kubectl" => Some("brew install kubectl".to_string()),
             "kind" => Some("brew install kind".to_string()),
             _ => None,
@@ -306,7 +317,9 @@ pub fn get_install_command(prereq_name: &str) -> Option<String> {
     {
         match prereq_name.to_lowercase().as_str() {
             "docker" | "docker desktop" => Some("winget install Docker.DockerDesktop".to_string()),
-            "powershell" | "powershell core" | "pwsh" => Some("winget install Microsoft.PowerShell".to_string()),
+            "powershell" | "powershell core" | "pwsh" => {
+                Some("winget install Microsoft.PowerShell".to_string())
+            }
             "kubectl" => Some("winget install Kubernetes.kubectl".to_string()),
             "kind" => Some("winget install Kubernetes.kind".to_string()),
             _ => None,
@@ -390,7 +403,7 @@ mod tests {
         let not_found = RegistryError::NotFound("file.json".to_string());
         let malformed = RegistryError::Malformed("JSON parse".to_string());
         let invalid = RegistryError::InvalidEntry("missing id".to_string());
-        
+
         assert!(not_found.to_string().contains("not found"));
         assert!(malformed.to_string().contains("malformed"));
         assert!(invalid.to_string().contains("Invalid"));
@@ -402,7 +415,7 @@ mod tests {
         let conn = SubmitError::ConnectionRefused;
         let validation = SubmitError::ValidationFailed("bad input".to_string());
         let server = SubmitError::ServerError(400, "bad request".to_string());
-        
+
         assert!(timeout.to_string().contains("timeout"));
         assert!(conn.to_string().contains("connect"));
         assert!(validation.to_string().contains("Validation"));
@@ -414,7 +427,7 @@ mod tests {
         let restricted = BrowserError::EnvironmentRestricted("SSH".to_string());
         let not_avail = BrowserError::NotAvailable("no browser".to_string());
         let failed = BrowserError::LaunchFailed("error".to_string());
-        
+
         assert!(restricted.to_string().contains("Environment"));
         assert!(not_avail.to_string().contains("available"));
         assert!(failed.to_string().contains("failed"));
@@ -425,10 +438,10 @@ mod tests {
         // Test that at least some commands are returned
         let docker_cmd = get_install_command("docker");
         assert!(docker_cmd.is_some());
-        
+
         let kubectl_cmd = get_install_command("kubectl");
         assert!(kubectl_cmd.is_some());
-        
+
         let unknown_cmd = get_install_command("unknown_tool");
         assert!(unknown_cmd.is_none());
     }

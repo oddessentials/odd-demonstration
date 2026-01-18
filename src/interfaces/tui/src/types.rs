@@ -1,5 +1,5 @@
 //! Type definitions for the odd-dashboard TUI
-//! 
+//!
 //! This module contains all shared data structures, enums, and constants
 //! used across the TUI application.
 
@@ -74,7 +74,7 @@ pub enum AppMode {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ClusterStatus {
     Ready,
-    NoPods,  // Cluster exists but no application pods deployed
+    NoPods, // Cluster exists but no application pods deployed
     NotFound,
     Error(String),
 }
@@ -83,11 +83,11 @@ pub enum ClusterStatus {
 /// Used to verify connectivity before loading Dashboard
 #[derive(Debug, Clone, PartialEq)]
 pub enum PortForwardStatus {
-    AllHealthy,                    // Both Gateway and Read Model reachable
-    GatewayUnhealthy,             // Gateway unreachable, Read Model OK
-    ReadModelUnhealthy,           // Read Model unreachable, Gateway OK
-    AllUnhealthy,                 // Neither service reachable
-    Error(String),                // Error during health check
+    AllHealthy,         // Both Gateway and Read Model reachable
+    GatewayUnhealthy,   // Gateway unreachable, Read Model OK
+    ReadModelUnhealthy, // Read Model unreachable, Gateway OK
+    AllUnhealthy,       // Neither service reachable
+    Error(String),      // Error during health check
 }
 
 /// Setup progress tracking
@@ -101,14 +101,14 @@ pub struct SetupProgress {
     pub is_complete: bool,
     pub has_error: bool,
     pub log_lines: Vec<String>,
-    pub start_time: Option<std::time::Instant>,  // For elapsed time tracking
+    pub start_time: Option<std::time::Instant>, // For elapsed time tracking
 }
 
 /// Shutdown progress tracking (for Ctrl+Q)
 #[derive(Debug, Clone, Default)]
 pub struct ShutdownProgress {
-    pub current_step: String,           // e.g., "ports", "cluster"
-    pub message: String,                // Status message
+    pub current_step: String, // e.g., "ports", "cluster"
+    pub message: String,      // Status message
     pub is_complete: bool,
     pub has_error: bool,
     pub error_message: Option<String>,
@@ -132,8 +132,8 @@ pub struct PortForwardRegistry {
 pub enum TaskCreationStatus {
     Editing,
     Submitting,
-    Success(String),  // contains job_id
-    Error(String),    // contains error message
+    Success(String), // contains job_id
+    Error(String),   // contains error message
 }
 
 #[derive(Debug, Clone)]
@@ -190,7 +190,7 @@ pub struct UiRegistry {
 pub struct UiLauncherState {
     pub selected_index: usize,
     pub registry: Option<UiRegistry>,
-    pub error: Option<String>,  // For displaying browser/registry errors
+    pub error: Option<String>, // For displaying browser/registry errors
 }
 
 // ============================================================================
@@ -250,14 +250,14 @@ pub struct Prerequisite {
     pub name: String,
     pub status: PrereqStatus,
     pub version: Option<String>,
-    pub install_cmd: Vec<String>,  // Platform-specific install commands
+    pub install_cmd: Vec<String>, // Platform-specific install commands
 }
 
 /// How to handle install command for user
 #[derive(Debug, Clone, PartialEq)]
 pub enum InstallAction {
-    Execute,      // Run the command directly
-    CopyToClipboard,  // Copy command to clipboard
+    Execute,         // Run the command directly
+    CopyToClipboard, // Copy command to clipboard
 }
 
 /// State for prerequisite setup view
@@ -266,10 +266,10 @@ pub struct PrerequisiteSetupState {
     pub prerequisites: Vec<Prerequisite>,
     pub selected_index: usize,
     pub install_action: Option<InstallAction>,
-    pub current_install: Option<usize>,  // Index of currently installing prereq
-    pub message: Option<String>,         // Feedback message for user
-    pub output_lines: Vec<String>,       // Captured install output for display
-    pub is_installing: bool,             // Whether install is currently running
+    pub current_install: Option<usize>, // Index of currently installing prereq
+    pub message: Option<String>,        // Feedback message for user
+    pub output_lines: Vec<String>,      // Captured install output for display
+    pub is_installing: bool,            // Whether install is currently running
 }
 
 // ============================================================================
@@ -335,8 +335,8 @@ impl App {
         }
 
         // Fetch alerts from Prometheus with retry logic
-        let prometheus_url = std::env::var("PROMETHEUS_URL")
-            .unwrap_or_else(|_| "http://localhost:9090".to_string());
+        let prometheus_url =
+            std::env::var("PROMETHEUS_URL").unwrap_or_else(|_| "http://localhost:9090".to_string());
         let alerts_url = format!("{}/api/v1/alerts", prometheus_url);
         match reqwest::blocking::Client::new()
             .get(alerts_url)
@@ -361,9 +361,15 @@ impl App {
             Err(_e) => {
                 self.alert_retry_count += 1;
                 if self.alert_retry_count >= MAX_ALERT_RETRIES {
-                    self.alerts_error = Some(format!("Prometheus unavailable (retried {}x)", MAX_ALERT_RETRIES));
+                    self.alerts_error = Some(format!(
+                        "Prometheus unavailable (retried {}x)",
+                        MAX_ALERT_RETRIES
+                    ));
                 } else {
-                    self.alerts_error = Some(format!("Connecting to Prometheus... (attempt {})", self.alert_retry_count));
+                    self.alerts_error = Some(format!(
+                        "Connecting to Prometheus... (attempt {})",
+                        self.alert_retry_count
+                    ));
                 }
             }
         }
@@ -385,7 +391,10 @@ mod tests {
 
     #[test]
     fn test_app_new() {
-        let app = App::new("http://test:8080".to_string(), "http://test:3000".to_string());
+        let app = App::new(
+            "http://test:8080".to_string(),
+            "http://test:3000".to_string(),
+        );
         assert_eq!(app.mode, AppMode::Loading);
         assert_eq!(app.api_url, "http://test:8080");
         assert_eq!(app.gateway_url, "http://test:3000");
@@ -412,7 +421,7 @@ mod tests {
         let missing = PrereqStatus::Missing;
         let installing = PrereqStatus::Installing;
         let failed = PrereqStatus::InstallFailed("error".to_string());
-        
+
         assert_eq!(installed, PrereqStatus::Installed);
         assert_eq!(missing, PrereqStatus::Missing);
         assert_eq!(installing, PrereqStatus::Installing);
@@ -422,7 +431,10 @@ mod tests {
     #[test]
     fn test_install_action_variants() {
         assert_eq!(InstallAction::Execute, InstallAction::Execute);
-        assert_eq!(InstallAction::CopyToClipboard, InstallAction::CopyToClipboard);
+        assert_eq!(
+            InstallAction::CopyToClipboard,
+            InstallAction::CopyToClipboard
+        );
         assert_ne!(InstallAction::Execute, InstallAction::CopyToClipboard);
     }
 
@@ -545,8 +557,8 @@ mod tests {
         // Document the expected read-model API endpoints
         // The refresh() method in App uses these endpoints
         let expected_stats_endpoint = "/stats";
-        let expected_jobs_endpoint = "/jobs/recent";  // NOT /jobs - see read-model main.go
-        
+        let expected_jobs_endpoint = "/jobs/recent"; // NOT /jobs - see read-model main.go
+
         assert_eq!(expected_stats_endpoint, "/stats");
         assert_eq!(expected_jobs_endpoint, "/jobs/recent");
     }
@@ -677,7 +689,8 @@ mod tests {
 
     #[test]
     fn test_alert_full() {
-        let json = r#"{"labels":{"alertname":"HighCPU","severity":"warning","service":"processor"}}"#;
+        let json =
+            r#"{"labels":{"alertname":"HighCPU","severity":"warning","service":"processor"}}"#;
         let alert: Alert = serde_json::from_str(json).unwrap();
         assert_eq!(alert.labels.alertname, Some("HighCPU".to_string()));
         assert_eq!(alert.labels.severity, Some("warning".to_string()));
@@ -769,8 +782,14 @@ mod tests {
 
     #[test]
     fn test_port_forward_status_inequality() {
-        assert_ne!(PortForwardStatus::AllHealthy, PortForwardStatus::AllUnhealthy);
-        assert_ne!(PortForwardStatus::GatewayUnhealthy, PortForwardStatus::ReadModelUnhealthy);
+        assert_ne!(
+            PortForwardStatus::AllHealthy,
+            PortForwardStatus::AllUnhealthy
+        );
+        assert_ne!(
+            PortForwardStatus::GatewayUnhealthy,
+            PortForwardStatus::ReadModelUnhealthy
+        );
     }
 
     // ========== UiLauncherState Tests ==========
@@ -801,7 +820,7 @@ mod tests {
         progress.message = "Deploying services...".to_string();
         progress.error_hint = "Check Docker".to_string();
         progress.remediation = vec!["Restart Docker".to_string()];
-        
+
         assert_eq!(progress.current_step, "deploying");
         assert_eq!(progress.current_status, "running");
         assert!(!progress.remediation.is_empty());
@@ -823,7 +842,10 @@ mod tests {
             // Braille characters are in Unicode range U+2800..U+28FF
             for c in frame.chars() {
                 let code = c as u32;
-                assert!(code >= 0x2800 && code <= 0x28FF, "Expected Braille character");
+                assert!(
+                    code >= 0x2800 && code <= 0x28FF,
+                    "Expected Braille character"
+                );
             }
         }
     }
@@ -887,7 +909,7 @@ mod tests {
         progress.current_step = "cluster".to_string();
         progress.message = "Deleting Kind cluster...".to_string();
         progress.is_complete = true;
-        
+
         assert_eq!(progress.current_step, "cluster");
         assert!(progress.message.contains("Deleting"));
         assert!(progress.is_complete);
@@ -898,7 +920,7 @@ mod tests {
         let mut progress = ShutdownProgress::default();
         progress.has_error = true;
         progress.error_message = Some("Failed to delete cluster".to_string());
-        
+
         assert!(progress.has_error);
         assert!(progress.error_message.is_some());
         assert!(progress.error_message.unwrap().contains("Failed"));
@@ -932,7 +954,7 @@ mod tests {
         let mut registry = PortForwardRegistry::default();
         registry.processes.push(("gateway".to_string(), 12345));
         registry.processes.push(("read-model".to_string(), 12346));
-        
+
         assert_eq!(registry.processes.len(), 2);
         assert_eq!(registry.processes[0].0, "gateway");
         assert_eq!(registry.processes[0].1, 12345);
@@ -943,7 +965,7 @@ mod tests {
     fn test_port_forward_registry_clone() {
         let mut registry = PortForwardRegistry::default();
         registry.processes.push(("test-service".to_string(), 99999));
-        
+
         let cloned = registry.clone();
         assert_eq!(cloned.processes.len(), 1);
         assert_eq!(cloned.processes[0].0, "test-service");
@@ -955,7 +977,7 @@ mod tests {
         registry.processes.push(("svc1".to_string(), 1));
         registry.processes.push(("svc2".to_string(), 2));
         registry.processes.clear();
-        
+
         assert!(registry.processes.is_empty());
     }
 
@@ -968,4 +990,3 @@ mod tests {
         assert_ne!(mode, AppMode::Dashboard);
     }
 }
-

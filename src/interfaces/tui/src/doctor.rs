@@ -3,9 +3,12 @@
 //! This module provides system diagnostics, platform support checking,
 //! and prerequisite validation for the odd-dashboard TUI.
 
+use crate::error::{
+    get_docker_install_steps, get_kind_install_steps, get_kubectl_install_steps,
+    get_pwsh_install_steps,
+};
+use crate::types::{PrereqStatus, Prerequisite};
 use std::process::Command;
-use crate::types::{Prerequisite, PrereqStatus};
-use crate::error::{get_docker_install_steps, get_pwsh_install_steps, get_kind_install_steps, get_kubectl_install_steps};
 
 // ============================================================================
 // Platform Support
@@ -21,23 +24,25 @@ pub const SUPPORT_MATRIX: &[(&str, &str)] = &[
     ("linux", "aarch64"),
 ];
 
-pub const SUPPORT_MATRIX_URL: &str = "https://github.com/oddessentials/odd-demonstration/blob/main/docs/agents/SUPPORT_MATRIX.md";
+pub const SUPPORT_MATRIX_URL: &str =
+    "https://github.com/oddessentials/odd-demonstration/blob/main/docs/agents/SUPPORT_MATRIX.md";
 
 /// Check if current platform is supported (no I/O, pure computation)
 pub fn check_platform_support() -> Result<(), String> {
     let os = std::env::consts::OS;
     let arch = std::env::consts::ARCH;
-    
-    let supported = SUPPORT_MATRIX.iter()
+
+    let supported = SUPPORT_MATRIX
+        .iter()
         .any(|(s_os, s_arch)| *s_os == os && *s_arch == arch);
-    
+
     if !supported {
         return Err(format!(
             "Unsupported platform: {}-{}\nSee supported configurations: {}",
             os, arch, SUPPORT_MATRIX_URL
         ));
     }
-    
+
     Ok(())
 }
 
@@ -74,7 +79,7 @@ pub fn check_command_version(cmd: &str, args: &[&str]) -> Result<String, String>
 /// Print version information with build metadata
 pub fn print_version() {
     println!("odd-dashboard {}", env!("CARGO_PKG_VERSION"));
-    
+
     // Build metadata injected by build.rs
     if let Some(commit) = option_env!("BUILD_COMMIT") {
         println!("  commit: {}", commit);
@@ -85,7 +90,7 @@ pub fn print_version() {
     if let Some(rustc) = option_env!("BUILD_RUSTC_VERSION") {
         println!("  rustc:  {}", rustc);
     }
-    
+
     println!("  os:     {}", std::env::consts::OS);
     println!("  arch:   {}", std::env::consts::ARCH);
 }
@@ -114,19 +119,19 @@ pub fn print_help() {
 /// Run the doctor command - check prerequisites and show diagnostic info
 pub fn run_doctor() {
     use crate::error::get_install_command;
-    
+
     println!("odd-dashboard doctor");
     println!("====================");
     println!();
-    
+
     // Platform info (already validated by main())
     let os = std::env::consts::OS;
     let arch = std::env::consts::ARCH;
     println!("[OK] Platform: {}-{} (supported)", os, arch);
-    
+
     let mut all_ok = true;
     let mut missing: Vec<&str> = Vec::new();
-    
+
     // Check Docker
     match check_command_version("docker", &["--version"]) {
         Ok(version) => println!("[OK] Docker: {}", version),
@@ -136,7 +141,7 @@ pub fn run_doctor() {
             all_ok = false;
         }
     }
-    
+
     // Check PowerShell Core
     let pwsh_cmd = if cfg!(windows) { "pwsh.exe" } else { "pwsh" };
     match check_command_version(pwsh_cmd, &["--version"]) {
@@ -144,8 +149,14 @@ pub fn run_doctor() {
         Err(_) => {
             // Try powershell.exe on Windows as fallback
             if cfg!(windows) {
-                match check_command_version("powershell.exe", &["-Command", "$PSVersionTable.PSVersion.ToString()"]) {
-                    Ok(version) => println!("[WARN] PowerShell (Windows): {} (pwsh recommended)", version),
+                match check_command_version(
+                    "powershell.exe",
+                    &["-Command", "$PSVersionTable.PSVersion.ToString()"],
+                ) {
+                    Ok(version) => println!(
+                        "[WARN] PowerShell (Windows): {} (pwsh recommended)",
+                        version
+                    ),
                     Err(msg) => {
                         println!("[FAIL] PowerShell: {}", msg);
                         missing.push("PowerShell Core");
@@ -159,7 +170,7 @@ pub fn run_doctor() {
             }
         }
     }
-    
+
     // Check kubectl
     match check_command_version("kubectl", &["version", "--client", "--short"]) {
         Ok(version) => println!("[OK] kubectl: {}", version),
@@ -179,7 +190,7 @@ pub fn run_doctor() {
             }
         }
     }
-    
+
     // Check kind
     match check_command_version("kind", &["version"]) {
         Ok(version) => println!("[OK] kind: {}", version),
@@ -189,9 +200,9 @@ pub fn run_doctor() {
             all_ok = false;
         }
     }
-    
+
     println!();
-    
+
     // Print install commands for missing prerequisites
     if !missing.is_empty() {
         println!("Installation Commands ({}):", os);
@@ -203,7 +214,7 @@ pub fn run_doctor() {
         }
         println!();
     }
-    
+
     // Summary
     if all_ok {
         println!("All prerequisites satisfied!");
@@ -223,7 +234,7 @@ pub fn run_doctor() {
 /// Check all prerequisites and return structured results
 pub fn check_all_prerequisites() -> Vec<Prerequisite> {
     let mut prereqs = Vec::new();
-    
+
     // Docker
     let docker = match check_command_version("docker", &["--version"]) {
         Ok(version) => Prerequisite {
@@ -240,7 +251,7 @@ pub fn check_all_prerequisites() -> Vec<Prerequisite> {
         },
     };
     prereqs.push(docker);
-    
+
     // PowerShell Core
     let pwsh_cmd = if cfg!(windows) { "pwsh.exe" } else { "pwsh" };
     let pwsh = match check_command_version(pwsh_cmd, &["--version"]) {
@@ -258,7 +269,7 @@ pub fn check_all_prerequisites() -> Vec<Prerequisite> {
         },
     };
     prereqs.push(pwsh);
-    
+
     // kubectl
     let kubectl = match check_command_version("kubectl", &["version", "--client", "--short"]) {
         Ok(version) => Prerequisite {
@@ -286,7 +297,7 @@ pub fn check_all_prerequisites() -> Vec<Prerequisite> {
         }
     };
     prereqs.push(kubectl);
-    
+
     // kind
     let kind = match check_command_version("kind", &["version"]) {
         Ok(version) => Prerequisite {
@@ -303,12 +314,12 @@ pub fn check_all_prerequisites() -> Vec<Prerequisite> {
         },
     };
     prereqs.push(kind);
-    
+
     prereqs
 }
 
 /// Check if any prerequisites are missing
-/// 
+///
 /// In server mode (W11: Container Contract), this returns `false` immediately
 /// without spawning any subprocesses for Docker/kubectl/kind/pwsh detection.
 pub fn has_missing_prerequisites() -> bool {
@@ -338,7 +349,11 @@ mod tests {
         // The current platform must be in the support matrix
         // (or this test wouldn't be running)
         let result = check_platform_support();
-        assert!(result.is_ok(), "Current platform should be supported: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Current platform should be supported: {:?}",
+            result
+        );
     }
 
     #[test]
@@ -346,7 +361,7 @@ mod tests {
         // Verify SUPPORT_MATRIX uses values that match Rust's std::env::consts
         let valid_os = &["windows", "macos", "linux", "android", "ios", "freebsd"];
         let valid_arch = &["x86_64", "aarch64", "arm", "x86"];
-        
+
         for (os, arch) in SUPPORT_MATRIX.iter() {
             assert!(
                 valid_os.contains(os),
@@ -371,12 +386,15 @@ mod tests {
             ("linux", "x86_64"),
             ("linux", "aarch64"),
         ];
-        
+
         for (os, arch) in expected.iter() {
             assert!(
-                SUPPORT_MATRIX.iter().any(|(s_os, s_arch)| s_os == os && s_arch == arch),
+                SUPPORT_MATRIX
+                    .iter()
+                    .any(|(s_os, s_arch)| s_os == os && s_arch == arch),
                 "Expected platform {}-{} not found in SUPPORT_MATRIX",
-                os, arch
+                os,
+                arch
             );
         }
     }
@@ -399,7 +417,7 @@ mod tests {
     fn test_check_all_prerequisites_names() {
         let prereqs = check_all_prerequisites();
         let names: Vec<&str> = prereqs.iter().map(|p| p.name.as_str()).collect();
-        
+
         assert!(names.contains(&"Docker"));
         assert!(names.contains(&"PowerShell Core"));
         assert!(names.contains(&"kubectl"));
@@ -427,7 +445,11 @@ mod tests {
 
     #[test]
     fn test_support_matrix_count() {
-        assert_eq!(SUPPORT_MATRIX.len(), 5, "Support matrix should have 5 platforms");
+        assert_eq!(
+            SUPPORT_MATRIX.len(),
+            5,
+            "Support matrix should have 5 platforms"
+        );
     }
 
     #[test]
@@ -440,7 +462,11 @@ mod tests {
     fn test_support_matrix_no_duplicates() {
         let mut seen: Vec<(&str, &str)> = Vec::new();
         for entry in SUPPORT_MATRIX.iter() {
-            assert!(!seen.contains(entry), "Duplicate entry in SUPPORT_MATRIX: {:?}", entry);
+            assert!(
+                !seen.contains(entry),
+                "Duplicate entry in SUPPORT_MATRIX: {:?}",
+                entry
+            );
             seen.push(*entry);
         }
     }
@@ -452,7 +478,11 @@ mod tests {
         let result = check_command_version("definitely_not_a_command_12345", &["--version"]);
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.contains("not found") || err.contains("failed"), "Error: {}", err);
+        assert!(
+            err.contains("not found") || err.contains("failed"),
+            "Error: {}",
+            err
+        );
     }
 
     #[test]
@@ -468,8 +498,11 @@ mod tests {
     fn test_prerequisites_have_install_commands() {
         let prereqs = check_all_prerequisites();
         for prereq in &prereqs {
-            assert!(!prereq.install_cmd.is_empty(), 
-                "{} should have install commands", prereq.name);
+            assert!(
+                !prereq.install_cmd.is_empty(),
+                "{} should have install commands",
+                prereq.name
+            );
         }
     }
 
@@ -479,8 +512,13 @@ mod tests {
         for prereq in &prereqs {
             // Status should be either Installed or Missing (not Installing or InstallFailed at startup)
             assert!(
-                matches!(prereq.status, PrereqStatus::Installed | PrereqStatus::Missing),
-                "{} has unexpected status: {:?}", prereq.name, prereq.status
+                matches!(
+                    prereq.status,
+                    PrereqStatus::Installed | PrereqStatus::Missing
+                ),
+                "{} has unexpected status: {:?}",
+                prereq.name,
+                prereq.status
             );
         }
     }
@@ -490,8 +528,11 @@ mod tests {
         let prereqs = check_all_prerequisites();
         for prereq in &prereqs {
             if prereq.status == PrereqStatus::Installed {
-                assert!(prereq.version.is_some(), 
-                    "Installed {} should have version info", prereq.name);
+                assert!(
+                    prereq.version.is_some(),
+                    "Installed {} should have version info",
+                    prereq.name
+                );
             }
         }
     }
@@ -501,8 +542,11 @@ mod tests {
         let prereqs = check_all_prerequisites();
         for prereq in &prereqs {
             if prereq.status == PrereqStatus::Missing {
-                assert!(prereq.version.is_none(), 
-                    "Missing {} should not have version", prereq.name);
+                assert!(
+                    prereq.version.is_none(),
+                    "Missing {} should not have version",
+                    prereq.name
+                );
             }
         }
     }
@@ -521,14 +565,17 @@ mod tests {
         // Multiple calls should return consistent result (deterministic)
         let first = has_missing_prerequisites();
         let second = has_missing_prerequisites();
-        assert_eq!(first, second, "has_missing_prerequisites should be deterministic");
+        assert_eq!(
+            first, second,
+            "has_missing_prerequisites should be deterministic"
+        );
     }
 
     #[test]
     fn test_missing_count_matches_has_missing() {
         let has_missing = has_missing_prerequisites();
         let count = missing_prereq_count();
-        
+
         if has_missing {
             assert!(count > 0, "has_missing is true but count is 0");
         } else {
@@ -554,17 +601,20 @@ mod tests {
         let original_path = std::env::var("PATH").ok();
         std::env::set_var("ODD_DASHBOARD_SERVER_MODE", "1");
         std::env::set_var("PATH", "");
-        
+
         let result = has_missing_prerequisites();
-        
+
         // Restore environment
         if let Some(path) = original_path {
             std::env::set_var("PATH", path);
         }
         std::env::remove_var("ODD_DASHBOARD_SERVER_MODE");
-        
+
         // If this returns successfully with false, no commands were probed
-        assert!(!result, "Server mode must return false without probing PATH");
+        assert!(
+            !result,
+            "Server mode must return false without probing PATH"
+        );
     }
 
     #[test]
@@ -575,4 +625,3 @@ mod tests {
         assert!(!is_enabled, "Server mode must be disabled by default");
     }
 }
-
