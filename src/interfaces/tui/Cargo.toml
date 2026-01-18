@@ -2,6 +2,7 @@
 name = "odd-dashboard"
 version = "3.4.4"
 edition = "2021"
+rust-version = "1.83"  # MSRV: Docker builds use rust:1.83-slim-bookworm
 description = "Terminal dashboard for Distributed Task Observatory"
 repository = "https://github.com/oddessentials/odd-demonstration"
 license = "MIT"
