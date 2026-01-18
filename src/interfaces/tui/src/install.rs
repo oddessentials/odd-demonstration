@@ -3,68 +3,60 @@
 //! This module handles executing install commands and clipboard operations
 //! for guided prerequisite installation.
 
-use std::process::{Command, Stdio};
 use arboard::Clipboard;
+use std::process::{Command, Stdio};
 
-use crate::types::{Prerequisite, PrereqStatus};
 use crate::error::get_install_command;
 
 /// Result of an installation attempt with captured output
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct InstallOutput {
     pub success: bool,
     pub lines: Vec<String>,
     pub error_message: Option<String>,
 }
 
-impl Default for InstallOutput {
-    fn default() -> Self {
-        Self {
-            success: false,
-            lines: Vec::new(),
-            error_message: None,
-        }
-    }
-}
-
 /// Copy install command to clipboard
 pub fn copy_to_clipboard(prereq_name: &str) -> Result<(), String> {
     let cmd = get_install_command(prereq_name)
         .ok_or_else(|| format!("No install command for {}", prereq_name))?;
-    
-    let mut clipboard = Clipboard::new()
-        .map_err(|e| format!("Failed to access clipboard: {}", e))?;
-    
-    clipboard.set_text(cmd)
+
+    let mut clipboard =
+        Clipboard::new().map_err(|e| format!("Failed to access clipboard: {}", e))?;
+
+    clipboard
+        .set_text(cmd)
         .map_err(|e| format!("Failed to copy to clipboard: {}", e))?;
-    
+
     Ok(())
 }
 
 /// Execute an install command and capture output
-/// 
+///
 /// Returns captured stdout/stderr lines for display in TUI
 pub fn execute_install_with_output(prereq_name: &str) -> InstallOutput {
     let cmd = match get_install_command(prereq_name) {
         Some(c) => c,
-        None => return InstallOutput {
-            success: false,
-            lines: vec![format!("No install command for {}", prereq_name)],
-            error_message: Some(format!("Unknown prerequisite: {}", prereq_name)),
-        },
+        None => {
+            return InstallOutput {
+                success: false,
+                lines: vec![format!("No install command for {}", prereq_name)],
+                error_message: Some(format!("Unknown prerequisite: {}", prereq_name)),
+            }
+        }
     };
-    
+
     // Execute the command based on platform
     #[cfg(target_os = "windows")]
     {
         execute_windows_command_captured(&cmd)
     }
-    
+
     #[cfg(target_os = "macos")]
     {
         execute_unix_command_captured(&cmd, "zsh")
     }
-    
+
     #[cfg(target_os = "linux")]
     {
         execute_unix_command_captured(&cmd, "bash")
@@ -78,24 +70,26 @@ fn execute_windows_command_captured(cmd: &str) -> InstallOutput {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output();
-    
+
     match result {
         Ok(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
-            
+
             let mut lines: Vec<String> = stdout.lines().map(|s| s.to_string()).collect();
             lines.extend(stderr.lines().map(|s| format!("ERR: {}", s)));
-            
+
             // Keep last 20 lines to avoid overwhelming the display
             if lines.len() > 20 {
                 lines = lines.into_iter().rev().take(20).rev().collect();
             }
-            
+
             InstallOutput {
                 success: output.status.success(),
                 lines,
-                error_message: if output.status.success() { None } else {
+                error_message: if output.status.success() {
+                    None
+                } else {
                     Some(format!("Exit code: {:?}", output.status.code()))
                 },
             }
@@ -115,24 +109,26 @@ fn execute_unix_command_captured(cmd: &str, shell: &str) -> InstallOutput {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output();
-    
+
     match result {
         Ok(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
-            
+
             let mut lines: Vec<String> = stdout.lines().map(|s| s.to_string()).collect();
             lines.extend(stderr.lines().map(|s| format!("ERR: {}", s)));
-            
+
             // Keep last 20 lines to avoid overwhelming the display
             if lines.len() > 20 {
                 lines = lines.into_iter().rev().take(20).rev().collect();
             }
-            
+
             InstallOutput {
                 success: output.status.success(),
                 lines,
-                error_message: if output.status.success() { None } else {
+                error_message: if output.status.success() {
+                    None
+                } else {
                     Some(format!("Exit code: {:?}", output.status.code()))
                 },
             }
@@ -148,8 +144,12 @@ fn execute_unix_command_captured(cmd: &str, shell: &str) -> InstallOutput {
 /// Get user-friendly description of what will be installed
 pub fn get_install_description(prereq_name: &str) -> String {
     match prereq_name.to_lowercase().as_str() {
-        "docker" | "docker desktop" => "Docker Desktop - container runtime and Kubernetes support".to_string(),
-        "powershell" | "powershell core" | "pwsh" => "PowerShell Core - cross-platform shell for running setup scripts".to_string(),
+        "docker" | "docker desktop" => {
+            "Docker Desktop - container runtime and Kubernetes support".to_string()
+        }
+        "powershell" | "powershell core" | "pwsh" => {
+            "PowerShell Core - cross-platform shell for running setup scripts".to_string()
+        }
         "kubectl" => "kubectl - Kubernetes command-line tool".to_string(),
         "kind" => "kind - Kubernetes in Docker for local clusters".to_string(),
         _ => format!("{} - required prerequisite", prereq_name),
@@ -161,7 +161,7 @@ mod tests {
     use super::*;
 
     // ========== InstallOutput Tests ==========
-    
+
     #[test]
     fn test_install_output_default() {
         let output = InstallOutput::default();
