@@ -1,3 +1,11 @@
+## [3.4.5](https://github.com/oddessentials/odd-demonstration/compare/v3.4.4...v3.4.5) (2026-01-18)
+
+
+### Bug Fixes
+
+* **deps:** pin Rust deps and prevent release regression ([145ee85](https://github.com/oddessentials/odd-demonstration/commit/145ee8593ed2bbfe9e38cb3d48a50981efc02c42))
+* **tui:** apply rustfmt and clippy fixes ([c0d7f04](https://github.com/oddessentials/odd-demonstration/commit/c0d7f04b298e505d279e52197cb5290c28b5733e))
+
 ## [3.4.4](https://github.com/oddessentials/odd-demonstration/compare/v3.4.3...v3.4.4) (2026-01-17)
 
 
