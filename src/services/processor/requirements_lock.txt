@@ -39,7 +39,7 @@ mypy==1.19.1
 mypy_extensions==1.1.0
 networkx==3.6.1
 ninja==1.13.0
-nodeenv==1.9.1
+nodeenv==1.10.0
 numpy==2.2.6
 opencv-python-headless==4.12.0.88
 packaging==25.0
