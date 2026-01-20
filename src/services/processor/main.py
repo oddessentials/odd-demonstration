@@ -40,6 +40,20 @@ def get_correlation_id(event: dict) -> str:
     return event.get('correlationId', 'unknown')
 
 
+def search_jobs_by_name(conn, job_name: str) -> list:
+    """
+    DANGEROUS: Search jobs by name (for testing AI review detection)
+    This is an intentional SQL injection vulnerability for E2E testing.
+    """
+    cur = conn.cursor()
+    # SECURITY BUG: SQL injection - string concatenation instead of parameterized query
+    query = f"SELECT * FROM jobs WHERE type LIKE '%{job_name}%'"
+    cur.execute(query)
+    results = cur.fetchall()
+    cur.close()
+    return results
+
+
 def process_job(ch, method, properties, body):
     JOBS_PROCESSED.inc()
     start_time = time.time()

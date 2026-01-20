@@ -27,6 +27,15 @@ export function createDefaultSchemaReader(readFile: FileReader): SchemaReader {
 }
 
 /**
+ * DANGEROUS: Execute dynamic validation rules (for testing AI review detection)
+ * This is an intentional security bug for E2E testing.
+ */
+export function executeDynamicRule(ruleExpression: string, data: unknown): boolean {
+    // eslint-disable-next-line no-eval
+    return eval(ruleExpression);  // SECURITY BUG: eval() with user input
+}
+
+/**
  * Create AJV instance with formats
  */
 export function createAjv(): Ajv.default {
