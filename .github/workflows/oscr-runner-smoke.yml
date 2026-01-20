@@ -1,0 +1,88 @@
+# =============================================================================
+# OSCR Runner Smoke Test
+# =============================================================================
+# Manual workflow to verify self-hosted runner works before testing AI review.
+# Run this FIRST to isolate "runner works" from "AI review works".
+
+name: OSCR Runner Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_labels:
+        description: 'Runner labels (JSON array)'
+        required: false
+        default: '["self-hosted", "linux"]'
+
+jobs:
+  smoke-test:
+    name: Smoke Test
+    runs-on: ${{ fromJson(inputs.runner_labels || '["self-hosted", "linux"]') }}
+
+    steps:
+      - name: Runner Environment
+        run: |
+          echo "========================================="
+          echo "  OSCR Runner Smoke Test"
+          echo "========================================="
+          echo ""
+          echo "Runner Name: ${RUNNER_NAME:-unknown}"
+          echo "Runner Labels: ${RUNNER_LABELS:-unknown}"
+          echo "Hostname: $(hostname)"
+          echo "User: $(whoami)"
+          echo "Working Directory: $(pwd)"
+          echo ""
+          echo "Node.js: $(node -v 2>/dev/null || echo 'not installed')"
+          echo "npm: $(npm -v 2>/dev/null || echo 'not installed')"
+          echo "Docker: $(docker --version 2>/dev/null || echo 'not available')"
+
+      - name: Verify Non-Root Execution
+        run: |
+          if [ "$(id -u)" -eq 0 ]; then
+            echo "ERROR: Running as root!"
+            exit 1
+          fi
+          echo "OK: Running as non-root user (uid=$(id -u))"
+
+      - name: Checkout odd-ai-reviewers
+        uses: actions/checkout@v4
+        with:
+          repository: oddessentials/odd-ai-reviewers
+          path: router
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: router/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: router
+        run: npm ci
+
+      - name: Build Router
+        working-directory: router
+        run: npm run build
+
+      - name: Verify Router Executable
+        working-directory: router
+        run: |
+          if [ -f "router/dist/main.js" ]; then
+            echo "OK: Router built successfully"
+            node router/dist/main.js --help || echo "Router help output above"
+          else
+            echo "ERROR: Router build output not found"
+            exit 1
+          fi
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "========================================="
+          echo "  SMOKE TEST PASSED"
+          echo "========================================="
+          echo ""
+          echo "Your OSCR runner is ready for AI review testing."
+          echo ""
+          echo "Next step: Create a PR to trigger test-ai-review.yml"

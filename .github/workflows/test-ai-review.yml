@@ -1,0 +1,28 @@
+# =============================================================================
+# Test AI Review on OSCR Self-Hosted Runner
+# =============================================================================
+# This workflow calls odd-ai-reviewers with explicit self-hosted targeting.
+# Used to validate the E2E integration between odd-ai-reviewers and OSCR.
+#
+# CRITICAL: The runs_on input MUST be set to target self-hosted runners.
+# Without this, the job will run on GitHub-hosted runners, defeating the test.
+
+name: Test AI Review (OSCR)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  ai-review:
+    # Block fork PRs for security (self-hosted runners should not run untrusted code)
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    uses: oddessentials/odd-ai-reviewers/.github/workflows/ai-review.yml@main
+    with:
+      target_repo: ${{ github.repository }}
+      target_ref: ${{ github.sha }}
+      pr_number: ${{ github.event.pull_request.number }}
+      # CRITICAL: Explicitly target self-hosted runner
+      runs_on: '["self-hosted", "linux"]'
+    secrets: inherit
