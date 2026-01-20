@@ -993,7 +993,7 @@ jobs:
 
       # Go services - golangci-lint (new code only)
       - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v1.55
           args: --new-from-rev=origin/main
@@ -1001,7 +1001,7 @@ jobs:
         continue-on-error: true
 
       - name: Lint read-model (golangci-lint)
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v1.55
           args: --new-from-rev=origin/main
