@@ -1,0 +1,562 @@
+ai-review / AI Code Review	UNKNOWN STEP	∩╗┐2026-01-20T12:52:27.0386964Z Current runner version: '2.331.0'
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0391278Z Runner name: 'a56035115034'
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0391744Z Runner group name: 'Default'
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0392159Z Machine name: 'a56035115034'
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0393803Z ##[group]GITHUB_TOKEN Permissions
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0395476Z Checks: write
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0395836Z Contents: read
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0396300Z Metadata: read
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0396603Z PullRequests: write
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0396902Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0398187Z Secret source: Actions
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0398565Z Prepare workflow directory
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0937301Z Prepare all required actions
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.0959449Z Getting action download info
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:27.6726637Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:29.5235805Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:31.8253797Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2676252Z Uses: oddessentials/odd-ai-reviewers/.github/workflows/ai-review.yml@refs/heads/main (f0429956010973b1a39545b96aa10ffa08fe95b4)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2678231Z ##[group] Inputs
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2678372Z   target_repo: oddessentials/odd-demonstration
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2678521Z   target_ref: b2a0104b31b35d91111dcb0356c74cb28fe9ae6f
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2678900Z   pr_number: 138
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2678989Z   base_ref: main
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2679076Z   runs_on: ["self-hosted", "linux"]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2679189Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2679289Z Complete job name: ai-review / AI Code Review
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2959984Z ##[group]Run actions/checkout@v4
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2960528Z with:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2960670Z   repository: oddessentials/odd-ai-reviewers
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2960817Z   path: router
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961018Z   token: ***
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961105Z   ssh-strict: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961199Z   ssh-user: git
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961295Z   persist-credentials: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961389Z   clean: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961482Z   sparse-checkout-cone-mode: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961590Z   fetch-depth: 1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961671Z   fetch-tags: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961760Z   show-progress: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961841Z   lfs: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2961923Z   submodules: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2962013Z   set-safe-directory: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.2962227Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4353995Z Syncing repository: oddessentials/odd-ai-reviewers
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4354704Z ##[group]Getting Git version info
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4354981Z Working directory is '/home/runner/work/odd-demonstration/odd-demonstration/router'
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4355271Z [command]/usr/bin/git version
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4402791Z git version 2.34.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4420423Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4435623Z Temporarily overriding HOME='/home/runner/work/_temp/fa800f9b-a4cc-4564-9ef6-f742acc4f3ed' before making global git config changes
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4436181Z Adding repository directory to the temporary git global config as a safe directory
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4438937Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/odd-demonstration/odd-demonstration/router
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4481086Z [command]/usr/bin/git config --local --get remote.origin.url
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4495138Z https://github.com/oddessentials/odd-ai-reviewers
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4508619Z ##[group]Removing previously created refs, to avoid conflicts
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4510817Z [command]/usr/bin/git rev-parse --symbolic-full-name --verify --quiet HEAD
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4533860Z refs/heads/main
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4538577Z [command]/usr/bin/git checkout --detach
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4596983Z HEAD is now at f042995 fix: correct router path for workflow execution
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4682863Z [command]/usr/bin/git branch --delete --force main
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4706251Z Deleted branch main (was f042995).
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4708233Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4711176Z [command]/usr/bin/git submodule status
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4976627Z ##[group]Cleaning the repository
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:36.4979430Z [command]/usr/bin/git clean -ffdx
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0374859Z Removing .husky/_/
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0375164Z Removing node_modules/
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0375367Z Removing router/dist/
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0375572Z Removing router/node_modules/
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0386235Z [command]/usr/bin/git reset --hard HEAD
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0434591Z HEAD is now at f042995 fix: correct router path for workflow execution
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0437576Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0438647Z ##[group]Disabling automatic garbage collection
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0443804Z [command]/usr/bin/git config --local gc.auto 0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0458915Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0459252Z ##[group]Setting up auth
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0469383Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0488023Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0656290Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0672069Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0834962Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.0851625Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.1000170Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.1023109Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.1023500Z ##[group]Determining the default branch
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.1023834Z Retrieving the default branch name
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.4796825Z Default branch 'main'
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.4798280Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.4798652Z ##[group]Fetching the repository
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:37.4800099Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0924408Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0924750Z ##[group]Determining the checkout info
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0925083Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0928240Z [command]/usr/bin/git sparse-checkout disable
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0953970Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0977199Z ##[group]Checking out the ref
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0977582Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0994576Z Switched to a new branch 'main'
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0994940Z Branch 'main' set up to track remote branch 'main' from 'origin'.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.0997022Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1019489Z [command]/usr/bin/git log -1 --format=%H
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1031833Z f0429956010973b1a39545b96aa10ffa08fe95b4
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1159707Z ##[group]Run actions/checkout@v4
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1160105Z with:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1160294Z   repository: oddessentials/odd-demonstration
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1160520Z   ref: b2a0104b31b35d91111dcb0356c74cb28fe9ae6f
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1160722Z   path: target
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1160854Z   fetch-depth: 0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1161089Z   token: ***
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1161252Z   ssh-strict: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1161410Z   ssh-user: git
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1161585Z   persist-credentials: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1161712Z   clean: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1161901Z   sparse-checkout-cone-mode: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1162085Z   fetch-tags: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1162309Z   show-progress: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1162492Z   lfs: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1162654Z   submodules: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1162769Z   set-safe-directory: true
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1162966Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1662202Z Syncing repository: oddessentials/odd-demonstration
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1730896Z ##[group]Getting Git version info
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1731362Z Working directory is '/home/runner/work/odd-demonstration/odd-demonstration/target'
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1732134Z [command]/usr/bin/git version
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1732243Z git version 2.34.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1733324Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1734221Z Temporarily overriding HOME='/home/runner/work/_temp/3e6e1f77-7b44-4e67-a76b-73657518596a' before making global git config changes
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1734542Z Adding repository directory to the temporary git global config as a safe directory
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1734830Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/odd-demonstration/odd-demonstration/target
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1761242Z [command]/usr/bin/git config --local --get remote.origin.url
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1773902Z https://github.com/oddessentials/odd-demonstration
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1786897Z ##[group]Removing previously created refs, to avoid conflicts
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1790383Z [command]/usr/bin/git rev-parse --symbolic-full-name --verify --quiet HEAD
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1801443Z HEAD
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1826690Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1829009Z [command]/usr/bin/git submodule status
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1981767Z ##[group]Cleaning the repository
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.1983329Z [command]/usr/bin/git clean -ffdx
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2094999Z [command]/usr/bin/git reset --hard HEAD
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2168352Z HEAD is now at 7c58b27 Merge 99491414e9865789ad44290e524bf7905a3b43f4 into c1875307b8df46d41c4776fc6ee4bdca3a897137
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2170211Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2171417Z ##[group]Disabling automatic garbage collection
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2174727Z [command]/usr/bin/git config --local gc.auto 0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2190154Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2190321Z ##[group]Setting up auth
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2194312Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2211471Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2368405Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2400407Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2557449Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2576948Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2743157Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2764010Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2764874Z ##[group]Fetching the repository
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.2767819Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.7942325Z From https://github.com/oddessentials/odd-demonstration
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.7942581Z  * [new branch]      fix/test-ai-reviewers  -> origin/fix/test-ai-reviewers
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.7943755Z    c187530..69401e7  main                   -> origin/main
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.7947425Z    9949141..ab16ce9  test/trigger-ai-review -> origin/test/trigger-ai-review
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.7966485Z [command]/usr/bin/git rev-parse --verify --quiet b2a0104b31b35d91111dcb0356c74cb28fe9ae6f^{object}
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:38.7983837Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin b2a0104b31b35d91111dcb0356c74cb28fe9ae6f
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2132765Z From https://github.com/oddessentials/odd-demonstration
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2133017Z  * branch            b2a0104b31b35d91111dcb0356c74cb28fe9ae6f -> FETCH_HEAD
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2147869Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2148062Z ##[group]Determining the checkout info
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2148235Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2148346Z [command]/usr/bin/git sparse-checkout disable
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2170057Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2212265Z ##[group]Checking out the ref
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2214707Z [command]/usr/bin/git checkout --progress --force b2a0104b31b35d91111dcb0356c74cb28fe9ae6f
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2251960Z Warning: you are leaving 1 commit behind, not connected to
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2252123Z any of your branches:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2252204Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2252330Z   7c58b27 Merge 99491414e9865789ad44290e524bf7905a3b43f4 into c1875307b8df46d41c4776fc6ee4bdca3a897137
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2252490Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2252575Z If you want to keep it by creating a new branch, this may be a good time
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2252716Z to do so with:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2252779Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2252842Z  git branch <new-branch-name> 7c58b27
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2252919Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2255297Z HEAD is now at b2a0104 Merge 01dc8e5bfbf2ac43d36ad802c6b40fc753d4e63a into 69401e7a2a2a98429f0cc19f6ac67bfa92bb02a0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2256925Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2275689Z [command]/usr/bin/git log -1 --format=%H
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2289255Z b2a0104b31b35d91111dcb0356c74cb28fe9ae6f
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2380777Z ##[group]Run actions/setup-node@v4
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2380902Z with:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2380985Z   node-version: 22
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2381073Z   cache: npm
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2381173Z   cache-dependency-path: router/package-lock.json
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2381315Z   always-auth: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2381406Z   check-latest: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2381544Z   token: ***
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.2381627Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.3321832Z Found in cache @ /home/runner/work/_tool/node/22.22.0/x64
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.3324984Z ##[group]Environment details
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.5202981Z node: v22.22.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.5203114Z npm: 10.9.4
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.5203372Z yarn: 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.5203822Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.5218956Z [command]/home/runner/work/_tool/node/22.22.0/x64/bin/npm config get cache
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.5832804Z /home/runner/.npm
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.9045985Z npm cache is not found
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.9111441Z ##[group]Run npm ci
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.9111677Z [36;1mnpm ci[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.9133408Z shell: /usr/bin/bash -e {0}
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:39.9133608Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:42.6549947Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.5926312Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.5926725Z > odd-ai-reviewers@1.0.0 prepare
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.5927134Z > husky
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.5927192Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6192869Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6194615Z added 400 packages, and audited 402 packages in 10s
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6194771Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6194844Z 104 packages are looking for funding
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6195128Z   run `npm fund` for details
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6269079Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6269679Z 7 vulnerabilities (2 low, 4 moderate, 1 critical)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6269807Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6272975Z To address issues that do not require attention, run:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6273355Z   npm audit fix
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6273490Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6273611Z To address all issues, run:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6273742Z   npm audit fix --force
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6273806Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6273866Z Run `npm audit` for details.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6572093Z ##[group]Run npm run build
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6572322Z [36;1mnpm run build[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6584280Z shell: /usr/bin/bash -e {0}
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.6584402Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.7150523Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.7151265Z > odd-ai-reviewers@1.0.0 build
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.7151489Z > npm run build --workspace=router
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.7151572Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.7764247Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.7764880Z > @odd-ai-reviewers/router@1.0.0 build
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.7765058Z > tsc
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:49.7765118Z 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:50.9323486Z ##[group]Run pip3 install semgrep
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:50.9323906Z [36;1mpip3 install semgrep[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:50.9330930Z shell: /usr/bin/bash -e {0}
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:50.9331049Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:51.2247318Z Defaulting to user installation because normal site-packages is not writeable
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:52.0211147Z Collecting semgrep
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:52:52.3062435Z   Downloading semgrep-1.148.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-musllinux_1_0_x86_64.manylinux2014_x86_64.whl (50.5 MB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:07.9747181Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 50.5/50.5 MB 13.4 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:08.0665715Z Collecting opentelemetry-instrumentation-threading~=0.58b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:08.1420581Z   Downloading opentelemetry_instrumentation_threading-0.60b1-py3-none-any.whl (9.3 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:08.2917933Z Collecting requests~=2.22
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:08.3556684Z   Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:08.3950046Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 64.7/64.7 KB 1.5 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:08.5292796Z Collecting exceptiongroup~=1.2.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:08.7194401Z   Downloading exceptiongroup-1.2.2-py3-none-any.whl (16 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:08.9125573Z Collecting wcmatch~=8.3
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:08.9823269Z   Downloading wcmatch-8.5.2-py3-none-any.whl (39 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:09.2988170Z Collecting glom~=22.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:09.3727138Z   Downloading glom-22.1.0-py2.py3-none-any.whl (100 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:09.6268547Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 100.7/100.7 KB 582.8 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:09.7393088Z Collecting packaging>=21.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:09.8302755Z   Downloading packaging-25.0-py3-none-any.whl (66 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:09.9537100Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 66.5/66.5 KB 705.5 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:10.0925036Z Collecting opentelemetry-api~=1.37.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:10.1716238Z   Downloading opentelemetry_api-1.37.0-py3-none-any.whl (65 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:10.2808808Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 65.7/65.7 KB 927.8 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:10.4255252Z Collecting opentelemetry-sdk~=1.37.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:10.5113289Z   Downloading opentelemetry_sdk-1.37.0-py3-none-any.whl (131 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:10.6812351Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 131.9/131.9 KB 949.9 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:10.8501595Z Collecting ruamel.yaml.clib==0.2.14
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:10.9073405Z   Downloading ruamel.yaml.clib-0.2.14-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (721 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:11.4994590Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 721.3/721.3 KB 1.3 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:11.5998013Z Collecting mcp==1.23.3
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:11.6424967Z   Downloading mcp-1.23.3-py3-none-any.whl (231 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:11.7687994Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 231.6/231.6 KB 2.0 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:11.8584056Z Collecting jsonschema~=4.25.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:11.9267751Z   Downloading jsonschema-4.25.1-py3-none-any.whl (90 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:11.9715372Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 90.0/90.0 KB 1.8 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:12.0701891Z Collecting tomli~=2.0.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:12.1495328Z   Downloading tomli-2.0.2-py3-none-any.whl (13 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:12.3071044Z Collecting urllib3~=2.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:12.3503725Z   Downloading urllib3-2.6.3-py3-none-any.whl (131 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:12.4246621Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 131.6/131.6 KB 2.0 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:12.8014047Z Collecting ruamel.yaml>=0.18.15
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:12.8422020Z   Downloading ruamel_yaml-0.19.1-py3-none-any.whl (118 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:12.8954930Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 118.1/118.1 KB 2.1 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:12.9929988Z Collecting opentelemetry-exporter-otlp-proto-http~=1.37.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:13.0426147Z   Downloading opentelemetry_exporter_otlp_proto_http-1.37.0-py3-none-any.whl (19 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:13.1736535Z Collecting opentelemetry-instrumentation-requests~=0.58b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:13.2597073Z   Downloading opentelemetry_instrumentation_requests-0.60b1-py3-none-any.whl (13 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:13.3511318Z Collecting click-option-group~=0.5
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:13.4022170Z   Downloading click_option_group-0.5.9-py3-none-any.whl (11 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:13.5126337Z Collecting boltons~=21.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:13.5989879Z   Downloading boltons-21.0.0-py2.py3-none-any.whl (193 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:14.2202765Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 193.7/193.7 KB 443.8 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:14.2991307Z Collecting typing-extensions~=4.2
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:14.3599708Z   Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:14.4145816Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 44.6/44.6 KB 1.2 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:14.5482316Z Collecting colorama~=0.4.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:14.6279088Z   Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:14.7554496Z Collecting attrs>=21.3
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:14.8466618Z   Downloading attrs-25.4.0-py3-none-any.whl (67 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:14.9218441Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 67.6/67.6 KB 777.5 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:15.0366357Z Collecting click~=8.1.8
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:15.1022455Z   Downloading click-8.1.8-py3-none-any.whl (98 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:15.2157421Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 98.2/98.2 KB 939.8 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:15.4086371Z Collecting rich~=13.5.2
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:15.4954097Z   Downloading rich-13.5.3-py3-none-any.whl (239 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:15.7313233Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 239.8/239.8 KB 1.1 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:15.8279599Z Collecting peewee~=3.14
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:15.9179367Z   Downloading peewee-3.19.0-py3-none-any.whl (411 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:16.2623161Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 411.9/411.9 KB 1.3 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:16.3516387Z Collecting uvicorn>=0.31.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:16.4220918Z   Downloading uvicorn-0.40.0-py3-none-any.whl (68 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:16.4736224Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 68.5/68.5 KB 1.2 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:16.6329036Z Collecting anyio>=4.5
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:16.6957375Z   Downloading anyio-4.12.1-py3-none-any.whl (113 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:16.7929660Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 113.6/113.6 KB 1.3 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:16.8636439Z Collecting python-multipart>=0.0.9
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:16.9352271Z   Downloading python_multipart-0.0.21-py3-none-any.whl (24 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:17.0670781Z Collecting httpx>=0.27.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:17.1196539Z   Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:17.1715282Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 73.5/73.5 KB 1.2 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:17.2526458Z Collecting pydantic-settings>=2.5.2
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:17.3124033Z   Downloading pydantic_settings-2.12.0-py3-none-any.whl (51 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:17.3626694Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 51.9/51.9 KB 1.5 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:17.6653787Z Collecting pydantic<3.0.0,>=2.11.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:17.7078232Z   Downloading pydantic-2.12.5-py3-none-any.whl (463 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:17.9743740Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 463.6/463.6 KB 1.7 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:18.0587304Z Collecting httpx-sse>=0.4
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:18.1362312Z   Downloading httpx_sse-0.4.3-py3-none-any.whl (9.0 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:18.2229112Z Collecting pyjwt[crypto]>=2.10.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:18.3176519Z   Downloading PyJWT-2.10.1-py3-none-any.whl (22 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:18.4717449Z Collecting typing-inspection>=0.4.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:18.5764152Z   Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:18.7269901Z Collecting sse-starlette>=1.6.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:18.7706231Z   Downloading sse_starlette-3.2.0-py3-none-any.whl (12 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:18.9593985Z Collecting starlette>=0.27
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:19.0407939Z   Downloading starlette-0.52.1-py3-none-any.whl (74 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:19.1326046Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 74.3/74.3 KB 915.3 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:19.2285610Z Collecting face>=20.1.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:19.3176739Z   Downloading face-24.0.0-py3-none-any.whl (54 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:19.3636602Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 54.7/54.7 KB 997.5 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:19.4575365Z Collecting referencing>=0.28.4
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:19.5377225Z   Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:19.6859279Z Collecting jsonschema-specifications>=2023.03.6
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:19.7839405Z   Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:20.6676616Z Collecting rpds-py>=0.7.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:20.7123225Z   Downloading rpds_py-0.30.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (390 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:20.9816772Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 390.5/390.5 KB 1.5 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:21.1481321Z Collecting importlib-metadata<8.8.0,>=6.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:21.1982749Z   Downloading importlib_metadata-8.7.1-py3-none-any.whl (27 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:21.3445095Z Collecting opentelemetry-exporter-otlp-proto-common==1.37.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:21.4227875Z   Downloading opentelemetry_exporter_otlp_proto_common-1.37.0-py3-none-any.whl (18 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:21.5640707Z Collecting googleapis-common-protos~=1.52
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:21.6446081Z   Downloading googleapis_common_protos-1.72.0-py3-none-any.whl (297 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:21.8483647Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 297.5/297.5 KB 1.4 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:21.9561862Z Collecting opentelemetry-proto==1.37.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:21.9984333Z   Downloading opentelemetry_proto-1.37.0-py3-none-any.whl (72 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:22.0508434Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 72.5/72.5 KB 1.7 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:22.4493848Z Collecting protobuf<7.0,>=5.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:22.4828567Z   Downloading protobuf-6.33.4-cp39-abi3-manylinux2014_x86_64.whl (323 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:22.6635158Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 323.3/323.3 KB 1.9 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:22.7742781Z Collecting opentelemetry-semantic-conventions==0.60b1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:22.8729239Z   Downloading opentelemetry_semantic_conventions-0.60b1-py3-none-any.whl (219 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:22.9663560Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 220.0/220.0 KB 2.3 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.0800629Z Collecting opentelemetry-util-http==0.60b1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.1948275Z   Downloading opentelemetry_util_http-0.60b1-py3-none-any.whl (8.9 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.2955027Z Collecting opentelemetry-instrumentation==0.60b1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.3705222Z   Downloading opentelemetry_instrumentation-0.60b1-py3-none-any.whl (33 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.7176002Z Collecting wrapt<2.0.0,>=1.0.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.7909333Z   Downloading wrapt-1.17.3-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (81 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.8318508Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 82.0/82.0 KB 1.8 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.8419624Z INFO: pip is looking at multiple versions of opentelemetry-instrumentation to determine which version is compatible with other requirements. This could take a while.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.8421453Z INFO: pip is looking at multiple versions of opentelemetry-instrumentation-requests to determine which version is compatible with other requirements. This could take a while.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.8440977Z Collecting opentelemetry-instrumentation-requests~=0.58b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.8904335Z   Downloading opentelemetry_instrumentation_requests-0.60b0-py3-none-any.whl (13 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.9370729Z Collecting opentelemetry-semantic-conventions==0.60b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:23.9876546Z   Downloading opentelemetry_semantic_conventions-0.60b0-py3-none-any.whl (219 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.0880486Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 220.0/220.0 KB 2.3 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.0931857Z Collecting opentelemetry-util-http==0.60b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.2291114Z   Downloading opentelemetry_util_http-0.60b0-py3-none-any.whl (8.7 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.2392481Z Collecting opentelemetry-instrumentation==0.60b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.3102864Z   Downloading opentelemetry_instrumentation-0.60b0-py3-none-any.whl (33 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.3544671Z Collecting opentelemetry-instrumentation-requests~=0.58b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.4268317Z   Downloading opentelemetry_instrumentation_requests-0.59b0-py3-none-any.whl (12 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.4740061Z Collecting opentelemetry-semantic-conventions==0.59b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.5651533Z   Downloading opentelemetry_semantic_conventions-0.59b0-py3-none-any.whl (207 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.6691001Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 208.0/208.0 KB 2.2 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.6735640Z Collecting opentelemetry-util-http==0.59b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.7654992Z   Downloading opentelemetry_util_http-0.59b0-py3-none-any.whl (7.6 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.7741615Z Collecting opentelemetry-instrumentation==0.59b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.8172143Z   Downloading opentelemetry_instrumentation-0.59b0-py3-none-any.whl (33 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.8581743Z Collecting opentelemetry-instrumentation-requests~=0.58b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.9433618Z   Downloading opentelemetry_instrumentation_requests-0.58b0-py3-none-any.whl (12 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:24.9549259Z Collecting opentelemetry-instrumentation==0.58b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.0063694Z   Downloading opentelemetry_instrumentation-0.58b0-py3-none-any.whl (33 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.0432642Z Collecting opentelemetry-util-http==0.58b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.1282513Z   Downloading opentelemetry_util_http-0.58b0-py3-none-any.whl (7.7 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.1364617Z Collecting opentelemetry-semantic-conventions==0.58b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.1860461Z   Downloading opentelemetry_semantic_conventions-0.58b0-py3-none-any.whl (207 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.2879661Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 208.0/208.0 KB 2.1 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.3030581Z Collecting opentelemetry-instrumentation-threading~=0.58b0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.3974245Z   Downloading opentelemetry_instrumentation_threading-0.60b0-py3-none-any.whl (9.3 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.4867676Z   Downloading opentelemetry_instrumentation_threading-0.59b0-py3-none-any.whl (9.3 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.6318480Z   Downloading opentelemetry_instrumentation_threading-0.58b0-py3-none-any.whl (9.3 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.7590144Z Collecting certifi>=2017.4.17
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.8385697Z   Downloading certifi-2026.1.4-py3-none-any.whl (152 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:25.9179961Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 152.9/152.9 KB 1.8 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:26.0127181Z Collecting idna<4,>=2.5
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:26.0609257Z   Downloading idna-3.11-py3-none-any.whl (71 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:26.1012013Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 71.0/71.0 KB 2.4 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:26.5086998Z Collecting charset_normalizer<4,>=2
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:26.5709203Z   Downloading charset_normalizer-3.4.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:26.6532790Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 153.6/153.6 KB 2.2 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:26.7468111Z Collecting pygments<3.0.0,>=2.13.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:26.8300892Z   Downloading pygments-2.19.2-py3-none-any.whl (1.2 MB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:27.3515749Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 1.2/1.2 MB 2.4 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:27.4375973Z Collecting markdown-it-py>=2.2.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:27.4721904Z   Downloading markdown_it_py-4.0.0-py3-none-any.whl (87 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:27.5131806Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 87.3/87.3 KB 2.3 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:27.6087085Z Collecting bracex>=2.1.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:27.6849925Z   Downloading bracex-2.6-py3-none-any.whl (11 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:27.8708051Z Collecting httpcore==1.*
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:27.9466391Z   Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:28.5638756Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 78.8/78.8 KB 196.0 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:28.6726779Z Collecting h11>=0.16
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:28.7791297Z   Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:29.0500782Z Collecting zipp>=3.20
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:29.0987491Z   Downloading zipp-3.23.0-py3-none-any.whl (10 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:29.2743545Z Collecting mdurl~=0.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:29.3216017Z   Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:29.4780699Z Collecting annotated-types>=0.6.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:29.5505750Z   Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:32.0296518Z Collecting pydantic-core==2.41.5
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:32.0771982Z   Downloading pydantic_core-2.41.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:36.1465308Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 2.1/2.1 MB 539.0 kB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:36.2618410Z Collecting python-dotenv>=0.21.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:36.3548324Z   Downloading python_dotenv-1.2.1-py3-none-any.whl (21 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:37.1035324Z Collecting cryptography>=3.4.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:37.1456088Z   Downloading cryptography-46.0.3-cp38-abi3-manylinux_2_34_x86_64.whl (4.5 MB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:41.3590029Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 4.5/4.5 MB 1.1 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:41.7868585Z Collecting cffi>=2.0.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:41.8287410Z   Downloading cffi-2.0.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (216 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:41.9738834Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 216.5/216.5 KB 1.5 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.1265946Z Collecting pycparser
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.1895346Z   Downloading pycparser-2.23-py3-none-any.whl (118 kB)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.2716395Z      ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü 118.1/118.1 KB 1.5 MB/s eta 0:00:00
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.3862411Z Installing collected packages: peewee, boltons, zipp, wrapt, urllib3, typing-extensions, tomli, ruamel.yaml.clib, ruamel.yaml, rpds-py, python-multipart, python-dotenv, pyjwt, pygments, pycparser, protobuf, packaging, opentelemetry-util-http, mdurl, idna, httpx-sse, h11, face, exceptiongroup, colorama, click, charset_normalizer, certifi, bracex, attrs, annotated-types, wcmatch, uvicorn, typing-inspection, requests, referencing, pydantic-core, opentelemetry-proto, markdown-it-py, importlib-metadata, httpcore, googleapis-common-protos, glom, click-option-group, cffi, anyio, starlette, rich, pydantic, opentelemetry-exporter-otlp-proto-common, opentelemetry-api, jsonschema-specifications, httpx, cryptography, sse-starlette, pydantic-settings, opentelemetry-semantic-conventions, jsonschema, opentelemetry-sdk, opentelemetry-instrumentation, mcp, opentelemetry-instrumentation-threading, opentelemetry-instrumentation-requests, opentelemetry-exporter-otlp-proto-http, semgrep
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.4448294Z   WARNING: The script pwiz is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.4448880Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.6813865Z   WARNING: The script dotenv is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.6833346Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.9643759Z   WARNING: The script pygmentize is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:42.9644491Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:43.2854758Z   WARNING: The script normalizer is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:43.2855167Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:43.3924877Z   WARNING: The script uvicorn is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:43.3925282Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:43.5423370Z   WARNING: The script markdown-it is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:43.5423735Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:43.6687819Z   WARNING: The script glom is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:43.6689124Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:44.0755576Z   WARNING: The script httpx is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:44.0756270Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:44.2885658Z   WARNING: The script jsonschema is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:44.2886037Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:44.3479884Z   WARNING: The scripts opentelemetry-bootstrap and opentelemetry-instrument are installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:44.3480359Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:44.4188672Z   WARNING: The script mcp is installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:44.4189032Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.2003766Z   WARNING: The scripts pysemgrep and semgrep are installed in '/home/runner/.local/bin' which is not on PATH.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.2004200Z   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.2154871Z Successfully installed annotated-types-0.7.0 anyio-4.12.1 attrs-25.4.0 boltons-21.0.0 bracex-2.6 certifi-2026.1.4 cffi-2.0.0 charset_normalizer-3.4.4 click-8.1.8 click-option-group-0.5.9 colorama-0.4.6 cryptography-46.0.3 exceptiongroup-1.2.2 face-24.0.0 glom-22.1.0 googleapis-common-protos-1.72.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 httpx-sse-0.4.3 idna-3.11 importlib-metadata-8.7.1 jsonschema-4.25.1 jsonschema-specifications-2025.9.1 markdown-it-py-4.0.0 mcp-1.23.3 mdurl-0.1.2 opentelemetry-api-1.37.0 opentelemetry-exporter-otlp-proto-common-1.37.0 opentelemetry-exporter-otlp-proto-http-1.37.0 opentelemetry-instrumentation-0.58b0 opentelemetry-instrumentation-requests-0.58b0 opentelemetry-instrumentation-threading-0.58b0 opentelemetry-proto-1.37.0 opentelemetry-sdk-1.37.0 opentelemetry-semantic-conventions-0.58b0 opentelemetry-util-http-0.58b0 packaging-25.0 peewee-3.19.0 protobuf-6.33.4 pycparser-2.23 pydantic-2.12.5 pydantic-core-2.41.5 pydantic-settings-2.12.0 pygments-2.19.2 pyjwt-2.10.1 python-dotenv-1.2.1 python-multipart-0.0.21 referencing-0.37.0 requests-2.32.5 rich-13.5.3 rpds-py-0.30.0 ruamel.yaml-0.19.1 ruamel.yaml.clib-0.2.14 semgrep-1.148.0 sse-starlette-3.2.0 starlette-0.52.1 tomli-2.0.2 typing-extensions-4.15.0 typing-inspection-0.4.2 urllib3-2.6.3 uvicorn-0.40.0 wcmatch-8.5.2 wrapt-1.17.3 zipp-3.23.0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4023793Z ##[group]Run if [ -n "69401e7a2a2a98429f0cc19f6ac67bfa92bb02a0" ]; then
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4024083Z [36;1mif [ -n "69401e7a2a2a98429f0cc19f6ac67bfa92bb02a0" ]; then[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4024297Z [36;1m  echo "sha=69401e7a2a2a98429f0cc19f6ac67bfa92bb02a0" >> $GITHUB_OUTPUT[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4024451Z [36;1melse[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4024576Z [36;1m  echo "sha=$(git rev-parse origin/main)" >> $GITHUB_OUTPUT[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4024713Z [36;1mfi[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4030179Z shell: /usr/bin/bash -e {0}
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4030300Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4078907Z ##[group]Run OWNER=$(echo "oddessentials/odd-demonstration" | cut -d'/' -f1)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4079183Z [36;1mOWNER=$(echo "oddessentials/odd-demonstration" | cut -d'/' -f1)[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4079381Z [36;1mREPO=$(echo "oddessentials/odd-demonstration" | cut -d'/' -f2)[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4079526Z [36;1m[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4079611Z [36;1mnode router/dist/main.js review \[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4079741Z [36;1m  --repo ../target \[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4079884Z [36;1m  --base 69401e7a2a2a98429f0cc19f6ac67bfa92bb02a0 \[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4080168Z [36;1m  --head b2a0104b31b35d91111dcb0356c74cb28fe9ae6f \[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4080300Z [36;1m  --owner "$OWNER" \[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4080411Z [36;1m  --repo-name "$REPO" \[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4080521Z [36;1m  --pr 138[0m
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4084516Z shell: /usr/bin/bash -e {0}
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4084618Z env:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4085051Z   GITHUB_TOKEN: ***
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4085203Z   OPENCODE_API_KEY: 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4085291Z   OPENAI_API_KEY: 
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4085407Z   OLLAMA_BASE_URL: ***
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4085495Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4898816Z [router] Starting AI Review
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4899026Z [router] Repository: ../target
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4901407Z [router] Diff: 69401e7a2a2a98429f0cc19f6ac67bfa92bb02a0...b2a0104b31b35d91111dcb0356c74cb28fe9ae6f
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4901677Z [config] No .ai-review.yml found, using defaults
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4975901Z [router] Loaded config with 2 passes
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.4978257Z [router] Skipping review: Fork PRs are not trusted (oddessentials/odd-demonstration ΓåÆ oddessentials/odd-demonstration)
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5058904Z ##[group]Run actions/upload-artifact@v4
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5059057Z with:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5059145Z   name: ai-review-results
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5059265Z   path: router/review-*.json
+ai-review / AI Code Review	UNKNOWN STEP	router/review-*.md
+ai-review / AI Code Review	UNKNOWN STEP	
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5059389Z   retention-days: 7
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5059474Z   if-no-files-found: warn
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5059569Z   compression-level: 6
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5059655Z   overwrite: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5059739Z   include-hidden-files: false
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.5059835Z ##[endgroup]
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.6244588Z ##[warning]No files were found with the provided path: router/review-*.json
+ai-review / AI Code Review	UNKNOWN STEP	router/review-*.md. No artifacts will be uploaded.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.6296129Z Post job cleanup.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:45.7157495Z [command]/usr/bin/tar --posix -cf cache.tgz --exclude cache.tgz -P -C /home/runner/work/odd-demonstration/odd-demonstration --files-from manifest.txt -z
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:47.7029285Z Sent 4259840 of 29559331 (14.4%), 4.1 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:48.7026596Z Sent 7143424 of 29559331 (24.2%), 3.4 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:49.7028526Z Sent 9764864 of 29559331 (33.0%), 3.1 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:50.7021536Z Sent 12255232 of 29559331 (41.5%), 2.9 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:51.7027762Z Sent 14876672 of 29559331 (50.3%), 2.8 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:52.7029201Z Sent 16973824 of 29559331 (57.4%), 2.7 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:53.7029308Z Sent 19005440 of 29559331 (64.3%), 2.6 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:54.7025718Z Sent 20054016 of 29559331 (67.8%), 2.4 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:55.7030511Z Sent 21561344 of 29559331 (72.9%), 2.3 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:56.7038947Z Sent 24117248 of 29559331 (81.6%), 2.3 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:57.7036061Z Sent 27262976 of 29559331 (92.2%), 2.4 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:58.7043540Z Sent 29559331 of 29559331 (100.0%), 2.3 MBs/sec
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.6688526Z Cache saved with the key: node-cache-Linux-x64-npm-8aeac71a74a65004eb17d125c59dbdf3fd78c0b81f26bc7e0c40326a68f889f0
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.6751328Z Post job cleanup.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7248897Z [command]/usr/bin/git version
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7269116Z git version 2.34.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7298803Z Temporarily overriding HOME='/home/runner/work/_temp/0eccc9eb-f532-4ebc-a6db-53ab1be604e6' before making global git config changes
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7299195Z Adding repository directory to the temporary git global config as a safe directory
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7305693Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/odd-demonstration/odd-demonstration/target
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7326774Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7346315Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7505961Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7520155Z http.https://github.com/.extraheader
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7526703Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7545393Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7714099Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7732433Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.7949857Z Post job cleanup.
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8477823Z [command]/usr/bin/git version
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8498344Z git version 2.34.1
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8523665Z Temporarily overriding HOME='/home/runner/work/_temp/1b4e00ca-b251-477c-a4af-e2491bd9a50d' before making global git config changes
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8524044Z Adding repository directory to the temporary git global config as a safe directory
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8526757Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/odd-demonstration/odd-demonstration/router
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8547302Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8565024Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8729230Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8744286Z http.https://github.com/.extraheader
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8747731Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8767105Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8919901Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.8938031Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+ai-review / AI Code Review	UNKNOWN STEP	2026-01-20T12:53:59.9178115Z Cleaning up orphan processes
