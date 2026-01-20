@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Messages sent from client to server
-#[derive(Debug, Clone, Deserialize)]
+
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum ClientMessage {
     /// Keyboard/terminal input
