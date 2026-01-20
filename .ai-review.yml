@@ -10,18 +10,18 @@ trusted_only: true
 passes:
   # Static analysis (free, always runs first)
   - name: static
-    agents: [semgrep]
+    agents: [semgrep, reviewdog]
     enabled: true
 
-  # Cloud AI review (requires API key)
+  # Cloud AI review (requires OPENAI_API_KEY or ANTHROPIC_API_KEY)
   - name: cloud-ai
-    agents: [opencode]
+    agents: [opencode, pr_agent]
     enabled: true
 
-  # Local LLM review (alternative to cloud AI)
-  # - name: local-ai
-  #   agents: [local_llm]
-  #   enabled: true
+  # Local LLM review (uses Ollama sidecar)
+  - name: local-ai
+    agents: [local_llm]
+    enabled: true
 
 limits:
   max_files: 50
