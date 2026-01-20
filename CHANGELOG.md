@@ -1,3 +1,11 @@
+# [3.5.0](https://github.com/oddessentials/odd-demonstration/compare/v3.4.6...v3.5.0) (2026-01-20)
+
+
+### Features
+
+* add ai reviews ([d1f5d39](https://github.com/oddessentials/odd-demonstration/commit/d1f5d39b774f3f6cb0a057a36a50494c4a4c8af7))
+* enable cloud AI review with OpenCode agent ([a148952](https://github.com/oddessentials/odd-demonstration/commit/a148952899d05632a5d5c16a9ac54185a0993c91))
+
 ## [3.4.6](https://github.com/oddessentials/odd-demonstration/compare/v3.4.5...v3.4.6) (2026-01-20)
 
 
