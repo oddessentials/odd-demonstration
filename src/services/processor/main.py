@@ -21,8 +21,6 @@ except Exception as e:
     raise SystemExit(1)
 
 # Configuration
-RABBITMQ_URL = os.environ.get('RABBITMQ_URL', 'amqp://guest:guest@rabbitmq:5672')
-POSTGRES_URL = os.environ.get('POSTGRES_URL', 'postgresql://admin:password123@postgres:5432/task_db')
 QUEUE_NAME = 'jobs.created'
 OUT_QUEUE = 'jobs.completed'
 DLQ_NAME = 'jobs.failed.validation'  # Dead-letter queue for validation failures
