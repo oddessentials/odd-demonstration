@@ -30,4 +30,7 @@ jobs:
       pr_number: ${{ github.event.pull_request.number }}
       # CRITICAL: Explicitly target self-hosted runner
       runs_on: '["self-hosted", "linux"]'
-    secrets: inherit
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OLLAMA_BASE_URL: ${{ secrets.OLLAMA_BASE_URL }}

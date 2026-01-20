@@ -1,0 +1,41 @@
+# =============================================================================
+# AI Review Configuration for odd-demonstration
+# =============================================================================
+# This configuration enables cloud AI review via OpenCode agent.
+# Requires OPENAI_API_KEY or ANTHROPIC_API_KEY in repository secrets.
+
+version: 1
+trusted_only: true
+
+passes:
+  # Static analysis (free, always runs first)
+  - name: static
+    agents: [semgrep, reviewdog]
+    enabled: true
+
+  # Cloud AI review (requires OPENAI_API_KEY or ANTHROPIC_API_KEY)
+  - name: cloud-ai
+    agents: [opencode, pr_agent]
+    enabled: true
+
+  # Local LLM review (uses Ollama sidecar)
+  - name: local-ai
+    agents: [local_llm]
+    enabled: true
+
+limits:
+  max_files: 50
+  max_diff_lines: 2000
+  max_tokens_per_pr: 12000
+  max_usd_per_pr: 1.00
+  monthly_budget_usd: 100
+
+reporting:
+  github:
+    mode: checks_and_comments
+    max_inline_comments: 20
+    summary: true
+
+gating:
+  enabled: false
+  fail_on_severity: error
