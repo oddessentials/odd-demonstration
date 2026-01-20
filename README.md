@@ -322,6 +322,17 @@ Images are automatically built and pushed on every merge to `main`:
 
 > **Note:** Visual regression tests (`tests/visual/`) build `web-pty-server` locally with `target: real` to embed the actual TUI binary. This ensures PR changes to the TUI are tested before merge.
 
+#### AI Review Test Harness
+
+This repository includes `test-ai-review.yml` specifically for **E2E testing** of the [odd-ai-reviewers](https://github.com/oddessentials/odd-ai-reviewers) + [OSCR](https://github.com/oddessentials/odd-self-hosted-ci-runtime) integration:
+
+| Workflow                 | Purpose                                                     |
+| ------------------------ | ----------------------------------------------------------- |
+| `test-ai-review.yml`     | Validates AI review on self-hosted OSCR runners             |
+| `oscr-runner-smoke.yml`  | Smoke tests for OSCR runner registration and basic workflow |
+
+> **Why `test-` prefix?** This is a pilot/demonstration repository. The `test-` naming makes it clear these workflows are for validating the AI review infrastructure, not for production use. Real repositories would use `ai-review.yml` directly.
+
 ---
 
 ## 📁 Project Structure
