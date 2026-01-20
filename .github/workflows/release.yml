@@ -286,7 +286,7 @@ jobs:
           echo "All expected artifacts present"
       
       - name: Upload assets to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release.outputs.tag }}
           files: release/*
