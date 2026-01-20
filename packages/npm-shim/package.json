@@ -1,6 +1,6 @@
 {
     "name": "@oddessentials/odd-dashboard",
-    "version": "3.4.5",
+    "version": "3.4.6",
     "description": "Terminal dashboard for Distributed Task Observatory",
     "repository": {
         "type": "git",

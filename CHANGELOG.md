@@ -1,3 +1,10 @@
+## [3.4.6](https://github.com/oddessentials/odd-demonstration/compare/v3.4.5...v3.4.6) (2026-01-20)
+
+
+### Bug Fixes
+
+* add permissions for reusable workflow call ([04bf983](https://github.com/oddessentials/odd-demonstration/commit/04bf983278802a68536876cbbb035266216117e3))
+
 ## [3.4.5](https://github.com/oddessentials/odd-demonstration/compare/v3.4.4...v3.4.5) (2026-01-18)
 
 
