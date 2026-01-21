@@ -30,6 +30,9 @@ limits:
   max_usd_per_pr: 1.00
   monthly_budget_usd: 100
 
+models:
+  default: claude-sonnet-4-20250514
+
 reporting:
   github:
     mode: checks_and_comments
