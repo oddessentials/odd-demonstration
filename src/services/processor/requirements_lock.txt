@@ -91,7 +91,7 @@ tqdm==4.67.1
 types-psycopg2==2.9.21.20251012
 types-requests==2.32.4.20250913
 typing_extensions==4.15.0
-tzdata==2025.2
+tzdata==2025.3
 urllib3==2.6.1
 virtualenv==20.35.4
 wcwidth==0.2.14
